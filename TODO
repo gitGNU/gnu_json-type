@@ -1,0 +1,29 @@
+Copyright (C) 2016  Stefan Vargyas
+
+This file is part of Json-Type.
+
+Json-Type is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Json-Type is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Json-Type.  If not, see <http://www.gnu.org/licenses/>.
+
+--------------------------------------------------------------------------------
+
+"dict" type object
+------------------
+
+Implement a new type object `{ "type": "dict", "args": [ $arg* ] }',
+that is similar to the "object" type in that it matches JSON object values,
+except that for "dict" the actual arguments can be given in any order and
+some (even all) of the arguments specified by the type may be omitted from
+the list of actual arguments.
+
+

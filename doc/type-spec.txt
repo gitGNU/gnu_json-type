@@ -1,0 +1,117 @@
+Copyright (C) 2016  Stefan Vargyas
+
+This file is part of Json-Type.
+
+Json-Type is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Json-Type is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Json-Type.  If not, see <http://www.gnu.org/licenses/>.
+
+--------------------------------------------------------------------------------
+
+Type Definitions Specification
+==============================
+
+A type definition is comprised of a text subsuming to the JSON specification
+[1, 2], adding to it one extra clause: the arguments of JSON objects within
+a type definition are required to form an *ordered* collection of name/value
+pairs (as opposed to the specification [1], where the collection of name/value
+pairs composing an object is *unordered*).
+
+There are precisely three categories of type definitions:
+
+  (F1) the JSON string values:
+
+         `"type"', `"null"', `"boolean"', `"number"', `"string"', `"object"',
+         and `"array"';
+
+  (F2) the JSON object values of form:
+
+         `{ "plain": $value }',
+
+       where $value is allowed to be only `null' or of JSON type boolean, number
+       or string;
+
+  (F3) the JSON object values of form:
+
+       (a) `{ "type": "object", "args": [ $arg* ] }',
+
+            where $arg is of form:
+
+           `{ "name": $string, "type": $type }',
+
+       (b) `{ "type": "array", "args": $type }',
+
+       (c) `{ "type": "array", "args": [ $type* ] }', or
+
+       (d) `{ "type": "list", "args": [ $type* ] }',
+
+       where $string is any string and $type is any type.
+
+Each of the string values listed by point (F1) is exempted from being a type when
+occurring as value associated to the key `"plain"' of objects of form (F2) or to
+the key `"name"' of objects of form (F3.a). In such cases, the string values are
+to be interpreted as proper values.
+
+The meaning of each of the constructs above is defined as follows:
+
+  (M1) The types of form (F1) have the meaning defined by the following table:
+
+         type         matching value
+         ----         --------------
+         `"type"'     any JSON value
+         `"null"'     the JSON `null' value
+         `"boolean"'  the JSON `false' and `true' values
+         `"number"'   any JSON number value
+         `"string"'   any JSON string value
+         `"object"'   any JSON object value
+         `"array"'    any JSON array value
+
+  (M2) A JSON value matches a given type of form (F2) if and only if its JSON
+       type is the same as the JSON type of the value specified by the type and
+       if the given JSON value is equal with the value specified by the type.
+
+  (M3) (a) A JSON value matches a given type of form (F3.a) if and only if:
+
+         * it is an JSON object, and
+         * has the number of arguments as specified by the type, and
+         * in the order specified by the type, each argument name is equal with
+           the corresponding name specified by the type, and
+         * in the order specified by the type, each argument value matches the
+           corresponding argument type specified by the type.
+
+       (b) A JSON value matches a given type of form (F3.b) if and only if:
+
+         * is is an JSON array with zero or more number of arguments, and
+         * each argument value matches the type specified.
+
+       (c) A JSON value matches a given type of form (F3.c) if and only if:
+
+         * is is an JSON array, and
+         * has the number of arguments specified by the type, and
+         * in the order specified by the type, each argument value matches the
+           corresponding argument type specified by the type.
+
+       (d) A JSON value matches a given type of form (F3.d) if and only if it
+           matches one of the argument types specified by the type.
+
+
+References
+----------
+
+[1] The JavaScript Object Notation (JSON) Data Interchange Format
+    https://tools.ietf.org/html/rfc7159
+
+[2] Standard ECMA-404: The JSON Data Interchange Format
+    http://www.ecma-international.org/publications/standards/Ecma-404.htm
+    http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf
+
+

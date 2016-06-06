@@ -1,0 +1,233 @@
+// Copyright (C) 2016  Stefan Vargyas
+// 
+// This file is part of Json-Type.
+// 
+// Json-Type is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// 
+// Json-Type is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License
+// along with Json-Type.  If not, see <http://www.gnu.org/licenses/>.
+
+// CASE(type, id, name, pad, letter, desc, help, min, max, def)
+
+CASE(BUF,                                                                      \
+ error_buf_max,                                                                \
+"error-buf-max",                                                               \
+               "          ", , "error buffer maximum size", ,                  \
+1, KB(512), KB(64)                                                             \
+)
+CASE(BUF,                                                                      \
+ error_buf_init,                                                               \
+"error-buf-init",                                                              \
+                "         ", , "error buffer initial size", ,                  \
+1, KB(512), KB(8)                                                              \
+)
+CASE(BUF,                                                                      \
+ input_buf_size,                                                               \
+"input-buf-size",                                                              \
+                "         ", b, "input buffer size",                           \
+"  -b|--input-buf-size NUM[KM]  use the given value for input buffer size",    \
+1, MB(2), KB(40)                                                               \
+)
+CASE(STACK,                                                                    \
+ json2_stack_size,                                                             \
+"json2-stack-size",                                                            \
+                  "       ", , "json2 stack size", ,                           \
+1, KB(10), KB(1)                                                               \
+)
+CASE(POOL,                                                                     \
+ json2_pool_size,                                                              \
+"json2-pool-size",                                                             \
+                 "        ", , "json2 memory pool size", ,                     \
+1, MB(2), KB(128)                                                              \
+)
+CASE(WIDTH,                                                                    \
+ error_ctxt_size,                                                              \
+"error-context-size",                                                          \
+                    "     ", e, "error context size",                          \
+"  -e|--error-context-size NUM  show an amount of NUM characters of context\n" \
+"                                 around the input error",                     \
+1, KB(256) - 1, 32                                                             \
+)
+CASE(BUF,                                                                      \
+ obj_buf_max,                                                                  \
+"obj-buf-max",                                                                 \
+             "            ", , "parser memory buffer maximum size", ,          \
+1, MB(2), KB(512)                                                              \
+)
+CASE(BUF,                                                                      \
+ obj_buf_init,                                                                 \
+"obj-buf-init",                                                                \
+              "           ", , "parser memory buffer initial size", ,          \
+1, MB(2), KB(4)                                                                \
+)
+CASE(STACK,                                                                    \
+ obj_stack_max,                                                                \
+"obj-stack-max",                                                               \
+               "          ", , "parser stack maximum size", ,                  \
+1, KB(10), KB(1)                                                               \
+)
+CASE(STACK,                                                                    \
+ obj_stack_init,                                                               \
+"obj-stack-init",                                                              \
+                "         ", , "parser stack initial size", ,                  \
+1, KB(10), KB(1)                                                               \
+)
+CASE(BUF,                                                                      \
+ ast_buf_max,                                                                  \
+"ast-buf-max",                                                                 \
+             "            ", , "AST parser memory buffer maximum size", ,      \
+1, MB(2), KB(512)                                                              \
+)
+CASE(BUF,                                                                      \
+ ast_buf_init,                                                                 \
+"ast-buf-init",                                                                \
+              "           ", , "AST parser memory buffer initial size", ,      \
+1, MB(2), KB(4)                                                                \
+)
+CASE(STACK,                                                                    \
+ ast_stack_max,                                                                \
+"ast-stack-max",                                                               \
+               "          ", , "AST parser and own stack maximum size", ,      \
+1, KB(10), KB(1)                                                               \
+)
+CASE(STACK,                                                                    \
+ ast_stack_init,                                                               \
+"ast-stack-init",                                                              \
+                "         ", , "AST parser and own stack initial size", ,      \
+1, KB(10), KB(1)                                                               \
+)
+CASE(POOL,                                                                     \
+ ast_pool_size,                                                                \
+"ast-pool-size",                                                               \
+               "          ", , "AST memory pool size", ,                       \
+1, MB(2), KB(128)                                                              \
+)
+CASE(BUF,                                                                      \
+ type_obj_buf_max,                                                             \
+"type-obj-buf-max",                                                            \
+                  "       ", , "type parser memory buffer maximum size", ,     \
+1, MB(2), KB(512)                                                              \
+)
+CASE(BUF,                                                                      \
+ type_obj_buf_init,                                                            \
+"type-obj-buf-init",                                                           \
+                   "      ", , "type parser memory buffer initial size", ,     \
+1, MB(2), KB(4)                                                                \
+)
+CASE(STACK,                                                                    \
+ type_obj_stack_max,                                                           \
+"type-obj-stack-max",                                                          \
+                    "     ", , "type parser and own stack maximum size", ,     \
+1, KB(10), KB(1)                                                               \
+)
+CASE(STACK,                                                                    \
+ type_obj_stack_init,                                                          \
+"type-obj-stack-init",                                                         \
+                     "    ", , "type parser and own stack initial size", ,     \
+1, KB(10), KB(1)                                                               \
+)
+CASE(BUF,                                                                      \
+ type_lib_buf_max,                                                             \
+"type-lib-buf-max",                                                            \
+                  "       ", , "type type-lib parser memory buffer maximum size", ,\
+1, MB(2), KB(512)                                                              \
+)
+CASE(BUF,                                                                      \
+ type_lib_buf_init,                                                            \
+"type-lib-buf-init",                                                           \
+                   "      ", , "type type-lib parser memory buffer initial size", ,\
+1, MB(2), KB(4)                                                                \
+)
+CASE(STACK,                                                                    \
+ type_lib_stack_max,                                                           \
+"type-lib-stack-max",                                                          \
+                    "     ", , "type type-lib stack maximum size", ,           \
+1, KB(10), KB(1)                                                               \
+)
+CASE(STACK,                                                                    \
+ type_lib_stack_init,                                                          \
+"type-lib-stack-init",                                                         \
+                     "    ", , "type type-lib stack initial size", ,           \
+1, KB(10), KB(1)                                                               \
+)
+CASE(POOL,                                                                     \
+ type_lib_pool_size,                                                           \
+"type-lib-pool-size",                                                          \
+                    "     ", , "type type-lib AST memory pool size", ,         \
+1, MB(2), KB(128)                                                              \
+)
+CASE(POOL,                                                                     \
+ type_lib_own_pool_size,                                                       \
+"type-lib-own-pool-size",                                                      \
+                        " ", , "type type-lib own memory pool size", ,         \
+1, MB(2), MB(1)                                                                \
+)
+CASE(POOL,                                                                     \
+ type_lib_ptr_space_size,                                                      \
+"type-lib-ptr-space-size",                                                     \
+                         "", , "type type-lib pointer space memory pool size", ,\
+1, MB(2), KB(1)                                                                \
+)
+CASE(BUF,                                                                      \
+ type_lib_text_max_size,                                                       \
+"type-lib-text-max-size",                                                      \
+                        " ", , "type type-lib text file maximum size", ,       \
+1, MB(1), KB(512)                                                              \
+)
+CASE(BUF,                                                                      \
+ lib_buf_max,                                                                  \
+"lib-buf-max",                                                                 \
+             "            ", , "type-lib parser memory buffer maximum size", , \
+1, KB(512), KB(4)                                                              \
+)
+CASE(BUF,                                                                      \
+ lib_buf_init,                                                                 \
+"lib-buf-init",                                                                \
+              "           ", , "type-lib parser memory buffer initial size", , \
+1, KB(512), KB(1)                                                              \
+)
+CASE(STACK,                                                                    \
+ lib_stack_max,                                                                \
+"lib-stack-max",                                                               \
+               "          ", , "type-lib AST and own stack maximum size", ,    \
+1, KB(10), KB(1)                                                               \
+)
+CASE(STACK,                                                                    \
+ lib_stack_init,                                                               \
+"lib-stack-init",                                                              \
+                "         ", , "type-lib AST and own stack initial size", ,    \
+1, KB(10), KB(1)                                                               \
+)
+CASE(POOL,                                                                     \
+ lib_pool_size,                                                                \
+"lib-pool-size",                                                               \
+               "          ", , "type-lib AST memory pool size", ,              \
+1, MB(2), MB(1)                                                                \
+)
+CASE(POOL,                                                                     \
+ lib_own_pool_size,                                                            \
+"lib-own-pool-size",                                                           \
+                   "      ", , "type-lib own memory pool size", ,              \
+1, MB(2), MB(1)                                                                \
+)
+CASE(POOL,                                                                     \
+ lib_ptr_space_size,                                                           \
+"lib-ptr-space-size",                                                          \
+                    "     ", , "type-lib pointer space memory pool size", ,    \
+1, MB(2), KB(1)                                                                \
+)
+CASE(BUF,                                                                      \
+ lib_text_max_size,                                                            \
+"lib-text-max-size",                                                           \
+                   "      ", , "type-lib text file maximum size", ,            \
+1, MB(1), KB(512)                                                              \
+)
+

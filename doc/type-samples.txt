@@ -1,0 +1,194 @@
+Copyright (C) 2016  Stefan Vargyas
+
+This file is part of Json-Type.
+
+Json-Type is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Json-Type is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Json-Type.  If not, see <http://www.gnu.org/licenses/>.
+
+--------------------------------------------------------------------------------
+
+Type Object Samples
+===================
+
+1. Type definitions
+-------------------
+
+The specifications of the type objects in 'doc/type-spec.txt' are kind of dry.
+Therefore a few illustrating type definitions should be more than welcomed.
+
+  * open array of numbers or strings:
+
+    {
+        "type": "array",
+        "args": {
+            "type": "list",
+            "args": [
+                "number",
+                "string"
+            ]
+        }
+    }
+
+  * closed array of one argument of type number or string:
+
+    {
+        "type": "array",
+        "args": [
+            {
+                "type": "list",
+                "args": [
+                    "number",
+                    "string"
+                ]
+            }
+        ]
+    }
+
+  * an object of three arguments:
+    - the 1st argument have its  name `"foo"' and its type `"type"',
+    - the 2nd argument must have its name either `"bar"' or `"bav"' and
+      its type `"number"',
+    - the 3rd argument is of name `"baz"' and of type `"string"':
+
+    {
+        "type": "list",
+        "args": [
+            {
+                "type": "object",
+                "args": [
+                    {
+                        "name": "foo",
+                        "type": "type"
+                    },
+                    {
+                        "name": "bar",
+                        "type": "number"
+                    },
+                    {
+                        "name": "baz",
+                        "type": "string"
+                    }
+                ]
+            },
+            {
+                "type": "object",
+                "args": [
+                    {
+                        "name": "foo",
+                        "type": "type"
+                    },
+                    {
+                        "name": "bav",
+                        "type": "number"
+                    },
+                    {
+                        "name": "baz",
+                        "type": "string"
+                    }
+                ]
+            }
+        ]
+    }
+
+Here are the answers of 'json' for inputs which are invalid with respect to the
+type definition above:
+
+  $ json -OV -d ... <<< '{"foo":{},"zzz":false,"bay":0}'
+  json: error: <stdin>:1:11: type check error: invalid argument name: expected "bar" or "bav"
+  json: error: <stdin>:1:11: {"foo":{},"zzz":false,"baz":0}
+  json: error: <stdin>:1:11:           ^
+
+  $ json -OV -d ... <<< '{"foo":{},"bar":false,"bay":0}'
+  json: error: <stdin>:1:17: type check error: type mismatch: expected a value of type `"number"'
+  json: error: <stdin>:1:17: {"foo":{},"bar":false,"baz":0}
+  json: error: <stdin>:1:17:                 ^
+
+  $ json -OV -d ... <<< '{"foo":{},"bar":false,"bay":0}'
+  json: error: <stdin>:1:19: type check error: invalid argument name: expected "baz"
+  json: error: <stdin>:1:19: {"foo":{},"bar":1,"bay":0}
+  json: error: <stdin>:1:19:                   ^
+
+  $ json -OV -d ... <<< '{"foo":{},"bar":1,"baz":0}'
+  json: error: <stdin>:1:25: type check error: type mismatch: expected a value of type `"string"'
+  json: error: <stdin>:1:25: {"foo":{},"bar":1,"baz":0}
+  json: error: <stdin>:1:25:                         ^
+
+
+2. Querying github API at the bash command line
+-----------------------------------------------
+
+Nowadays it is quite common that web services provide APIs which can be called
+in through and provide output of the form of JSON text.
+
+The file 'doc/github.json' contains an incipient set of type definitions which
+can be used for querying one of the web service APIs of 'github'. (This is true
+for at least today, Wed May 25 12:16:21 EEST 2016.)
+
+For starters, let's type-check the JSON output of the most recent 100 commits
+of GCC that 'github' is mirroring:
+
+  $ set +o pipefail
+
+  $ wget-gcc-commits() { [[ "$1" =~ ^$|^[1-9][0-9]*$ ]] && wget -qO- 'https://api.github.com/repos/gcc-mirror/gcc/commits?per_page=100&page='"${1:-1}"; }
+
+  $ wget-gcc-commits|json -t doc/github.json -OV
+  json: error: doc/github.json: type lib error: library error: type name not specified
+
+  $ wget-gcc-commits|json -t doc/github.json:commits -OV && echo OK
+  OK
+
+The first of the two invocations of 'json' is reported to be incorrect. The type
+library 'doc/github.json' is made of an array of "name" objects. Therefore, the
+argument to `-t|--type-lib' has to specify the name of the type definition with 
+which 'json' validates the input.
+
+The second invocation of 'json' does give the name of the respective definition:
+that is 'commits'. Note that instead of using `-t doc/github.json:commits', the
+initial command line can be made to work by only adding the option `-Ncommits'.
+
+Next, let's see the list of the most recent 100 commit messages obtained using
+the action option `-J|--json2':
+
+  $ filter-msgs() { sed -nr 's|^\s*$\|^/commit/committer/(name=\|date=)\|^/commit/(mess)age(=)|\1\2\3|p'; }
+
+  $ wget-gcc-commits|json -t doc/github.json:commits -VJ|filter-msgs
+  name=marxin
+  date=2016-05-25T09:10:16Z
+  mess=Fix PR tree-optimization/71239.
+  mess=
+  mess=   * g++.dg/pr71239.C: New test.
+  mess=   PR tree-optimization/71239
+  mess=   * tree.c (array_at_struct_end_p): Do not call operand_equal_p
+  mess=   if DECL_SIZE is NULL.
+  mess=
+  mess=
+  mess=git-svn-id: svn+ssh://gcc.gnu.org/svn/gcc/trunk@236696 138bc75d-0d04-0410-961f-82ee72b054a4
+  
+  name=rguenth
+  date=2016-05-25T08:52:22Z
+  mess=2016-05-25  Richard Biener  <rguenther@suse.de>
+  mess=
+  mess=   * timevar.def (TV_TREE_LOOP_IFCVT): Add.
+  mess=   * tree-if-conv.c (pass_data_if_conversion): Use it.
+  mess=
+  mess=
+  mess=git-svn-id: svn+ssh://gcc.gnu.org/svn/gcc/trunk@236695 138bc75d-0d04-0410-961f-82ee72b054a4
+
+  ...
+
+The action option `-J|--json2' flattens the hierarchical nested structure of the
+JSON input to a series of text lines of form `/PATH/NAME=VALUE'. Upon flattening,
+the classical Unix power-tools (such as 'awk', 'sed' or 'grep') can conveniently
+be used for filtering and transforming further the text obtained from 'json'.
+
+

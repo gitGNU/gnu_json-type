@@ -1,0 +1,538 @@
+# Copyright (C) 2016  Stefan Vargyas
+# 
+# This file is part of Json-Type.
+# 
+# Json-Type is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# Json-Type is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with Json-Type.  If not, see <http://www.gnu.org/licenses/>.
+
+--------------------------------------------------------------------------------
+
+# This file contains the list of bugs found, in reverse chronological order. For
+# each of these bugs there is a corresponding test case, in the 'json-bugs' test
+# suite in the 'test' directory, which records the way the bug got fixed.
+
+--------------------------------------------------------------------------------
+
+$ date
+Mon May  9 13:04:30 EEST 2016
+
+$ json -d '"type"' <<< '1'
+1
+$ json <<< ''
+json: error: <stdin>:2:1: parse error: unexpected token
+json: error: <stdin>:2:1: 
+json: error: <stdin>:2:1: ^
+# stev: BUG: the following failed assertion occur in the front-end on '\n' input
+# when specifying a type in the command line:
+$ json -d '"type"' <<< ''
+json: error: <stdin>:2:1: parse error: unexpected token
+json: fatal error: assertion failed: json-base.c:218:pos_error_verbose: x < e
+$
+
+# stev: note that the bug above occurs in the source file 'json-base.c' in
+# the function 'pos_error_verbose' upon the second call of it in the function
+# 'obj_json_base_run'; the bug popes out if and only if 'keep_mem_buf' is set
+# to 'true'
+
+--------------------------------------------------------------------------------
+
+$ date
+Mon Apr 18 10:12:14 EEST 2016
+
+# stev: BUG: incorrect error message; it should have been: expected an object of type `"null"' or `"number"'
+$ json -d '{"type":"list","args":[{"type":"array","args":"null"},{"type":"array","args":["number"]}]}' <<< '[false]'
+json: error: <stdin>:1:2: type check error: type mismatch: expected an object of type `"number"'
+json: error: <stdin>:1:2: [false]
+json: error: <stdin>:1:2:  ^
+[
+$
+
+# stev: BUG: rejected correct JSON input:
+$ json -d '{"type":"list","args":[{"type":"object","args":[{"name":"faa","type":"null"}]},{"type":"object","args":[]}]}' <<< '{}'
+json: error: <stdin>:1:2: type check error: too few arguments
+json: error: <stdin>:1:2: {}
+json: error: <stdin>:1:2:  ^
+{
+$
+
+# stev: BUG: incorrect JSON input which is not rejected:
+$ json -d '{"type":"list","args":[{"type":"array","args":"null"},{"type":"array","args":["number","number"]}]}' <<< '[null,1]'
+[null,1]
+$
+
+# stev: BUG: rejected correct JSON input:
+$ json -d '{"type":"list","args":[{"type":"array","args":["null"]},{"type":"array","args":{"plain":null}}]}' <<< '[null,null]'
+json: error: <stdin>:1:6: type check error: too many arguments
+json: error: <stdin>:1:6: [null,null]
+json: error: <stdin>:1:6:      ^
+[null
+$
+
+# stev: BUG: invalid JSON input: too few arguments
+$ json -d '{"type":"list","args":[{"type":"array","args":["null"]}]}' <<< '[]'
+[]
+$
+
+# stev: BUG: invalid JSON input: too few arguments
+$ json -d '{"type":"list","args":[{"type":"array","args":["null","null"]}]}' <<< '[null]'
+[null]
+$
+
+--------------------------------------------------------------------------------
+
+$ date
+Sat Apr 16 16:30:25 EEST 2016
+
+$ json -d '{"type":"list","args":[{"type":"array","args":{"type":"list","args":["number"]}},{"type":"array","args":["number"]}]}' <<< '[1]'
+[1]
+$
+
+# stev: BUG: the type def below should have been rejected as ambiguous:
+$ json -Tc <<< '{"type":"list","args":[{"type":"array","args":{"type":"list","args":["number"]}},{"type":"array","args":["number"]}]}'
+$
+
+# stev: BUG: the type def below should have been rejected as ambiguous:
+$ json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":"number"}},{"type":"array","args":{"type":"list","args":["number"]}}]}' <<< '[0]'
+json: error: <stdin>:1:1: type check error: type mismatch: expected an object of type `{"type":"list","args":[{"type":"array","args":{"type":"array","args":"number"}},{"type":"array","args":{"type":"list","args":["number"]}}]}' -- the mismatched arg is at 1:2
+json: error: <stdin>:1:1: [0]
+json: error: <stdin>:1:1: ^
+[
+$
+
+# stev: BUG: correctly typed JSON input, yet
+$ json -d '{"type":"list","args":[{"type":"array","args":{"type":"list","args":["number"]}}]}' <<< '[0]'
+json: error: <stdin>:1:1: type check error: type mismatch: expected an object of type `{"type":"list","args":[{"type":"array","args":{"type":"list","args":["number"]}}]}' -- the mismatched arg is at 1:2
+json: error: <stdin>:1:1: [0]
+json: error: <stdin>:1:1: ^
+[
+$
+
+# stev: BUG: correctly types JSON input, yet
+$ json -d '{"type":"list","args":[{"type":"array","args":{"type":"list","args":["number"]}}]}' <<< '[0,1]'
+json: error: <stdin>:1:1: type check error: type mismatch: expected an object of type `{"type":"list","args":[{"type":"array","args":{"type":"list","args":["number"]}}]}' -- the mismatched arg is at 1:2
+json: error: <stdin>:1:1: [0,1]
+json: error: <stdin>:1:1: ^
+[
+$
+
+--------------------------------------------------------------------------------
+
+$ date
+Sat Apr 16 08:42:29 EEST 2016
+
+# stev: BUG: apparently correct JSON input yet it is rejected; this is in fact an ambiguity issue:
+$ json -d '{"type":"list","args":[{"type":"array","args":{"type":"list","args":["number"]}},{"type":"array","args":["number","number"]}]}' <<< '[1]'
+json: error: <stdin>:1:3: type check error: too few arguments
+json: error: <stdin>:1:3: [1]
+json: error: <stdin>:1:3:   ^
+[1
+$
+
+--------------------------------------------------------------------------------
+
+$ date
+Sun Apr 10 09:51:56 EEST 2016
+
+$ json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":"number"}},{"type":"array","args":{"type":"array","args":"string"}}]}' <<< '[[false]]'
+json: error: <stdin>:1:3: type check error: type mismatch: expected an object of type `"number"'
+json: error: <stdin>:1:3: [[false]]
+json: error: <stdin>:1:3:   ^
+[[
+$ json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":"number"}},{"type":"array","args":{"type":"array","args":"string"}}]}' <<< '[[0]]'
+[[0]]
+# stev: BUG: the type def below is not ambiguous, yet the type checking fails:
+$ json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":"number"}},{"type":"array","args":{"type":"array","args":"string"}}]}' <<< '[[""]]'
+json: error: <stdin>:1:3: type check error: type mismatch: expected an object of type `"number"'
+json: error: <stdin>:1:3: [[""]]
+json: error: <stdin>:1:3:   ^
+[[
+# stev: a partial solution to this problem is to reject for the time being these
+# kinds of type definitions with the error message *type def not yet supported*
+$
+
+--------------------------------------------------------------------------------
+
+$ date
+Sat Apr  9 14:48:12 EEST 2016
+
+$ json -d '{"type":"list","args":[{"type":"array","args":"type"},{"type":"array","args":"array"}]}' <<< '[null,null]'
+[null,null]
+$ json -d '{"type":"list","args":[{"type":"array","args":"type"},{"type":"array","args":"array"}]}' <<< '[{},null]'
+[{},null]
+# stev: the following JSON input appears to be correctly typed, yet the type
+# checking rejects it: this is so because the type definition is ambiguous:
+$ json -d '{"type":"list","args":[{"type":"array","args":"type"},{"type":"array","args":"array"}]}' <<< '[[],null]'
+json: error: <stdin>:1:5: type check error: type mismatch: expected an object of type `"array"'
+json: error: <stdin>:1:5: [[],null]
+json: error: <stdin>:1:5:     ^
+[[],
+$
+
+# stev: BUG: the following type definition is ambiguous and must be rejected:
+$ json -Ta <<< '{"type":"list","args":[{"type":"array","args":"type"},{"type":"array","args":"array"}]}' >/dev/null && echo OK
+OK
+$
+
+# stev: the same as above, but with the open array replaced with a closed one:
+$ json -d '{"type":"list","args":[{"type":"array","args":["type","boolean"]},{"type":"array","args":["array","number"]}]}' <<< '[[],0]'
+[[],0]
+# the JSON input appears to be correctly typed, yet the type checking rejects it:
+# this is so because the type definition is ambiguous:
+$ json -d '{"type":"list","args":[{"type":"array","args":["type","boolean"]},{"type":"array","args":["array","number"]}]}' <<< '[[],false]'
+json: error: <stdin>:1:1: type check error: type mismatch: expected an object of type `{"type":"list","args":[{"type":"array","args":["type","boolean"]},{"type":"array","args":["array","number"]}]}' -- the mismatched arg is at 1:5
+json: error: <stdin>:1:1: [[],false]
+json: error: <stdin>:1:1: ^
+[[],
+$
+
+# stev: BUG: the following type definition is ambiguous and must be rejected:
+$ json -Ta <<< '{"type":"list","args":[{"type":"array","args":["type","boolean"]},{"type":"array","args":["array","number"]}]}' >/dev/null && echo OK
+OK
+$
+
+# stev: the same as above, but with the closed array replaced with an object:
+$ json -d '{"type":"list","args":[{"type":"object","args":[{"name":"foo","type":"type"},{"name":"bar","type":"boolean"}]},{"type":"object","args":[{"name":"foo","type":"array"},{"name":"bar","type":"number"}]}]}' <<< '{"foo":[],"bar":0}'
+{"foo":[],"bar":0}
+# the JSON input appears to be correctly typed, yet the type checking rejects it:
+# this is so because the type definition is ambiguous:
+$ json -d '{"type":"list","args":[{"type":"object","args":[{"name":"foo","type":"type"},{"name":"bar","type":"boolean"}]},{"type":"object","args":[{"name":"foo","type":"array"},{"name":"bar","type":"number"}]}]}' <<< '{"foo":[],"bar":false}'
+json: error: <stdin>:1:1: type check error: type mismatch: expected an object of type `{"type":"list","args":[{"type":"object","args":[{"name":"foo","type":"type"},{"name":"bar","type":"boolean"}]},{"type":"object","args":[{"name":"foo","type":"array"},{"name":"bar","type":"number"}]}]}' -- the mismatched arg is at 1:17
+json: error: <stdin>:1:1: {"foo":[],"bar":false}
+json: error: <stdin>:1:1: ^
+{"foo":[],"bar":
+$
+
+# stev: BUG: the following type definition is ambiguous and must be rejected:
+$ json -Ta <<< '{"type":"list","args":[{"type":"object","args":[{"name":"foo","type":"type"},{"name":"bar","type":"boolean"}]},{"type":"object","args":[{"name":"foo","type":"array"},{"name":"bar","type":"number"}]}]}' >/dev/null && echo OK
+OK
+$
+
+--------------------------------------------------------------------------------
+
+$ date
+Wed Apr  6 12:31:26 EEST 2016
+
+# stev: BUG: the JSON input below should have passed the type checking successfully:
+$ json -d '{"type":"list","args":[{"type":"object","args":[{"name":"foo","type":"number"}]},{"type":"object","args":[{"name":"foo","type":"number"},{"name":"bar","type":"number"}]}]}' <<< '{"foo":0,"bar":1}'
+json: error: <stdin>:1:9: type check error: too many arguments
+json: error: <stdin>:1:9: {"foo":0,"bar":1}
+json: error: <stdin>:1:9:         ^
+{"foo":0
+$
+
+# bug correction:
+$ json -d '{"type":"list","args":[{"type":"object","args":[{"name":"foo","type":"number"}]},{"type":"object","args":[{"name":"foo","type":"number"},{"name":"bar","type":"number"}]}]}' <<< '{"foo":0,"bar":1}'
+{"foo":0,"bar":1}
+$
+
+--------------------------------------------------------------------------------
+
+$ date
+Sun Apr  3 15:55:06 EEST 2016
+
+$ json -F <<< '{"type":"object","args":[{"name":"foo","type":{"type":"list","args":[{"type":"array","args":[]},{"type":"array","args":["number"]}]}}]}'
+{
+    "type": "object",
+    "args": [
+        {
+            "name": "foo",
+            "type": {
+                "type": "list",
+                "args": [
+                    {
+                        "type": "array",
+                        "args": []
+                    },
+                    {
+                        "type": "array",
+                        "args": [
+                            "number"
+                        ]
+                    }
+                ]
+            }
+        }
+    ]
+}
+$
+
+# stev: BUG: the JSON input below should have passed the type checking successfully:
+$ json -d '{"type":"object","args":[{"name":"foo","type":{"type":"list","args":[{"type":"array","args":[]},{"type":"array","args":["number"]}]}}]}' <<< '{"foo":[1]}'
+json: error: <stdin>:1:9: type check error: too many arguments
+json: error: <stdin>:1:9: {"foo":[1]}
+json: error: <stdin>:1:9:         ^
+{"foo":[
+# stev: BUG: the bug above can be narrowed down to the following invocation:
+$ json -d '{"type":"list","args":[{"type":"array","args":[]},{"type":"array","args":["number"]}]}' <<< '[1]'
+json: error: <stdin>:1:2: type check error: too many arguments
+json: error: <stdin>:1:2: [1]
+json: error: <stdin>:1:2:  ^
+[
+$
+
+# the bug above is due to '(p->closed || ...)' below:
+$ diff -u json-type.c{~,}
+--- json-type.c~	2016-04-03 16:07:52.000000000 +0300
++++ json-type.c	2016-04-03 16:08:17.000000000 +0300
+@@ -6977,7 +6977,8 @@
+ 				const struct json_type_trie_node_t* n = NULL;
+ 				const struct json_type_node_t* r;
+ 
+-				if (a.array_trie->sym == NULL && o.args->n_arg > 1) { //!!!???
++				if (a.array_trie->sym == NULL
++					&& (p->is_closed || o.args->n_arg > 1)) { //!!!???
+ 					if (p->open != NULL) {
+ 						o.args->array_trie = NULL; //!!!ARRAY_TRIE_NULL
+ 						return JSON_TYPE_CHECK_NODE_RESULT(
+$
+
+$ json -d '{"type":"list","args":[{"type":"array","args":["number"]},{"type":"array","args":["number","number"]}]}' <<< '[1]'
+[1]
+# stev: BUG: this one belongs to the same category as the above:
+$ json -d '{"type":"list","args":[{"type":"array","args":["number"]},{"type":"array","args":["number","number"]}]}' <<< '[1,2]'
+json: error: <stdin>:1:3: type check error: too many arguments
+json: error: <stdin>:1:3: [1,2]
+json: error: <stdin>:1:3:   ^
+[1
+$
+
+# stev: BUG: the JSON input shouldn't have passed type checking:
+$ json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":"string"}]}' <<< '[1,""]'
+[1,""]
+$
+
+# bug correction:
+$ json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":"string"}]}' <<< '[1,""]'
+json: error: <stdin>:1:4: type check error: type mismatch: expected an object of type `"number"'
+json: error: <stdin>:1:4: [1,""]
+json: error: <stdin>:1:4:    ^
+[1,
+$
+
+# stev: BUG: the JSON input below should have passed the type checking successfully:
+$ json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":"string"},{"type":"array","args":["number","string"]}]}' <<< '[1,2]'
+json: error: <stdin>:1:1: type check error: type mismatch: expected an object of type `{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":"string"},{"type":"array","args":["number","string"]}]}' -- the mismatched arg is at 1:4
+json: error: <stdin>:1:1: [1,2]
+json: error: <stdin>:1:1: ^
+[1,
+$
+
+# bug correction:
+$ json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":"string"},{"type":"array","args":["number","string"]}]}' <<< '[1,2]'
+[1,2]
+$ json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":"string"},{"type":"array","args":["number","string"]}]}' <<< '[1,""]'
+[1,""]
+$ json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":"string"},{"type":"array","args":["number","string"]}]}' <<< '["",""]'
+["",""]
+$
+
+# stev: BUG: the following type definition is ambiguous and must be rejected:
+$ json -Ta <<< '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":{"plain":1}}]}' >/dev/null && echo OK
+OK
+$
+
+--------------------------------------------------------------------------------
+
+$ date
+Mon Mar 21 09:06:54 EET 2016
+
+# stev: BUGS of the same category as above due to incomplete implementation of
+# type checking of "list" types:
+
+$ json -Tp <<< '{"type":"list","args":[{"type":"array","args":[{"plain":0}]}]}'|json -Po
+{
+.   "type": "list",
+.   "args": [
+.   .   {
+.   .   .   "type": "array",
+.   .   .   "args": [
+.   .   .   .   {
+.   .   .   .   .   "plain": 0
+.   .   .   .   }
+.   .   .   ]
+.   .   }
+.   ]
+}
+# stev: BUG: the JSON input has a correct type yet the type checking fails:
+$ json -t <(echo '{"type":"list","args":[{"type":"array","args":[{"plain":0}]}]}') <<< '[0]'
+json: error: <stdin>:1:1: type check error: type mismatch: expected an object of type `{"type":"list","args":[{"type":"array","args":[{"plain":0}]}]}' -- the mismatched arg is at 1:2
+json: error: <stdin>:1:1: [0]
+json: error: <stdin>:1:1: ^
+[
+$
+
+$ json -Tp <<< '{"type":"list","args":[{"type":"array","args":[{"plain":0},{"plain":1}]}]}'|json -Po
+{
+.   "type": "list",
+.   "args": [
+.   .   {
+.   .   .   "type": "array",
+.   .   .   "args": [
+.   .   .   .   {
+.   .   .   .   .   "plain": 0
+.   .   .   .   },
+.   .   .   .   {
+.   .   .   .   .   "plain": 1
+.   .   .   .   }
+.   .   .   ]
+.   .   }
+.   ]
+}
+# stev: BUG: the JSON input has a correct type yet the type checking fails:
+$ json -t <(echo '{"type":"list","args":[{"type":"array","args":[{"plain":0},{"plain":1}]}]}') <<< '[0,1]'
+json: error: <stdin>:1:1: type check error: type mismatch: expected an object of type `{"type":"list","args":[{"type":"array","args":[{"plain":0},{"plain":1}]}]}' -- the mismatched arg is at 1:2
+json: error: <stdin>:1:1: [0,1]
+json: error: <stdin>:1:1: ^
+[
+$
+
+--------------------------------------------------------------------------------
+
+$ date
+Sat Mar 19 22:12:49 EET 2016
+
+# stev: incomplete implementation:
+
+$ json -t <(echo '{"type":"list","args":["number",{"type":"array","args":"number"}]}') <<< '1'
+1
+# stev: BUG: the JSON input has a correct type yet the type checking fails:
+$ json -t <(echo '{"type":"list","args":["number",{"type":"array","args":"number"}]}') <<< '[1]'
+json: error: <stdin>:1:1: type check error: type mismatch: expected an object of type `{"type":"list","args":["number",{"type":"array","args":"number"}]}'
+json: error: <stdin>:1:1: [1]
+json: error: <stdin>:1:1: ^
+$ json -t <(echo '{"type":"list","args":["number",{"type":"array","args":["number"]}]}') <<< '[1]'
+[1]
+$
+
+$ json --pretty -o <<< '{"type":"list","args":[{"type":"object","args":[{"name":"foo","type":"boolean"}]},{"type":"object","args":[{"name":"foo","type":{"type":"object","args":[]}}]}]}'
+{
+.   "type": "list",
+.   "args": [
+.   .   {
+.   .   .   "type": "object",
+.   .   .   "args": [
+.   .   .   .   {
+.   .   .   .   .   "name": "foo",
+.   .   .   .   .   "type": "boolean"
+.   .   .   .   }
+.   .   .   ]
+.   .   },
+.   .   {
+.   .   .   "type": "object",
+.   .   .   "args": [
+.   .   .   .   {
+.   .   .   .   .   "name": "foo",
+.   .   .   .   .   "type": {
+.   .   .   .   .   .   "type": "object",
+.   .   .   .   .   .   "args": [
+.   .   .   .   .   .   ]
+.   .   .   .   .   }
+.   .   .   .   }
+.   .   .   ]
+.   .   }
+.   ]
+}
+# stev: BUG: the JSON input has a correct type yet the type checking fails:
+$ json -t <(echo '{"type":"list","args":[{"type":"object","args":[{"name":"foo","type":"boolean"}]},{"type":"object","args":[{"name":"foo","type":{"type":"object","args":[]}}]}]}') <<< '{"foo":{}}'
+json: error: <stdin>:1:1: type check error: type mismatch: expected an object of type `{"type":"list","args":[{"type":"object","args":[{"name":"foo","type":"boolean"}]},{"type":"object","args":[{"name":"foo","type":{"type":"object","args":[]}}]}]}' -- the mismatched arg is at 1:8
+json: error: <stdin>:1:1: {"foo":{}}
+json: error: <stdin>:1:1: ^
+{"foo":
+$
+
+$ json --pretty -o <<< '{"type":"list","args":[{"type":"object","args":[{"name":"foo","type":"boolean"}]},{"type":"object","args":[{"name":"foo","type":{"type":"array","args":[]}}]}]}'
+{
+.   "type": "list",
+.   "args": [
+.   .   {
+.   .   .   "type": "object",
+.   .   .   "args": [
+.   .   .   .   {
+.   .   .   .   .   "name": "foo",
+.   .   .   .   .   "type": "boolean"
+.   .   .   .   }
+.   .   .   ]
+.   .   },
+.   .   {
+.   .   .   "type": "object",
+.   .   .   "args": [
+.   .   .   .   {
+.   .   .   .   .   "name": "foo",
+.   .   .   .   .   "type": {
+.   .   .   .   .   .   "type": "array",
+.   .   .   .   .   .   "args": [
+.   .   .   .   .   .   ]
+.   .   .   .   .   }
+.   .   .   .   }
+.   .   .   ]
+.   .   }
+.   ]
+}
+# stev: BUG: the JSON input has a correct type yet the type checking fails:
+$ json -t <(echo '{"type":"list","args":[{"type":"object","args":[{"name":"foo","type":"boolean"}]},{"type":"object","args":[{"name":"foo","type":{"type":"array","args":[]}}]}]}') <<< '{"foo":[]}'
+json: error: <stdin>:1:1: type check error: type mismatch: expected an object of type `{"type":"list","args":[{"type":"object","args":[{"name":"foo","type":"boolean"}]},{"type":"object","args":[{"name":"foo","type":{"type":"array","args":[]}}]}]}' -- the mismatched arg is at 1:8
+json: error: <stdin>:1:1: {"foo":[]}
+json: error: <stdin>:1:1: ^
+{"foo":
+$
+
+$ json --pretty -o <<< '{"type":"list","args":[{"type":"object","args":[{"name":"foo","type":"boolean"}]},{"type":"object","args":[{"name":"foo","type":{"type":"array","args":[]}}]},{"type":"object","args":[{"name":"foo","type":{"type":"array","args":["number"]}}]}]}'
+{
+.   "type": "list",
+.   "args": [
+.   .   {
+.   .   .   "type": "object",
+.   .   .   "args": [
+.   .   .   .   {
+.   .   .   .   .   "name": "foo",
+.   .   .   .   .   "type": "boolean"
+.   .   .   .   }
+.   .   .   ]
+.   .   },
+.   .   {
+.   .   .   "type": "object",
+.   .   .   "args": [
+.   .   .   .   {
+.   .   .   .   .   "name": "foo",
+.   .   .   .   .   "type": {
+.   .   .   .   .   .   "type": "array",
+.   .   .   .   .   .   "args": [
+.   .   .   .   .   .   ]
+.   .   .   .   .   }
+.   .   .   .   }
+.   .   .   ]
+.   .   },
+.   .   {
+.   .   .   "type": "object",
+.   .   .   "args": [
+.   .   .   .   {
+.   .   .   .   .   "name": "foo",
+.   .   .   .   .   "type": {
+.   .   .   .   .   .   "type": "array",
+.   .   .   .   .   .   "args": [
+.   .   .   .   .   .   .   "number"
+.   .   .   .   .   .   ]
+.   .   .   .   .   }
+.   .   .   .   }
+.   .   .   ]
+.   .   }
+.   ]
+}
+# stev: BUG: the JSON input has a correct type yet the type checking fails:
+$ json -t <(echo '{"type":"list","args":[{"type":"object","args":[{"name":"foo","type":"boolean"}]},{"type":"object","args":[{"name":"foo","type":{"type":"array","args":[]}}]},{"type":"object","args":[{"name":"foo","type":{"type":"array","args":["number"]}}]}]}') <<< '{"foo":[1]}'
+json: error: <stdin>:1:1: type check error: type mismatch: expected an object of type `{"type":"list","args":[{"type":"object","args":[{"name":"foo","type":"boolean"}]},{"type":"object","args":[{"name":"foo","type":{"type":"array","args":[]}}]},{"type":"object","args":[{"name":"foo","type":{"type":"array","args":["number"]}}]}]}' -- the mismatched arg is at 1:8
+json: error: <stdin>:1:1: {"foo":[1]}
+json: error: <stdin>:1:1: ^
+{"foo":
+$
+

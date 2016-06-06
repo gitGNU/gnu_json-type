@@ -1,0 +1,2028 @@
+# Copyright (C) 2016  Stefan Vargyas
+# 
+# This file is part of Json-Type.
+# 
+# Json-Type is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# Json-Type is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with Json-Type.  If not, see <http://www.gnu.org/licenses/>.
+
+#
+# json type cases test suite:
+#
+
+$ . ~/regtest2.sh
+$ alias json-type-cases-regtest='regtest2-selftest -f test-json-type-cases.txt -a exec=pipe -B'
+
+# output all test names:
+$ json-type-cases-regtest -N
+...
+
+# run all tests:
+$ json-type-cases-regtest -A
+...
+
+--[ prereq ]--------------------------------------------------------------------
+
+$ json() { set -o pipefail && LD_LIBRARY_PATH=../lib ../src/json --terse --verbose --literal-value "$@" 2>&1|sed -r '/error:/s|(/dev/fd/)[0-9]+|\1??|'; }
+$
+
+--[ 1 ]-------------------------------------------------------------------------
+
+# list-open-array-of-open-array-of-basic
+$ json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":"number"}}]}' <<< '[[false]]'
+json: error: <stdin>:1:3: type check error: type mismatch: expected a value of type `"number"'
+json: error: <stdin>:1:3: [[false]]
+json: error: <stdin>:1:3:   ^
+[[
+command failed: json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":"number"}}]}' <<< '[[false]]'
+$
+
+--[ 2 ]-------------------------------------------------------------------------
+
+# list-open-array-of-closed-array-of-basic
+$ json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":["number"]}}]}' <<< '[[false]]'
+json: error: <stdin>:1:3: type check error: type mismatch: expected a value of type `"number"'
+json: error: <stdin>:1:3: [[false]]
+json: error: <stdin>:1:3:   ^
+[[
+command failed: json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":["number"]}}]}' <<< '[[false]]'
+$
+
+--[ 3 ]-------------------------------------------------------------------------
+
+$ json -Tc <<< '{"type":"list","args":[{"type":"array","args":{"type":"list","args":[]}},{"type":"array","args":{"type":"list","args":[]}}]}'
+json: error: <stdin>:1:74: attribute error: invalid "list" type object: duplicated 'open array' entry (previous defined at 1:24)
+json: error: <stdin>:1:74: rgs":{"type":"list","args":[]}},{"type":"array","args":{"type":"l
+json: error: <stdin>:1:74:                                 ^
+command failed: json -Tc <<< '{"type":"list","args":[{"type":"array","args":{"type":"list","args":[]}},{"type":"array","args":{"type":"list","args":[]}}]}'
+$
+
+--[ 4 ]-------------------------------------------------------------------------
+
+$ json -Tc <<< '{"type":"list","args":[{"type":"array","args":{"type":"list","args":[]}},{"type":"array","args":{"type":"list","args":["null"]}}]}'
+json: error: <stdin>:1:24: attribute error: invalid "list" type object: sort of array of list type not yet supported (the inner list is at 1:47)
+json: error: <stdin>:1:24: {"type":"list","args":[{"type":"array","args":{"type":"l
+json: error: <stdin>:1:24:                        ^
+command failed: json -Tc <<< '{"type":"list","args":[{"type":"array","args":{"type":"list","args":[]}},{"type":"array","args":{"type":"list","args":["null"]}}]}'
+$
+
+--[ 5 ]-------------------------------------------------------------------------
+
+$ json -d '{"type":"list","args":[{"type":"object","args":[{"name":"faa","type":"null"}]},{"type":"object","args":[]}]}' <<< '{"faa":false}'
+json: error: <stdin>:1:8: type check error: type mismatch: expected a value of type `"null"'
+json: error: <stdin>:1:8: {"faa":false}
+json: error: <stdin>:1:8:        ^
+{"faa":
+command failed: json -d '{"type":"list","args":[{"type":"object","args":[{"name":"faa","type":"null"}]},{"type":"object","args":[]}]}' <<< '{"faa":false}'
+$
+
+--[ 6 ]-------------------------------------------------------------------------
+
+$ json -d '{"type":"list","args":[{"type":"object","args":[{"name":"faa","type":"null"}]},{"type":"object","args":[{"name":"faa","type":"number"}]}]}' <<< '{"faa":false}'
+json: error: <stdin>:1:8: type check error: type mismatch: expected a value of type `"null"' or `"number"'
+json: error: <stdin>:1:8: {"faa":false}
+json: error: <stdin>:1:8:        ^
+{"faa":
+command failed: json -d '{"type":"list","args":[{"type":"object","args":[{"name":"faa","type":"null"}]},{"type":"object","args":[{"name":"faa","type":"number"}]}]}' <<< '{"faa":false}'
+$
+
+--[ 7 ]-------------------------------------------------------------------------
+
+$ json -d '{"type":"list","args":[{"type":"object","args":[{"name":"faa","type":"null"}]},{"type":"object","args":[{"name":"faa","type":"number"}]},{"type":"object","args":[{"name":"faa","type":"string"}]}]}' <<< '{"faa":false}'
+json: error: <stdin>:1:8: type check error: type mismatch: expected a value of type `"null"', `"number"' or `"string"'
+json: error: <stdin>:1:8: {"faa":false}
+json: error: <stdin>:1:8:        ^
+{"faa":
+command failed: json -d '{"type":"list","args":[{"type":"object","args":[{"name":"faa","type":"null"}]},{"type":"object","args":[{"name":"faa","type":"number"}]},{"type":"object","args":[{"name":"faa","type":"string"}]}]}' <<< '{"faa":false}'
+$
+
+--[ 8 ]-------------------------------------------------------------------------
+
+$ json -d '{"type":"list","args":[{"type":"object","args":[{"name":"faa","type":"null"}]},{"type":"object","args":[{"name":"faa","type":"number"}]},{"type":"object","args":[{"name":"faa","type":"string"}]}]}' <<< '{}'
+json: error: <stdin>:1:2: type check error: too few arguments
+json: error: <stdin>:1:2: {}
+json: error: <stdin>:1:2:  ^
+{
+command failed: json -d '{"type":"list","args":[{"type":"object","args":[{"name":"faa","type":"null"}]},{"type":"object","args":[{"name":"faa","type":"number"}]},{"type":"object","args":[{"name":"faa","type":"string"}]}]}' <<< '{}'
+$
+
+--[ 9 ]-------------------------------------------------------------------------
+
+$ json -d '{"type":"list","args":[{"type":"object","args":[{"name":"faa","type":"null"}]},{"type":"object","args":[{"name":"faa","type":"number"}]},{"type":"object","args":[{"name":"faa","type":{"type":"object","args":[]}}]}]}' <<< '{"faa":[]}'
+json: error: <stdin>:1:8: type check error: type mismatch: expected a value of type `"null"', `"number"' or `{"type":"object","args":[]}'
+json: error: <stdin>:1:8: {"faa":[]}
+json: error: <stdin>:1:8:        ^
+{"faa":
+command failed: json -d '{"type":"list","args":[{"type":"object","args":[{"name":"faa","type":"null"}]},{"type":"object","args":[{"name":"faa","type":"number"}]},{"type":"object","args":[{"name":"faa","type":{"type":"object","args":[]}}]}]}' <<< '{"faa":[]}'
+$
+
+
+--[ 10 ]------------------------------------------------------------------------
+
+$ json -d '{"type":"list","args":[{"type":"object","args":[{"name":"faa","type":"null"}]},{"type":"object","args":[{"name":"faa","type":"number"}]},{"type":"object","args":[{"name":"faa","type":{"type":"object","args":[]}}]}]}' <<< '{"faa":{}}'
+{"faa":{}}
+$
+
+
+--[ 11 ]------------------------------------------------------------------------
+
+$ json -d '{"type":"list","args":[{"type":"object","args":[{"name":"faa","type":"null"}]},{"type":"object","args":[{"name":"faa","type":"number"}]},{"type":"object","args":[{"name":"faa","type":{"type":"object","args":[]}}]}]}' <<< '{"faa":{"baa":null}}'
+json: error: <stdin>:1:9: type check error: too many arguments
+json: error: <stdin>:1:9: {"faa":{"baa":null}}
+json: error: <stdin>:1:9:         ^
+{"faa":{
+command failed: json -d '{"type":"list","args":[{"type":"object","args":[{"name":"faa","type":"null"}]},{"type":"object","args":[{"name":"faa","type":"number"}]},{"type":"object","args":[{"name":"faa","type":{"type":"object","args":[]}}]}]}' <<< '{"faa":{"baa":null}}'
+$
+
+--[ 12 ]------------------------------------------------------------------------
+
+$ json -d '{"type":"list","args":[{"type":"array","args":["number","number"]}]}' <<< '[1]'
+json: error: <stdin>:1:3: type check error: too few arguments
+json: error: <stdin>:1:3: [1]
+json: error: <stdin>:1:3:   ^
+[1
+command failed: json -d '{"type":"list","args":[{"type":"array","args":["number","number"]}]}' <<< '[1]'
+$ json -d '{"type":"list","args":[{"type":"array","args":["number","number"]}]}' <<< '[1,2]'
+[1,2]
+$ json -d '{"type":"list","args":[{"type":"array","args":["number","number"]}]}' <<< '[1,2,3]'
+json: error: <stdin>:1:5: type check error: too many arguments
+json: error: <stdin>:1:5: [1,2,3]
+json: error: <stdin>:1:5:     ^
+[1,2
+command failed: json -d '{"type":"list","args":[{"type":"array","args":["number","number"]}]}' <<< '[1,2,3]'
+$ json -d '{"type":"list","args":[{"type":"array","args":["number","number"]}]}' <<< '[1,false]'
+json: error: <stdin>:1:4: type check error: type mismatch: expected a value of type `"number"'
+json: error: <stdin>:1:4: [1,false]
+json: error: <stdin>:1:4:    ^
+[1,
+command failed: json -d '{"type":"list","args":[{"type":"array","args":["number","number"]}]}' <<< '[1,false]'
+$
+
+--[ 13 ]------------------------------------------------------------------------
+
+$ json -d '{"type":"list","args":[{"type":"array","args":"null"},{"type":"array","args":["number","number"]}]}' <<< '[1,false]'
+json: error: <stdin>:1:4: type check error: type mismatch: expected a value of type `"number"'
+json: error: <stdin>:1:4: [1,false]
+json: error: <stdin>:1:4:    ^
+[1,
+command failed: json -d '{"type":"list","args":[{"type":"array","args":"null"},{"type":"array","args":["number","number"]}]}' <<< '[1,false]'
+$
+
+--[ 14 ]------------------------------------------------------------------------
+
+$ json -d '{"type":"object","args":[{"name":"foo","type":{"type":"list","args":["boolean","number"]}}]}' <<< '{"foo":null}'
+json: error: <stdin>:1:8: type check error: type mismatch: expected a value of type `"boolean"' or `"number"'
+json: error: <stdin>:1:8: {"foo":null}
+json: error: <stdin>:1:8:        ^
+{"foo":
+command failed: json -d '{"type":"object","args":[{"name":"foo","type":{"type":"list","args":["boolean","number"]}}]}' <<< '{"foo":null}'
+$
+
+--[ 15 ]------------------------------------------------------------------------
+
+$ json -d '{"type":"list","args":[{"type":"array","args":["boolean","null"]},{"type":"array","args":"boolean"}]}' <<< '[]'
+[]
+$ json -d '{"type":"list","args":[{"type":"array","args":["boolean","null"]},{"type":"array","args":"boolean"}]}' <<< '[false,null]'
+[false,null]
+$ json -d '{"type":"list","args":[{"type":"array","args":["boolean","null"]},{"type":"array","args":"boolean"}]}' <<< '[false,false]'
+[false,false]
+$ json -d '{"type":"list","args":[{"type":"array","args":["boolean","null"]},{"type":"array","args":"boolean"}]}' <<< '[false,false,false]'
+[false,false,false]
+$ json -d '{"type":"list","args":[{"type":"array","args":["boolean","null"]},{"type":"array","args":"boolean"}]}' <<< '[false,null,null]'
+json: error: <stdin>:1:12: type check error: too many arguments
+json: error: <stdin>:1:12: [false,null,null]
+json: error: <stdin>:1:12:            ^
+[false,null
+command failed: json -d '{"type":"list","args":[{"type":"array","args":["boolean","null"]},{"type":"array","args":"boolean"}]}' <<< '[false,null,null]'
+$
+
+--[ 16 ]------------------------------------------------------------------------
+
+$ json -d '{"type":"list","args":[]}' <<< '[]'
+json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type none
+json: error: <stdin>:1:1: []
+json: error: <stdin>:1:1: ^
+command failed: json -d '{"type":"list","args":[]}' <<< '[]'
+$ json -d '{"type":"list","args":["null"]}' <<< '[]'
+json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `"null"'
+json: error: <stdin>:1:1: []
+json: error: <stdin>:1:1: ^
+command failed: json -d '{"type":"list","args":["null"]}' <<< '[]'
+$ json -d '{"type":"list","args":["null","boolean"]}' <<< '[]'
+json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `"null"' or `"boolean"'
+json: error: <stdin>:1:1: []
+json: error: <stdin>:1:1: ^
+command failed: json -d '{"type":"list","args":["null","boolean"]}' <<< '[]'
+$ json -d '{"type":"list","args":["null","boolean","number"]}' <<< '[]'
+json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `"null"', `"boolean"' or `"number"'
+json: error: <stdin>:1:1: []
+json: error: <stdin>:1:1: ^
+command failed: json -d '{"type":"list","args":["null","boolean","number"]}' <<< '[]'
+$ json -d '{"type":"list","args":["null","boolean","number","string"]}' <<< '[]'
+json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `"null"', `"boolean"', `"number"' or `"string"'
+json: error: <stdin>:1:1: []
+json: error: <stdin>:1:1: ^
+command failed: json -d '{"type":"list","args":["null","boolean","number","string"]}' <<< '[]'
+$ json -d '{"type":"list","args":["null","boolean","number","string","object"]}' <<< '[]'
+json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `"null"', `"boolean"', `"number"', `"string"' or `"object"'
+json: error: <stdin>:1:1: []
+json: error: <stdin>:1:1: ^
+command failed: json -d '{"type":"list","args":["null","boolean","number","string","object"]}' <<< '[]'
+$ json -d '{"type":"list","args":["null","boolean","number","string","object","array"]}' <<< '[]'
+[]
+$ json -d '{"type":"list","args":["boolean","number","string","object","array"]}' <<< 'null'
+json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `"boolean"', `"number"', `"string"', `"object"' or `"array"'
+json: error: <stdin>:1:1: null
+json: error: <stdin>:1:1: ^
+command failed: json -d '{"type":"list","args":["boolean","number","string","object","array"]}' <<< 'null'
+$ json -d '{"type":"list","args":["null",{"type":"object","args":[]}]}' <<< '[]'
+json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `"null"' or `{"type":"object",...}'
+json: error: <stdin>:1:1: []
+json: error: <stdin>:1:1: ^
+command failed: json -d '{"type":"list","args":["null",{"type":"object","args":[]}]}' <<< '[]'
+$ json -d '{"type":"list","args":["null",{"type":"object","args":[]},"object"]}' <<< '[]'
+json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `"null"' or `"object"'
+json: error: <stdin>:1:1: []
+json: error: <stdin>:1:1: ^
+command failed: json -d '{"type":"list","args":["null",{"type":"object","args":[]},"object"]}' <<< '[]'
+$
+
+--[ 17 ]------------------------------------------------------------------------
+
+$ json -d '{"type":"list","args":[{"type":"object","args":[{"name":"foo","type":"number"}]},{"type":"object","args":[{"name":"foo","type":"string"},{"name":"bar","type":"array"}]}]}' <<< '{"foo":1,"bar":null}'
+json: error: <stdin>:1:9: type check error: too many arguments
+json: error: <stdin>:1:9: {"foo":1,"bar":null}
+json: error: <stdin>:1:9:         ^
+{"foo":1
+command failed: json -d '{"type":"list","args":[{"type":"object","args":[{"name":"foo","type":"number"}]},{"type":"object","args":[{"name":"foo","type":"string"},{"name":"bar","type":"array"}]}]}' <<< '{"foo":1,"bar":null}'
+$ json -d '{"type":"list","args":[{"type":"object","args":[{"name":"foo","type":"number"}]},{"type":"object","args":[{"name":"foo","type":"string"},{"name":"bar","type":"array"}]}]}' <<< '{"foo":"","bar":null}'
+json: error: <stdin>:1:17: type check error: type mismatch: expected a value of type `"array"'
+json: error: <stdin>:1:17: {"foo":"","bar":null}
+json: error: <stdin>:1:17:                 ^
+{"foo":"","bar":
+command failed: json -d '{"type":"list","args":[{"type":"object","args":[{"name":"foo","type":"number"}]},{"type":"object","args":[{"name":"foo","type":"string"},{"name":"bar","type":"array"}]}]}' <<< '{"foo":"","bar":null}'
+$ json -d '{"type":"list","args":[{"type":"object","args":[{"name":"foo","type":"number"}]},{"type":"object","args":[{"name":"foo","type":"string"},{"name":"bar","type":"array"}]}]}' <<< '{"foo":"","bar":[1]}'
+{"foo":"","bar":[1]}
+$ json -d '{"type":"list","args":[{"type":"object","args":[{"name":"foo","type":"number"}]},{"type":"object","args":[{"name":"foo","type":"number"},{"name":"bar","type":"array"}]}]}' <<< '{"foo":"","bar":[1]}'
+json: error: <stdin>:1:8: type check error: type mismatch: expected a value of type `"number"'
+json: error: <stdin>:1:8: {"foo":"","bar":[1]}
+json: error: <stdin>:1:8:        ^
+{"foo":
+command failed: json -d '{"type":"list","args":[{"type":"object","args":[{"name":"foo","type":"number"}]},{"type":"object","args":[{"name":"foo","type":"number"},{"name":"bar","type":"array"}]}]}' <<< '{"foo":"","bar":[1]}'
+$ json -d '{"type":"list","args":[{"type":"object","args":[{"name":"foo","type":"number"}]},{"type":"object","args":[{"name":"foo","type":"number"},{"name":"bar","type":"array"}]}]}' <<< '{"foo":1,"bar":null}'
+json: error: <stdin>:1:16: type check error: type mismatch: expected a value of type `"array"'
+json: error: <stdin>:1:16: {"foo":1,"bar":null}
+json: error: <stdin>:1:16:                ^
+{"foo":1,"bar":
+command failed: json -d '{"type":"list","args":[{"type":"object","args":[{"name":"foo","type":"number"}]},{"type":"object","args":[{"name":"foo","type":"number"},{"name":"bar","type":"array"}]}]}' <<< '{"foo":1,"bar":null}'
+$ json -d '{"type":"list","args":[{"type":"object","args":[{"name":"foo","type":"number"}]},{"type":"object","args":[{"name":"foo","type":"number"},{"name":"bar","type":"array"}]}]}' <<< '{"foo":1,"bar":[],"baz":null}'
+json: error: <stdin>:1:18: type check error: too many arguments
+json: error: <stdin>:1:18: {"foo":1,"bar":[],"baz":null}
+json: error: <stdin>:1:18:                  ^
+{"foo":1,"bar":[]
+command failed: json -d '{"type":"list","args":[{"type":"object","args":[{"name":"foo","type":"number"}]},{"type":"object","args":[{"name":"foo","type":"number"},{"name":"bar","type":"array"}]}]}' <<< '{"foo":1,"bar":[],"baz":null}'
+$
+
+--[ 18 ]------------------------------------------------------------------------
+
+# any
+$ json -d '{"type":"list","args":["number"]}' <<< 'false'
+json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `"number"'
+json: error: <stdin>:1:1: false
+json: error: <stdin>:1:1: ^
+command failed: json -d '{"type":"list","args":["number"]}' <<< 'false'
+# plain
+$ json -d '{"type":"list","args":[{"plain":0}]}' <<< 'false'
+json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `{"plain":0}'
+json: error: <stdin>:1:1: false
+json: error: <stdin>:1:1: ^
+command failed: json -d '{"type":"list","args":[{"plain":0}]}' <<< 'false'
+# object
+$ json -d '{"type":"list","args":[{"type":"object","args":[]}]}' <<< 'false'
+json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `{"type":"object",...}'
+json: error: <stdin>:1:1: false
+json: error: <stdin>:1:1: ^
+command failed: json -d '{"type":"list","args":[{"type":"object","args":[]}]}' <<< 'false'
+# array
+$ json -d '{"type":"list","args":[{"type":"array","args":"null"}]}' <<< 'false'
+json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `{"type":"array",...}'
+json: error: <stdin>:1:1: false
+json: error: <stdin>:1:1: ^
+command failed: json -d '{"type":"list","args":[{"type":"array","args":"null"}]}' <<< 'false'
+# any + any
+$ json -d '{"type":"list","args":["number","string"]}' <<< 'false'
+json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `"number"' or `"string"'
+json: error: <stdin>:1:1: false
+json: error: <stdin>:1:1: ^
+command failed: json -d '{"type":"list","args":["number","string"]}' <<< 'false'
+# plain + plain
+$ json -d '{"type":"list","args":[{"plain":0},{"plain":""}]}' <<< 'false'
+json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `{"plain":0}' or `{"plain":""}'
+json: error: <stdin>:1:1: false
+json: error: <stdin>:1:1: ^
+command failed: json -d '{"type":"list","args":[{"plain":0},{"plain":""}]}' <<< 'false'
+# object + object
+$ json -d '{"type":"list","args":[{"type":"object","args":[]},{"type":"object","args":[{"name":"foo","type":"type"}]}]}' <<< 'false'
+json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `{"type":"object",...}'
+json: error: <stdin>:1:1: false
+json: error: <stdin>:1:1: ^
+command failed: json -d '{"type":"list","args":[{"type":"object","args":[]},{"type":"object","args":[{"name":"foo","type":"type"}]}]}' <<< 'false'
+# array + array
+$ json -d '{"type":"list","args":[{"type":"array","args":"null"},{"type":"array","args":"string"}]}' <<< 'false'
+json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `{"type":"array",...}'
+json: error: <stdin>:1:1: false
+json: error: <stdin>:1:1: ^
+command failed: json -d '{"type":"list","args":[{"type":"array","args":"null"},{"type":"array","args":"string"}]}' <<< 'false'
+# any + object
+$ json -d '{"type":"list","args":["number",{"type":"object","args":[]}]}' <<< 'false'
+json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `"number"' or `{"type":"object",...}'
+json: error: <stdin>:1:1: false
+json: error: <stdin>:1:1: ^
+command failed: json -d '{"type":"list","args":["number",{"type":"object","args":[]}]}' <<< 'false'
+# plain + object
+$ json -d '{"type":"list","args":[{"plain":0},{"type":"object","args":[]}]}' <<< 'false'
+json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `{"plain":0}' or `{"type":"object",...}'
+json: error: <stdin>:1:1: false
+json: error: <stdin>:1:1: ^
+command failed: json -d '{"type":"list","args":[{"plain":0},{"type":"object","args":[]}]}' <<< 'false'
+# obj + object
+$ json -d '{"type":"list","args":["object",{"type":"object","args":[]}]}' <<< 'false'
+json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `"object"'
+json: error: <stdin>:1:1: false
+json: error: <stdin>:1:1: ^
+command failed: json -d '{"type":"list","args":["object",{"type":"object","args":[]}]}' <<< 'false'
+# arr + object
+$ json -d '{"type":"list","args":["array",{"type":"object","args":[]}]}' <<< 'false'
+json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `"array"' or `{"type":"object",...}'
+json: error: <stdin>:1:1: false
+json: error: <stdin>:1:1: ^
+command failed: json -d '{"type":"list","args":["array",{"type":"object","args":[]}]}' <<< 'false'
+# any + array
+$ json -d '{"type":"list","args":["number",{"type":"array","args":"null"}]}' <<< 'false'
+json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `"number"' or `{"type":"array",...}'
+json: error: <stdin>:1:1: false
+json: error: <stdin>:1:1: ^
+command failed: json -d '{"type":"list","args":["number",{"type":"array","args":"null"}]}' <<< 'false'
+# plain + array
+$ json -d '{"type":"list","args":[{"plain":0},{"type":"array","args":"null"}]}' <<< 'false'
+json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `{"plain":0}' or `{"type":"array",...}'
+json: error: <stdin>:1:1: false
+json: error: <stdin>:1:1: ^
+command failed: json -d '{"type":"list","args":[{"plain":0},{"type":"array","args":"null"}]}' <<< 'false'
+# obj + array
+$ json -d '{"type":"list","args":["object",{"type":"array","args":"null"}]}' <<< 'false'
+json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `"object"' or `{"type":"array",...}'
+json: error: <stdin>:1:1: false
+json: error: <stdin>:1:1: ^
+command failed: json -d '{"type":"list","args":["object",{"type":"array","args":"null"}]}' <<< 'false'
+# arr + array
+$ json -d '{"type":"list","args":["array",{"type":"array","args":"null"}]}' <<< 'false'
+json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `"array"'
+json: error: <stdin>:1:1: false
+json: error: <stdin>:1:1: ^
+command failed: json -d '{"type":"list","args":["array",{"type":"array","args":"null"}]}' <<< 'false'
+# any + any + object
+$ json -d '{"type":"list","args":["number","string",{"type":"object","args":[]}]}' <<< 'false'
+json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `"number"', `"string"' or `{"type":"object",...}'
+json: error: <stdin>:1:1: false
+json: error: <stdin>:1:1: ^
+command failed: json -d '{"type":"list","args":["number","string",{"type":"object","args":[]}]}' <<< 'false'
+# any + obj + object
+$ json -d '{"type":"list","args":["number","object",{"type":"object","args":[]}]}' <<< 'false'
+json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `"number"' or `"object"'
+json: error: <stdin>:1:1: false
+json: error: <stdin>:1:1: ^
+command failed: json -d '{"type":"list","args":["number","object",{"type":"object","args":[]}]}' <<< 'false'
+# any + plain! + object
+$ json -d '{"type":"list","args":["number",{"plain":""},{"type":"object","args":[]}]}' <<< 'false'
+json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `"number"', `{"plain":""}' or `{"type":"object",...}'
+json: error: <stdin>:1:1: false
+json: error: <stdin>:1:1: ^
+command failed: json -d '{"type":"list","args":["number",{"plain":""},{"type":"object","args":[]}]}' <<< 'false'
+# any + plain= + object
+$ json -d '{"type":"list","args":["number",{"plain":0},{"type":"object","args":[]}]}' <<< 'false'
+json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `"number"' or `{"type":"object",...}'
+json: error: <stdin>:1:1: false
+json: error: <stdin>:1:1: ^
+command failed: json -d '{"type":"list","args":["number",{"plain":0},{"type":"object","args":[]}]}' <<< 'false'
+# any + arr + object
+$ json -d '{"type":"list","args":["number","array",{"type":"object","args":[]}]}' <<< 'false'
+json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `"number"', `"array"' or `{"type":"object",...}'
+json: error: <stdin>:1:1: false
+json: error: <stdin>:1:1: ^
+command failed: json -d '{"type":"list","args":["number","array",{"type":"object","args":[]}]}' <<< 'false'
+# any + any + array
+$ json -d '{"type":"list","args":["number","string",{"type":"array","args":"null"}]}' <<< 'false'
+json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `"number"', `"string"' or `{"type":"array",...}'
+json: error: <stdin>:1:1: false
+json: error: <stdin>:1:1: ^
+command failed: json -d '{"type":"list","args":["number","string",{"type":"array","args":"null"}]}' <<< 'false'
+# any + plain! + array
+$ json -d '{"type":"list","args":["number",{"plain":""},{"type":"array","args":"null"}]}' <<< 'false'
+json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `"number"', `{"plain":""}' or `{"type":"array",...}'
+json: error: <stdin>:1:1: false
+json: error: <stdin>:1:1: ^
+command failed: json -d '{"type":"list","args":["number",{"plain":""},{"type":"array","args":"null"}]}' <<< 'false'
+# any + plain= + array
+$ json -d '{"type":"list","args":["number",{"plain":0},{"type":"array","args":"null"}]}' <<< 'false'
+json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `"number"' or `{"type":"array",...}'
+json: error: <stdin>:1:1: false
+json: error: <stdin>:1:1: ^
+command failed: json -d '{"type":"list","args":["number",{"plain":0},{"type":"array","args":"null"}]}' <<< 'false'
+# any + obj + array
+$ json -d '{"type":"list","args":["number","object",{"type":"array","args":"null"}]}' <<< 'false'
+json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `"number"', `"object"' or `{"type":"array",...}'
+json: error: <stdin>:1:1: false
+json: error: <stdin>:1:1: ^
+command failed: json -d '{"type":"list","args":["number","object",{"type":"array","args":"null"}]}' <<< 'false'
+# any + arr + array
+$ json -d '{"type":"list","args":["number","array",{"type":"array","args":"null"}]}' <<< 'false'
+json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `"number"' or `"array"'
+json: error: <stdin>:1:1: false
+json: error: <stdin>:1:1: ^
+command failed: json -d '{"type":"list","args":["number","array",{"type":"array","args":"null"}]}' <<< 'false'
+# any + object + array
+$ json -d '{"type":"list","args":["number",{"type":"object","args":[]},{"type":"array","args":"null"}]}' <<< 'false'
+json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `"number"', `{"type":"object",...}' or `{"type":"array",...}'
+json: error: <stdin>:1:1: false
+json: error: <stdin>:1:1: ^
+command failed: json -d '{"type":"list","args":["number",{"type":"object","args":[]},{"type":"array","args":"null"}]}' <<< 'false'
+# plain + object + array
+$ json -d '{"type":"list","args":[{"plain":0},{"type":"object","args":[]},{"type":"array","args":"null"}]}' <<< 'false'
+json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `{"plain":0}', `{"type":"object",...}' or `{"type":"array",...}'
+json: error: <stdin>:1:1: false
+json: error: <stdin>:1:1: ^
+command failed: json -d '{"type":"list","args":[{"plain":0},{"type":"object","args":[]},{"type":"array","args":"null"}]}' <<< 'false'
+# obj + object + array
+$ json -d '{"type":"list","args":["object",{"type":"object","args":[]},{"type":"array","args":"null"}]}' <<< 'false'
+json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `"object"' or `{"type":"array",...}'
+json: error: <stdin>:1:1: false
+json: error: <stdin>:1:1: ^
+command failed: json -d '{"type":"list","args":["object",{"type":"object","args":[]},{"type":"array","args":"null"}]}' <<< 'false'
+# arr + object + array
+$ json -d '{"type":"list","args":["array",{"type":"object","args":[]},{"type":"array","args":"null"}]}' <<< 'false'
+json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `"array"' or `{"type":"object",...}'
+json: error: <stdin>:1:1: false
+json: error: <stdin>:1:1: ^
+command failed: json -d '{"type":"list","args":["array",{"type":"object","args":[]},{"type":"array","args":"null"}]}' <<< 'false'
+# any + any + object + array
+$ json -d '{"type":"list","args":["number","string",{"type":"object","args":[]},{"type":"array","args":"null"}]}' <<< 'false'
+json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `"number"', `"string"', `{"type":"object",...}' or `{"type":"array",...}'
+json: error: <stdin>:1:1: false
+json: error: <stdin>:1:1: ^
+command failed: json -d '{"type":"list","args":["number","string",{"type":"object","args":[]},{"type":"array","args":"null"}]}' <<< 'false'
+# any + plain! + object + array
+$ json -d '{"type":"list","args":["number",{"plain":""},{"type":"object","args":[]},{"type":"array","args":"null"}]}' <<< 'false'
+json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `"number"', `{"plain":""}', `{"type":"object",...}' or `{"type":"array",...}'
+json: error: <stdin>:1:1: false
+json: error: <stdin>:1:1: ^
+command failed: json -d '{"type":"list","args":["number",{"plain":""},{"type":"object","args":[]},{"type":"array","args":"null"}]}' <<< 'false'
+# any + plain= + object + array
+$ json -d '{"type":"list","args":["number",{"plain":0},{"type":"object","args":[]},{"type":"array","args":"null"}]}' <<< 'false'
+json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `"number"', `{"type":"object",...}' or `{"type":"array",...}'
+json: error: <stdin>:1:1: false
+json: error: <stdin>:1:1: ^
+command failed: json -d '{"type":"list","args":["number",{"plain":0},{"type":"object","args":[]},{"type":"array","args":"null"}]}' <<< 'false'
+# any + obj + object + array
+$ json -d '{"type":"list","args":["number","object",{"type":"object","args":[]},{"type":"array","args":"null"}]}' <<< 'false'
+json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `"number"', `"object"' or `{"type":"array",...}'
+json: error: <stdin>:1:1: false
+json: error: <stdin>:1:1: ^
+command failed: json -d '{"type":"list","args":["number","object",{"type":"object","args":[]},{"type":"array","args":"null"}]}' <<< 'false'
+# any + arr + object + array
+$ json -d '{"type":"list","args":["number","array",{"type":"object","args":[]},{"type":"array","args":"null"}]}' <<< 'false'
+json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `"number"', `"array"' or `{"type":"object",...}'
+json: error: <stdin>:1:1: false
+json: error: <stdin>:1:1: ^
+command failed: json -d '{"type":"list","args":["number","array",{"type":"object","args":[]},{"type":"array","args":"null"}]}' <<< 'false'
+$
+
+--[ 19 ]------------------------------------------------------------------------
+
+$ json -d '{"type":"list","args":["number",{"type":"array","args":[]},{"type":"array","args":["number"]}]}' <<< '[false]'
+json: error: <stdin>:1:2: type check error: type mismatch: expected a value of type `"number"' or no value at all
+json: error: <stdin>:1:2: [false]
+json: error: <stdin>:1:2:  ^
+[
+command failed: json -d '{"type":"list","args":["number",{"type":"array","args":[]},{"type":"array","args":["number"]}]}' <<< '[false]'
+$ json -d '{"type":"list","args":["number",{"type":"array","args":[]},{"type":"array","args":["number","number"]}]}' <<< '[false]'
+json: error: <stdin>:1:2: type check error: type mismatch: expected a value of type `"number"' or no value at all
+json: error: <stdin>:1:2: [false]
+json: error: <stdin>:1:2:  ^
+[
+command failed: json -d '{"type":"list","args":["number",{"type":"array","args":[]},{"type":"array","args":["number","number"]}]}' <<< '[false]'
+$ json -d '{"type":"list","args":["number",{"type":"array","args":"null"},{"type":"array","args":["number","number"]}]}' <<< '[false]'
+json: error: <stdin>:1:2: type check error: type mismatch: expected a value of type `"null"' or `"number"' or, otherwise, no value at all
+json: error: <stdin>:1:2: [false]
+json: error: <stdin>:1:2:  ^
+[
+command failed: json -d '{"type":"list","args":["number",{"type":"array","args":"null"},{"type":"array","args":["number","number"]}]}' <<< '[false]'
+$ json -d '{"type":"list","args":["number",{"type":"array","args":"null"},{"type":"array","args":["number","number"]}]}' <<< '[1,false]'
+json: error: <stdin>:1:4: type check error: type mismatch: expected a value of type `"number"'
+json: error: <stdin>:1:4: [1,false]
+json: error: <stdin>:1:4:    ^
+[1,
+command failed: json -d '{"type":"list","args":["number",{"type":"array","args":"null"},{"type":"array","args":["number","number"]}]}' <<< '[1,false]'
+$
+
+--[ 20 ]------------------------------------------------------------------------
+
+$ json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":["number","string"]}]}' <<< '[0]'
+[0]
+$ json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":["number","string"]}]}' <<< '[0,1]'
+[0,1]
+$ json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":["number","string"]}]}' <<< '[0,""]'
+[0,""]
+$ json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":["number","string"]}]}' <<< '[0,1,2]'
+[0,1,2]
+$ json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":["number","string"]}]}' <<< '[0,false]'
+json: error: <stdin>:1:4: type check error: type mismatch: expected a value of type `"number"' or `"string"'
+json: error: <stdin>:1:4: [0,false]
+json: error: <stdin>:1:4:    ^
+[0,
+command failed: json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":["number","string"]}]}' <<< '[0,false]'
+$ json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":["number","number","string"]}]}' <<< '[0]'
+[0]
+$ json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":["number","number","string"]}]}' <<< '[0,1]'
+[0,1]
+$ json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":["number","number","string"]}]}' <<< '[0,1,2]'
+[0,1,2]
+$ json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":["number","number","string"]}]}' <<< '[0,1,""]'
+[0,1,""]
+$ json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":["number","number","string"]}]}' <<< '[0,1,false]'
+json: error: <stdin>:1:6: type check error: type mismatch: expected a value of type `"number"' or `"string"'
+json: error: <stdin>:1:6: [0,1,false]
+json: error: <stdin>:1:6:      ^
+[0,1,
+command failed: json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":["number","number","string"]}]}' <<< '[0,1,false]'
+$ json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":["number","number","string"]}]}' <<< '[0,1,2,false]'
+json: error: <stdin>:1:8: type check error: type mismatch: expected a value of type `"number"'
+json: error: <stdin>:1:8: [0,1,2,false]
+json: error: <stdin>:1:8:        ^
+[0,1,2,
+command failed: json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":["number","number","string"]}]}' <<< '[0,1,2,false]'
+$
+
+--[ 21 ]------------------------------------------------------------------------
+
+$ json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":["number","string"]},{"type":"array","args":["number","array"]}]}' <<< '[0,false]'
+json: error: <stdin>:1:4: type check error: type mismatch: expected a value of type `"number"', `"string"' or `"array"'
+json: error: <stdin>:1:4: [0,false]
+json: error: <stdin>:1:4:    ^
+[0,
+command failed: json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":["number","string"]},{"type":"array","args":["number","array"]}]}' <<< '[0,false]'
+$
+
+--[ 22 ]------------------------------------------------------------------------
+
+$ json -d '{"type":"list","args":[{"type":"array","args":"boolean"},{"type":"array","args":"number"},{"type":"array","args":["number","string"]}]}' <<< '[null]'
+json: error: <stdin>:1:2: type check error: type mismatch: expected a value of type `"boolean"' or `"number"' or, otherwise, no value at all
+json: error: <stdin>:1:2: [null]
+json: error: <stdin>:1:2:  ^
+[
+command failed: json -d '{"type":"list","args":[{"type":"array","args":"boolean"},{"type":"array","args":"number"},{"type":"array","args":["number","string"]}]}' <<< '[null]'
+$
+
+--[ 23 ]------------------------------------------------------------------------
+
+$ json -d '{"type":"list","args":[{"type":"array","args":"boolean"},{"type":"array","args":"number"},{"type":"array","args":["boolean","string"]},{"type":"array","args":["number","string"]}]}' <<< '[null]'
+json: error: <stdin>:1:2: type check error: type mismatch: expected a value of type `"boolean"' or `"number"' or, otherwise, no value at all
+json: error: <stdin>:1:2: [null]
+json: error: <stdin>:1:2:  ^
+[
+command failed: json -d '{"type":"list","args":[{"type":"array","args":"boolean"},{"type":"array","args":"number"},{"type":"array","args":["boolean","string"]},{"type":"array","args":["number","string"]}]}' <<< '[null]'
+$ json -d '{"type":"list","args":[{"type":"array","args":"boolean"},{"type":"array","args":"number"},{"type":"array","args":["boolean","string"]},{"type":"array","args":["number","string"]}]}' <<< '[0,null]'
+json: error: <stdin>:1:4: type check error: type mismatch: expected a value of type `"number"' or `"string"'
+json: error: <stdin>:1:4: [0,null]
+json: error: <stdin>:1:4:    ^
+[0,
+command failed: json -d '{"type":"list","args":[{"type":"array","args":"boolean"},{"type":"array","args":"number"},{"type":"array","args":["boolean","string"]},{"type":"array","args":["number","string"]}]}' <<< '[0,null]'
+$ json -d '{"type":"list","args":[{"type":"array","args":"boolean"},{"type":"array","args":"number"},{"type":"array","args":["boolean","string"]},{"type":"array","args":["number","string"]}]}' <<< '[false,null]'
+json: error: <stdin>:1:8: type check error: type mismatch: expected a value of type `"boolean"' or `"string"'
+json: error: <stdin>:1:8: [false,null]
+json: error: <stdin>:1:8:        ^
+[false,
+command failed: json -d '{"type":"list","args":[{"type":"array","args":"boolean"},{"type":"array","args":"number"},{"type":"array","args":["boolean","string"]},{"type":"array","args":["number","string"]}]}' <<< '[false,null]'
+$
+
+--[ 24 ]------------------------------------------------------------------------
+
+$ json -d '{"type":"list","args":[{"type":"array","args":"boolean"},{"type":"array","args":"number"}]}' <<< '[null]'
+json: error: <stdin>:1:2: type check error: type mismatch: expected a value of type `"boolean"' or `"number"' or, otherwise, no value at all
+json: error: <stdin>:1:2: [null]
+json: error: <stdin>:1:2:  ^
+[
+command failed: json -d '{"type":"list","args":[{"type":"array","args":"boolean"},{"type":"array","args":"number"}]}' <<< '[null]'
+$ json -d '{"type":"list","args":[{"type":"array","args":["boolean"]},{"type":"array","args":["number"]}]}' <<< '[null]'
+json: error: <stdin>:1:2: type check error: type mismatch: expected a value of type `"boolean"' or `"number"'
+json: error: <stdin>:1:2: [null]
+json: error: <stdin>:1:2:  ^
+[
+command failed: json -d '{"type":"list","args":[{"type":"array","args":["boolean"]},{"type":"array","args":["number"]}]}' <<< '[null]'
+$
+
+--[ 25 ]------------------------------------------------------------------------
+
+$ json -d '{"type":"list","args":[{"type":"array","args":["boolean","boolean"]},{"type":"array","args":["boolean","string"]},{"type":"array","args":["number","number"]},{"type":"array","args":["number","string"]}]}' <<< '[null]'
+json: error: <stdin>:1:2: type check error: type mismatch: expected a value of type `"boolean"' or `"number"'
+json: error: <stdin>:1:2: [null]
+json: error: <stdin>:1:2:  ^
+[
+command failed: json -d '{"type":"list","args":[{"type":"array","args":["boolean","boolean"]},{"type":"array","args":["boolean","string"]},{"type":"array","args":["number","number"]},{"type":"array","args":["number","string"]}]}' <<< '[null]'
+$ json -d '{"type":"list","args":[{"type":"array","args":["boolean","boolean"]},{"type":"array","args":["boolean","string"]},{"type":"array","args":["number","number"]},{"type":"array","args":["number","string"]}]}' <<< '[false]'
+json: error: <stdin>:1:7: type check error: too few arguments
+json: error: <stdin>:1:7: [false]
+json: error: <stdin>:1:7:       ^
+[false
+command failed: json -d '{"type":"list","args":[{"type":"array","args":["boolean","boolean"]},{"type":"array","args":["boolean","string"]},{"type":"array","args":["number","number"]},{"type":"array","args":["number","string"]}]}' <<< '[false]'
+$ json -d '{"type":"list","args":[{"type":"array","args":["boolean","boolean"]},{"type":"array","args":["boolean","string"]},{"type":"array","args":["number","number"]},{"type":"array","args":["number","string"]}]}' <<< '[0]'
+json: error: <stdin>:1:3: type check error: too few arguments
+json: error: <stdin>:1:3: [0]
+json: error: <stdin>:1:3:   ^
+[0
+command failed: json -d '{"type":"list","args":[{"type":"array","args":["boolean","boolean"]},{"type":"array","args":["boolean","string"]},{"type":"array","args":["number","number"]},{"type":"array","args":["number","string"]}]}' <<< '[0]'
+$ json -d '{"type":"list","args":[{"type":"array","args":["boolean","boolean"]},{"type":"array","args":["boolean","string"]},{"type":"array","args":["number","number"]},{"type":"array","args":["number","string"]}]}' <<< '[false,0]'
+json: error: <stdin>:1:8: type check error: type mismatch: expected a value of type `"boolean"' or `"string"'
+json: error: <stdin>:1:8: [false,0]
+json: error: <stdin>:1:8:        ^
+[false,
+command failed: json -d '{"type":"list","args":[{"type":"array","args":["boolean","boolean"]},{"type":"array","args":["boolean","string"]},{"type":"array","args":["number","number"]},{"type":"array","args":["number","string"]}]}' <<< '[false,0]'
+$ json -d '{"type":"list","args":[{"type":"array","args":["boolean","boolean"]},{"type":"array","args":["boolean","string"]},{"type":"array","args":["number","number"]},{"type":"array","args":["number","string"]}]}' <<< '[0,false]'
+json: error: <stdin>:1:4: type check error: type mismatch: expected a value of type `"number"' or `"string"'
+json: error: <stdin>:1:4: [0,false]
+json: error: <stdin>:1:4:    ^
+[0,
+command failed: json -d '{"type":"list","args":[{"type":"array","args":["boolean","boolean"]},{"type":"array","args":["boolean","string"]},{"type":"array","args":["number","number"]},{"type":"array","args":["number","string"]}]}' <<< '[0,false]'
+$ json -d '{"type":"list","args":[{"type":"array","args":["boolean","boolean"]},{"type":"array","args":["boolean","string"]},{"type":"array","args":["number","number"]},{"type":"array","args":["number","string"]}]}' <<< '[false,""]'
+[false,""]
+$ json -d '{"type":"list","args":[{"type":"array","args":["boolean","boolean"]},{"type":"array","args":["boolean","string"]},{"type":"array","args":["number","number"]},{"type":"array","args":["number","string"]}]}' <<< '[0,""]'
+[0,""]
+$ json -d '{"type":"list","args":[{"type":"array","args":["boolean","boolean"]},{"type":"array","args":["boolean","string"]},{"type":"array","args":["number","number"]},{"type":"array","args":["number","string"]}]}' <<< '[false,false]'
+[false,false]
+$ json -d '{"type":"list","args":[{"type":"array","args":["boolean","boolean"]},{"type":"array","args":["boolean","string"]},{"type":"array","args":["number","number"]},{"type":"array","args":["number","string"]}]}' <<< '[0,0]'
+[0,0]
+$ json -d '{"type":"list","args":[{"type":"array","args":["boolean","boolean"]},{"type":"array","args":["boolean","string"]},{"type":"array","args":["number","number"]},{"type":"array","args":["number","string"]}]}' <<< '[false,true]'
+[false,true]
+$ json -d '{"type":"list","args":[{"type":"array","args":["boolean","boolean"]},{"type":"array","args":["boolean","string"]},{"type":"array","args":["number","number"]},{"type":"array","args":["number","string"]}]}' <<< '[0,1]'
+[0,1]
+$ json -d '{"type":"list","args":[{"type":"array","args":["boolean","boolean"]},{"type":"array","args":["boolean","string"]},{"type":"array","args":["number","number"]},{"type":"array","args":["number","string"]}]}' <<< '[false,true,'
+json: error: <stdin>:1:12: type check error: too many arguments
+json: error: <stdin>:1:12: [false,true,
+json: error: <stdin>:1:12:            ^
+[false,true
+command failed: json -d '{"type":"list","args":[{"type":"array","args":["boolean","boolean"]},{"type":"array","args":["boolean","string"]},{"type":"array","args":["number","number"]},{"type":"array","args":["number","string"]}]}' <<< '[false,true,'
+$ json -d '{"type":"list","args":[{"type":"array","args":["boolean","boolean"]},{"type":"array","args":["boolean","string"]},{"type":"array","args":["number","number"]},{"type":"array","args":["number","string"]}]}' <<< '[0,1,'
+json: error: <stdin>:1:5: type check error: too many arguments
+json: error: <stdin>:1:5: [0,1,
+json: error: <stdin>:1:5:     ^
+[0,1
+command failed: json -d '{"type":"list","args":[{"type":"array","args":["boolean","boolean"]},{"type":"array","args":["boolean","string"]},{"type":"array","args":["number","number"]},{"type":"array","args":["number","string"]}]}' <<< '[0,1,'
+$ 
+
+--[ 26 ]------------------------------------------------------------------------
+
+$ json -d '{"type":"list","args":[{"type":"array","args":"boolean"},{"type":"array","args":"number"},{"type":"array","args":["boolean","boolean","string"]},{"type":"array","args":["number","number","string"]}]}' <<< '[null]'
+json: error: <stdin>:1:2: type check error: type mismatch: expected a value of type `"boolean"' or `"number"' or, otherwise, no value at all
+json: error: <stdin>:1:2: [null]
+json: error: <stdin>:1:2:  ^
+[
+command failed: json -d '{"type":"list","args":[{"type":"array","args":"boolean"},{"type":"array","args":"number"},{"type":"array","args":["boolean","boolean","string"]},{"type":"array","args":["number","number","string"]}]}' <<< '[null]'
+$ json -d '{"type":"list","args":[{"type":"array","args":"boolean"},{"type":"array","args":"number"},{"type":"array","args":["boolean","boolean","string"]},{"type":"array","args":["number","number","string"]}]}' <<< '[false]'
+[false]
+$ json -d '{"type":"list","args":[{"type":"array","args":"boolean"},{"type":"array","args":"number"},{"type":"array","args":["boolean","boolean","string"]},{"type":"array","args":["number","number","string"]}]}' <<< '[0]'
+[0]
+$ json -d '{"type":"list","args":[{"type":"array","args":"boolean"},{"type":"array","args":"number"},{"type":"array","args":["boolean","boolean","string"]},{"type":"array","args":["number","number","string"]}]}' <<< '[false,true]'
+[false,true]
+$ json -d '{"type":"list","args":[{"type":"array","args":"boolean"},{"type":"array","args":"number"},{"type":"array","args":["boolean","boolean","string"]},{"type":"array","args":["number","number","string"]}]}' <<< '[0,1]'
+[0,1]
+$ json -d '{"type":"list","args":[{"type":"array","args":"boolean"},{"type":"array","args":"number"},{"type":"array","args":["boolean","boolean","string"]},{"type":"array","args":["number","number","string"]}]}' <<< '[false,true,false]'
+[false,true,false]
+$ json -d '{"type":"list","args":[{"type":"array","args":"boolean"},{"type":"array","args":"number"},{"type":"array","args":["boolean","boolean","string"]},{"type":"array","args":["number","number","string"]}]}' <<< '[0,1,2]'
+[0,1,2]
+$ json -d '{"type":"list","args":[{"type":"array","args":"boolean"},{"type":"array","args":"number"},{"type":"array","args":["boolean","boolean","string"]},{"type":"array","args":["number","number","string"]}]}' <<< '[false,true,""]'
+[false,true,""]
+$ json -d '{"type":"list","args":[{"type":"array","args":"boolean"},{"type":"array","args":"number"},{"type":"array","args":["boolean","boolean","string"]},{"type":"array","args":["number","number","string"]}]}' <<< '[0,1,""]'
+[0,1,""]
+$ json -d '{"type":"list","args":[{"type":"array","args":"boolean"},{"type":"array","args":"number"},{"type":"array","args":["boolean","boolean","string"]},{"type":"array","args":["number","number","string"]}]}' <<< '[false,true,null]'
+json: error: <stdin>:1:13: type check error: type mismatch: expected a value of type `"boolean"' or `"string"'
+json: error: <stdin>:1:13: [false,true,null]
+json: error: <stdin>:1:13:             ^
+[false,true,
+command failed: json -d '{"type":"list","args":[{"type":"array","args":"boolean"},{"type":"array","args":"number"},{"type":"array","args":["boolean","boolean","string"]},{"type":"array","args":["number","number","string"]}]}' <<< '[false,true,null]'
+$ json -d '{"type":"list","args":[{"type":"array","args":"boolean"},{"type":"array","args":"number"},{"type":"array","args":["boolean","boolean","string"]},{"type":"array","args":["number","number","string"]}]}' <<< '[0,1,null]'
+json: error: <stdin>:1:6: type check error: type mismatch: expected a value of type `"number"' or `"string"'
+json: error: <stdin>:1:6: [0,1,null]
+json: error: <stdin>:1:6:      ^
+[0,1,
+command failed: json -d '{"type":"list","args":[{"type":"array","args":"boolean"},{"type":"array","args":"number"},{"type":"array","args":["boolean","boolean","string"]},{"type":"array","args":["number","number","string"]}]}' <<< '[0,1,null]'
+$ json -d '{"type":"list","args":[{"type":"array","args":"boolean"},{"type":"array","args":"number"},{"type":"array","args":["boolean","boolean","string"]},{"type":"array","args":["number","number","string"]}]}' <<< '[false,true,false,true]'
+[false,true,false,true]
+$ json -d '{"type":"list","args":[{"type":"array","args":"boolean"},{"type":"array","args":"number"},{"type":"array","args":["boolean","boolean","string"]},{"type":"array","args":["number","number","string"]}]}' <<< '[0,1,2,3]'
+[0,1,2,3]
+$ json -d '{"type":"list","args":[{"type":"array","args":"boolean"},{"type":"array","args":"number"},{"type":"array","args":["boolean","boolean","string"]},{"type":"array","args":["number","number","string"]}]}' <<< '[false,true,false,null]'
+json: error: <stdin>:1:19: type check error: type mismatch: expected a value of type `"boolean"'
+json: error: <stdin>:1:19: [false,true,false,null]
+json: error: <stdin>:1:19:                   ^
+[false,true,false,
+command failed: json -d '{"type":"list","args":[{"type":"array","args":"boolean"},{"type":"array","args":"number"},{"type":"array","args":["boolean","boolean","string"]},{"type":"array","args":["number","number","string"]}]}' <<< '[false,true,false,null]'
+$ json -d '{"type":"list","args":[{"type":"array","args":"boolean"},{"type":"array","args":"number"},{"type":"array","args":["boolean","boolean","string"]},{"type":"array","args":["number","number","string"]}]}' <<< '[0,1,2,null]'
+json: error: <stdin>:1:8: type check error: type mismatch: expected a value of type `"number"'
+json: error: <stdin>:1:8: [0,1,2,null]
+json: error: <stdin>:1:8:        ^
+[0,1,2,
+command failed: json -d '{"type":"list","args":[{"type":"array","args":"boolean"},{"type":"array","args":"number"},{"type":"array","args":["boolean","boolean","string"]},{"type":"array","args":["number","number","string"]}]}' <<< '[0,1,2,null]'
+$
+
+--[ 27 ]------------------------------------------------------------------------
+
+$ json -d '{"type":"list","args":[{"type":"array","args":"boolean"},{"type":"array","args":"number"},{"type":"array","args":["string","boolean","boolean"]},{"type":"array","args":["string","number","number"]}]}' <<< 'null'
+json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `{"type":"array",...}'
+json: error: <stdin>:1:1: null
+json: error: <stdin>:1:1: ^
+command failed: json -d '{"type":"list","args":[{"type":"array","args":"boolean"},{"type":"array","args":"number"},{"type":"array","args":["string","boolean","boolean"]},{"type":"array","args":["string","number","number"]}]}' <<< 'null'
+$ json -d '{"type":"list","args":[{"type":"array","args":"boolean"},{"type":"array","args":"number"},{"type":"array","args":["string","boolean","boolean"]},{"type":"array","args":["string","number","number"]}]}' <<< '[null'
+json: error: <stdin>:1:2: type check error: type mismatch: expected a value of type `"boolean"', `"number"' or `"string"' or, otherwise, no value at all
+json: error: <stdin>:1:2: [null
+json: error: <stdin>:1:2:  ^
+[
+command failed: json -d '{"type":"list","args":[{"type":"array","args":"boolean"},{"type":"array","args":"number"},{"type":"array","args":["string","boolean","boolean"]},{"type":"array","args":["string","number","number"]}]}' <<< '[null'
+$ json -d '{"type":"list","args":[{"type":"array","args":"boolean"},{"type":"array","args":"number"},{"type":"array","args":["string","boolean","boolean"]},{"type":"array","args":["string","number","number"]}]}' <<< '[]'
+[]
+$ json -d '{"type":"list","args":[{"type":"array","args":"boolean"},{"type":"array","args":"number"},{"type":"array","args":["string","boolean","boolean"]},{"type":"array","args":["string","number","number"]}]}' <<< '[false]'
+[false]
+$ json -d '{"type":"list","args":[{"type":"array","args":"boolean"},{"type":"array","args":"number"},{"type":"array","args":["string","boolean","boolean"]},{"type":"array","args":["string","number","number"]}]}' <<< '[0]'
+[0]
+$ json -d '{"type":"list","args":[{"type":"array","args":"boolean"},{"type":"array","args":"number"},{"type":"array","args":["string","boolean","boolean"]},{"type":"array","args":["string","number","number"]}]}' <<< '[""]'
+json: error: <stdin>:1:4: type check error: too few arguments
+json: error: <stdin>:1:4: [""]
+json: error: <stdin>:1:4:    ^
+[""
+command failed: json -d '{"type":"list","args":[{"type":"array","args":"boolean"},{"type":"array","args":"number"},{"type":"array","args":["string","boolean","boolean"]},{"type":"array","args":["string","number","number"]}]}' <<< '[""]'
+$ json -d '{"type":"list","args":[{"type":"array","args":"boolean"},{"type":"array","args":"number"},{"type":"array","args":["string","boolean","boolean"]},{"type":"array","args":["string","number","number"]}]}' <<< '["",null]'
+json: error: <stdin>:1:5: type check error: type mismatch: expected a value of type `"boolean"' or `"number"'
+json: error: <stdin>:1:5: ["",null]
+json: error: <stdin>:1:5:     ^
+["",
+command failed: json -d '{"type":"list","args":[{"type":"array","args":"boolean"},{"type":"array","args":"number"},{"type":"array","args":["string","boolean","boolean"]},{"type":"array","args":["string","number","number"]}]}' <<< '["",null]'
+$ json -d '{"type":"list","args":[{"type":"array","args":"boolean"},{"type":"array","args":"number"},{"type":"array","args":["string","boolean","boolean"]},{"type":"array","args":["string","number","number"]}]}' <<< '["",false]'
+json: error: <stdin>:1:10: type check error: too few arguments
+json: error: <stdin>:1:10: ["",false]
+json: error: <stdin>:1:10:          ^
+["",false
+command failed: json -d '{"type":"list","args":[{"type":"array","args":"boolean"},{"type":"array","args":"number"},{"type":"array","args":["string","boolean","boolean"]},{"type":"array","args":["string","number","number"]}]}' <<< '["",false]'
+$ json -d '{"type":"list","args":[{"type":"array","args":"boolean"},{"type":"array","args":"number"},{"type":"array","args":["string","boolean","boolean"]},{"type":"array","args":["string","number","number"]}]}' <<< '[false,true,false]'
+[false,true,false]
+$ json -d '{"type":"list","args":[{"type":"array","args":"boolean"},{"type":"array","args":"number"},{"type":"array","args":["string","boolean","boolean"]},{"type":"array","args":["string","number","number"]}]}' <<< '[0,1,2]'
+[0,1,2]
+$ json -d '{"type":"list","args":[{"type":"array","args":"boolean"},{"type":"array","args":"number"},{"type":"array","args":["string","boolean","boolean"]},{"type":"array","args":["string","number","number"]}]}' <<< '["",false,true]'
+["",false,true]
+$ json -d '{"type":"list","args":[{"type":"array","args":"boolean"},{"type":"array","args":"number"},{"type":"array","args":["string","boolean","boolean"]},{"type":"array","args":["string","number","number"]}]}' <<< '["",false,null]'
+json: error: <stdin>:1:11: type check error: type mismatch: expected a value of type `"boolean"'
+json: error: <stdin>:1:11: ["",false,null]
+json: error: <stdin>:1:11:           ^
+["",false,
+command failed: json -d '{"type":"list","args":[{"type":"array","args":"boolean"},{"type":"array","args":"number"},{"type":"array","args":["string","boolean","boolean"]},{"type":"array","args":["string","number","number"]}]}' <<< '["",false,null]'
+$ json -d '{"type":"list","args":[{"type":"array","args":"boolean"},{"type":"array","args":"number"},{"type":"array","args":["string","boolean","boolean"]},{"type":"array","args":["string","number","number"]}]}' <<< '["",0,null]'
+json: error: <stdin>:1:7: type check error: type mismatch: expected a value of type `"number"'
+json: error: <stdin>:1:7: ["",0,null]
+json: error: <stdin>:1:7:       ^
+["",0,
+command failed: json -d '{"type":"list","args":[{"type":"array","args":"boolean"},{"type":"array","args":"number"},{"type":"array","args":["string","boolean","boolean"]},{"type":"array","args":["string","number","number"]}]}' <<< '["",0,null]'
+$ json -d '{"type":"list","args":[{"type":"array","args":"boolean"},{"type":"array","args":"number"},{"type":"array","args":["string","boolean","boolean"]},{"type":"array","args":["string","number","number"]}]}' <<< '["",false,true]'
+["",false,true]
+$ json -d '{"type":"list","args":[{"type":"array","args":"boolean"},{"type":"array","args":"number"},{"type":"array","args":["string","boolean","boolean"]},{"type":"array","args":["string","number","number"]}]}' <<< '["",0,1]'
+["",0,1]
+$ json -d '{"type":"list","args":[{"type":"array","args":"boolean"},{"type":"array","args":"number"},{"type":"array","args":["string","boolean","boolean"]},{"type":"array","args":["string","number","number"]}]}' <<< '["",false,true,null]'
+json: error: <stdin>:1:15: type check error: too many arguments
+json: error: <stdin>:1:15: ["",false,true,null]
+json: error: <stdin>:1:15:               ^
+["",false,true
+command failed: json -d '{"type":"list","args":[{"type":"array","args":"boolean"},{"type":"array","args":"number"},{"type":"array","args":["string","boolean","boolean"]},{"type":"array","args":["string","number","number"]}]}' <<< '["",false,true,null]'
+$ json -d '{"type":"list","args":[{"type":"array","args":"boolean"},{"type":"array","args":"number"},{"type":"array","args":["string","boolean","boolean"]},{"type":"array","args":["string","number","number"]}]}' <<< '["",0,1,null]'
+json: error: <stdin>:1:8: type check error: too many arguments
+json: error: <stdin>:1:8: ["",0,1,null]
+json: error: <stdin>:1:8:        ^
+["",0,1
+command failed: json -d '{"type":"list","args":[{"type":"array","args":"boolean"},{"type":"array","args":"number"},{"type":"array","args":["string","boolean","boolean"]},{"type":"array","args":["string","number","number"]}]}' <<< '["",0,1,null]'
+$ 
+
+--[ 28 ]------------------------------------------------------------------------
+
+$ set -o pipefail
+$ clr() { sed -r '/fatal error/s/:[0-9]+:/:???:/'; }
+$ gen-type() { local n; [[ "$1" =~ ^[0-9]+$ ]] && n="$1" || n=0; printf '{"type":"list","args":['; local k; for((k=0; k<n; k++)); do printf '{"type":"array","args":{"plain":%d}}' $k; test "$k" -lt $((n - 1)) && printf ','; done; printf ']}\n'; }
+$ gen-type
+{"type":"list","args":[]}
+$ gen-type 1
+{"type":"list","args":[{"type":"array","args":{"plain":0}}]}
+$ gen-type 2
+{"type":"list","args":[{"type":"array","args":{"plain":0}},{"type":"array","args":{"plain":1}}]}
+$ gen-type 32|json -Tc
+$ gen-type 33|json -Tc 2>&1|clr
+$ gen-type 512|json -Tc 2>&1|clr
+$ 
+
+--[ 29 ]------------------------------------------------------------------------
+
+$ set -o pipefail
+$ clr() { sed -r '/fatal error/s/:[0-9]+:/:???:/'; }
+$ gen-type() { local n; [[ "$1" =~ ^[0-9]+$ ]] && n="$1" || n=0; printf '{"type":"list","args":['; local k; for((k=0; k<n; k++)); do printf '{"type":"object","args":[{"name":"foo","type":{"plain":%d}}]}' $k; test "$k" -lt $((n - 1)) && printf ','; done; printf ']}\n'; }
+$ gen-type
+{"type":"list","args":[]}
+$ gen-type 1
+{"type":"list","args":[{"type":"object","args":[{"name":"foo","type":{"plain":0}}]}]}
+$ gen-type 2
+{"type":"list","args":[{"type":"object","args":[{"name":"foo","type":{"plain":0}}]},{"type":"object","args":[{"name":"foo","type":{"plain":1}}]}]}
+$ gen-type 32|json -Tc
+$ gen-type 33|json -Tc 2>&1|clr
+$ gen-type 512|json -Tc 2>&1|clr
+$
+
+--[ 30 ]------------------------------------------------------------------------
+
+$ json -d '{"type":"list","args":[{"type":"array","args":["null","boolean"]},{"type":"array","args":["null","number"]},{"type":"array","args":["null","string"]}]}' <<< 'null'
+json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `{"type":"array",...}'
+json: error: <stdin>:1:1: null
+json: error: <stdin>:1:1: ^
+command failed: json -d '{"type":"list","args":[{"type":"array","args":["null","boolean"]},{"type":"array","args":["null","number"]},{"type":"array","args":["null","string"]}]}' <<< 'null'
+$ json -d '{"type":"list","args":[{"type":"array","args":["null","boolean"]},{"type":"array","args":["null","number"]},{"type":"array","args":["null","string"]}]}' <<< '[null]'
+json: error: <stdin>:1:6: type check error: too few arguments
+json: error: <stdin>:1:6: [null]
+json: error: <stdin>:1:6:      ^
+[null
+command failed: json -d '{"type":"list","args":[{"type":"array","args":["null","boolean"]},{"type":"array","args":["null","number"]},{"type":"array","args":["null","string"]}]}' <<< '[null]'
+$ json -d '{"type":"list","args":[{"type":"array","args":["null","boolean"]},{"type":"array","args":["null","number"]},{"type":"array","args":["null","string"]}]}' <<< '[0]'
+json: error: <stdin>:1:2: type check error: type mismatch: expected a value of type `"null"'
+json: error: <stdin>:1:2: [0]
+json: error: <stdin>:1:2:  ^
+[
+command failed: json -d '{"type":"list","args":[{"type":"array","args":["null","boolean"]},{"type":"array","args":["null","number"]},{"type":"array","args":["null","string"]}]}' <<< '[0]'
+$ json -d '{"type":"list","args":[{"type":"array","args":["null","boolean"]},{"type":"array","args":["null","number"]},{"type":"array","args":["null","string"]}]}' <<< '[null,null]'
+json: error: <stdin>:1:7: type check error: type mismatch: expected a value of type `"boolean"', `"number"' or `"string"'
+json: error: <stdin>:1:7: [null,null]
+json: error: <stdin>:1:7:       ^
+[null,
+command failed: json -d '{"type":"list","args":[{"type":"array","args":["null","boolean"]},{"type":"array","args":["null","number"]},{"type":"array","args":["null","string"]}]}' <<< '[null,null]'
+$ json -d '{"type":"list","args":[{"type":"array","args":["null","boolean"]},{"type":"array","args":["null","number"]},{"type":"array","args":["null","string"]}]}' <<< '[null,false]'
+[null,false]
+$ json -d '{"type":"list","args":[{"type":"array","args":["null","boolean"]},{"type":"array","args":["null","number"]},{"type":"array","args":["null","string"]}]}' <<< '[null,0]'
+[null,0]
+$ json -d '{"type":"list","args":[{"type":"array","args":["null","boolean"]},{"type":"array","args":["null","number"]},{"type":"array","args":["null","string"]}]}' <<< '[null,""]'
+[null,""]
+$ json -d '{"type":"list","args":[{"type":"array","args":["null","boolean"]},{"type":"array","args":["null","number"]},{"type":"array","args":["null","string"]}]}' <<< '[null,false,null]'
+json: error: <stdin>:1:12: type check error: too many arguments
+json: error: <stdin>:1:12: [null,false,null]
+json: error: <stdin>:1:12:            ^
+[null,false
+command failed: json -d '{"type":"list","args":[{"type":"array","args":["null","boolean"]},{"type":"array","args":["null","number"]},{"type":"array","args":["null","string"]}]}' <<< '[null,false,null]'
+$ json -d '{"type":"list","args":[{"type":"array","args":["null","boolean"]},{"type":"array","args":["null","number"]},{"type":"array","args":["null","string"]}]}' <<< '[null,0,null]'
+json: error: <stdin>:1:8: type check error: too many arguments
+json: error: <stdin>:1:8: [null,0,null]
+json: error: <stdin>:1:8:        ^
+[null,0
+command failed: json -d '{"type":"list","args":[{"type":"array","args":["null","boolean"]},{"type":"array","args":["null","number"]},{"type":"array","args":["null","string"]}]}' <<< '[null,0,null]'
+$ json -d '{"type":"list","args":[{"type":"array","args":["null","boolean"]},{"type":"array","args":["null","number"]},{"type":"array","args":["null","string"]}]}' <<< '[null,"",null]'
+json: error: <stdin>:1:9: type check error: too many arguments
+json: error: <stdin>:1:9: [null,"",null]
+json: error: <stdin>:1:9:         ^
+[null,""
+command failed: json -d '{"type":"list","args":[{"type":"array","args":["null","boolean"]},{"type":"array","args":["null","number"]},{"type":"array","args":["null","string"]}]}' <<< '[null,"",null]'
+$
+
+--[ 31 ]------------------------------------------------------------------------
+
+$ json -d '{"type":"list","args":[{"type":"array","args":["null","null","boolean"]},{"type":"array","args":["null","null","number"]},{"type":"array","args":["null","null","string"]}]}' <<< '0'
+json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `{"type":"array",...}'
+json: error: <stdin>:1:1: 0
+json: error: <stdin>:1:1: ^
+command failed: json -d '{"type":"list","args":[{"type":"array","args":["null","null","boolean"]},{"type":"array","args":["null","null","number"]},{"type":"array","args":["null","null","string"]}]}' <<< '0'
+$ json -d '{"type":"list","args":[{"type":"array","args":["null","null","boolean"]},{"type":"array","args":["null","null","number"]},{"type":"array","args":["null","null","string"]}]}' <<< '[0]'
+json: error: <stdin>:1:2: type check error: type mismatch: expected a value of type `"null"'
+json: error: <stdin>:1:2: [0]
+json: error: <stdin>:1:2:  ^
+[
+command failed: json -d '{"type":"list","args":[{"type":"array","args":["null","null","boolean"]},{"type":"array","args":["null","null","number"]},{"type":"array","args":["null","null","string"]}]}' <<< '[0]'
+$ json -d '{"type":"list","args":[{"type":"array","args":["null","null","boolean"]},{"type":"array","args":["null","null","number"]},{"type":"array","args":["null","null","string"]}]}' <<< '[null]'
+json: error: <stdin>:1:6: type check error: too few arguments
+json: error: <stdin>:1:6: [null]
+json: error: <stdin>:1:6:      ^
+[null
+command failed: json -d '{"type":"list","args":[{"type":"array","args":["null","null","boolean"]},{"type":"array","args":["null","null","number"]},{"type":"array","args":["null","null","string"]}]}' <<< '[null]'
+$ json -d '{"type":"list","args":[{"type":"array","args":["null","null","boolean"]},{"type":"array","args":["null","null","number"]},{"type":"array","args":["null","null","string"]}]}' <<< '[null,0]'
+json: error: <stdin>:1:7: type check error: type mismatch: expected a value of type `"null"'
+json: error: <stdin>:1:7: [null,0]
+json: error: <stdin>:1:7:       ^
+[null,
+command failed: json -d '{"type":"list","args":[{"type":"array","args":["null","null","boolean"]},{"type":"array","args":["null","null","number"]},{"type":"array","args":["null","null","string"]}]}' <<< '[null,0]'
+$ json -d '{"type":"list","args":[{"type":"array","args":["null","null","boolean"]},{"type":"array","args":["null","null","number"]},{"type":"array","args":["null","null","string"]}]}' <<< '[null,null]'
+json: error: <stdin>:1:11: type check error: too few arguments
+json: error: <stdin>:1:11: [null,null]
+json: error: <stdin>:1:11:           ^
+[null,null
+command failed: json -d '{"type":"list","args":[{"type":"array","args":["null","null","boolean"]},{"type":"array","args":["null","null","number"]},{"type":"array","args":["null","null","string"]}]}' <<< '[null,null]'
+$ json -d '{"type":"list","args":[{"type":"array","args":["null","null","boolean"]},{"type":"array","args":["null","null","number"]},{"type":"array","args":["null","null","string"]}]}' <<< '[null,null,null]'
+json: error: <stdin>:1:12: type check error: type mismatch: expected a value of type `"boolean"', `"number"' or `"string"'
+json: error: <stdin>:1:12: [null,null,null]
+json: error: <stdin>:1:12:            ^
+[null,null,
+command failed: json -d '{"type":"list","args":[{"type":"array","args":["null","null","boolean"]},{"type":"array","args":["null","null","number"]},{"type":"array","args":["null","null","string"]}]}' <<< '[null,null,null]'
+$ json -d '{"type":"list","args":[{"type":"array","args":["null","null","boolean"]},{"type":"array","args":["null","null","number"]},{"type":"array","args":["null","null","string"]}]}' <<< '[null,null,false]'
+[null,null,false]
+$ json -d '{"type":"list","args":[{"type":"array","args":["null","null","boolean"]},{"type":"array","args":["null","null","number"]},{"type":"array","args":["null","null","string"]}]}' <<< '[null,null,0]'
+[null,null,0]
+$ json -d '{"type":"list","args":[{"type":"array","args":["null","null","boolean"]},{"type":"array","args":["null","null","number"]},{"type":"array","args":["null","null","string"]}]}' <<< '[null,null,""]'
+[null,null,""]
+$ json -d '{"type":"list","args":[{"type":"array","args":["null","null","boolean"]},{"type":"array","args":["null","null","number"]},{"type":"array","args":["null","null","string"]}]}' <<< '[null,null,false,null]'
+json: error: <stdin>:1:17: type check error: too many arguments
+json: error: <stdin>:1:17: [null,null,false,null]
+json: error: <stdin>:1:17:                 ^
+[null,null,false
+command failed: json -d '{"type":"list","args":[{"type":"array","args":["null","null","boolean"]},{"type":"array","args":["null","null","number"]},{"type":"array","args":["null","null","string"]}]}' <<< '[null,null,false,null]'
+$ json -d '{"type":"list","args":[{"type":"array","args":["null","null","boolean"]},{"type":"array","args":["null","null","number"]},{"type":"array","args":["null","null","string"]}]}' <<< '[null,null,0,null]'
+json: error: <stdin>:1:13: type check error: too many arguments
+json: error: <stdin>:1:13: [null,null,0,null]
+json: error: <stdin>:1:13:             ^
+[null,null,0
+command failed: json -d '{"type":"list","args":[{"type":"array","args":["null","null","boolean"]},{"type":"array","args":["null","null","number"]},{"type":"array","args":["null","null","string"]}]}' <<< '[null,null,0,null]'
+$ json -d '{"type":"list","args":[{"type":"array","args":["null","null","boolean"]},{"type":"array","args":["null","null","number"]},{"type":"array","args":["null","null","string"]}]}' <<< '[null,null,"",null]'
+json: error: <stdin>:1:14: type check error: too many arguments
+json: error: <stdin>:1:14: [null,null,"",null]
+json: error: <stdin>:1:14:              ^
+[null,null,""
+command failed: json -d '{"type":"list","args":[{"type":"array","args":["null","null","boolean"]},{"type":"array","args":["null","null","number"]},{"type":"array","args":["null","null","string"]}]}' <<< '[null,null,"",null]'
+$ 
+
+--[ 32 ]------------------------------------------------------------------------
+
+$ json -d '{"type":"list","args":[{"type":"array","args":["null","boolean"]},{"type":"array","args":["null",{"type":"array","args":"type"}]}]}' <<< '[null]'
+json: error: <stdin>:1:6: type check error: too few arguments
+json: error: <stdin>:1:6: [null]
+json: error: <stdin>:1:6:      ^
+[null
+command failed: json -d '{"type":"list","args":[{"type":"array","args":["null","boolean"]},{"type":"array","args":["null",{"type":"array","args":"type"}]}]}' <<< '[null]'
+$ json -d '{"type":"list","args":[{"type":"array","args":["null","boolean"]},{"type":"array","args":["null",{"type":"array","args":"type"}]}]}' <<< '[null,null]'
+json: error: <stdin>:1:7: type check error: type mismatch: expected a value of type `"boolean"' or `{"type":"array","args":...}'
+json: error: <stdin>:1:7: [null,null]
+json: error: <stdin>:1:7:       ^
+[null,
+command failed: json -d '{"type":"list","args":[{"type":"array","args":["null","boolean"]},{"type":"array","args":["null",{"type":"array","args":"type"}]}]}' <<< '[null,null]'
+$ json -d '{"type":"list","args":[{"type":"array","args":["null","boolean"]},{"type":"array","args":["null",{"type":"array","args":"type"}]}]}' <<< '[null,false]'
+[null,false]
+$ json -d '{"type":"list","args":[{"type":"array","args":["null","boolean"]},{"type":"array","args":["null",{"type":"array","args":"type"}]}]}' <<< '[null,[]]'
+[null,[]]
+$ json -d '{"type":"list","args":[{"type":"array","args":["null","boolean"]},{"type":"array","args":["null",{"type":"array","args":"type"}]}]}' <<< '[null,[0]]'
+[null,[0]]
+$
+
+--[ 33 ]------------------------------------------------------------------------
+
+$ json -d '{"type":"list","args":[{"type":"array","args":["null","boolean"]},{"type":"array","args":["null",{"type":"array","args":["number"]}]}]}' <<< '[null]'
+json: error: <stdin>:1:6: type check error: too few arguments
+json: error: <stdin>:1:6: [null]
+json: error: <stdin>:1:6:      ^
+[null
+command failed: json -d '{"type":"list","args":[{"type":"array","args":["null","boolean"]},{"type":"array","args":["null",{"type":"array","args":["number"]}]}]}' <<< '[null]'
+$ json -d '{"type":"list","args":[{"type":"array","args":["null","boolean"]},{"type":"array","args":["null",{"type":"array","args":["number"]}]}]}' <<< '[null,0]'
+json: error: <stdin>:1:7: type check error: type mismatch: expected a value of type `"boolean"' or `{"type":"array","args":[...]}'
+json: error: <stdin>:1:7: [null,0]
+json: error: <stdin>:1:7:       ^
+[null,
+command failed: json -d '{"type":"list","args":[{"type":"array","args":["null","boolean"]},{"type":"array","args":["null",{"type":"array","args":["number"]}]}]}' <<< '[null,0]'
+$ json -d '{"type":"list","args":[{"type":"array","args":["null","boolean"]},{"type":"array","args":["null",{"type":"array","args":["number"]}]}]}' <<< '[null,false]'
+[null,false]
+$ json -d '{"type":"list","args":[{"type":"array","args":["null","boolean"]},{"type":"array","args":["null",{"type":"array","args":["number"]}]}]}' <<< '[null,[]]'
+json: error: <stdin>:1:8: type check error: too few arguments
+json: error: <stdin>:1:8: [null,[]]
+json: error: <stdin>:1:8:        ^
+[null,[
+command failed: json -d '{"type":"list","args":[{"type":"array","args":["null","boolean"]},{"type":"array","args":["null",{"type":"array","args":["number"]}]}]}' <<< '[null,[]]'
+$ json -d '{"type":"list","args":[{"type":"array","args":["null","boolean"]},{"type":"array","args":["null",{"type":"array","args":["number"]}]}]}' <<< '[null,[null]]'
+json: error: <stdin>:1:8: type check error: type mismatch: expected a value of type `"number"'
+json: error: <stdin>:1:8: [null,[null]]
+json: error: <stdin>:1:8:        ^
+[null,[
+command failed: json -d '{"type":"list","args":[{"type":"array","args":["null","boolean"]},{"type":"array","args":["null",{"type":"array","args":["number"]}]}]}' <<< '[null,[null]]'
+$ json -d '{"type":"list","args":[{"type":"array","args":["null","boolean"]},{"type":"array","args":["null",{"type":"array","args":["number"]}]}]}' <<< '[null,[0]]'
+[null,[0]]
+$ json -d '{"type":"list","args":[{"type":"array","args":["null","boolean"]},{"type":"array","args":["null",{"type":"array","args":["number"]}]}]}' <<< '[null,[0,1]]'
+json: error: <stdin>:1:9: type check error: too many arguments
+json: error: <stdin>:1:9: [null,[0,1]]
+json: error: <stdin>:1:9:         ^
+[null,[0
+command failed: json -d '{"type":"list","args":[{"type":"array","args":["null","boolean"]},{"type":"array","args":["null",{"type":"array","args":["number"]}]}]}' <<< '[null,[0,1]]'
+$
+
+--[ 34 ]------------------------------------------------------------------------
+
+$ json -d '{"type":"list","args":[{"type":"object","args":[]}]}' <<< '{}'
+{}
+$ json -d '{"type":"list","args":[{"type":"object","args":[]}]}' <<< '{"bar":false}'
+json: error: <stdin>:1:2: type check error: too many arguments
+json: error: <stdin>:1:2: {"bar":false}
+json: error: <stdin>:1:2:  ^
+{
+command failed: json -d '{"type":"list","args":[{"type":"object","args":[]}]}' <<< '{"bar":false}'
+$ json -d '{"type":"list","args":[{"type":"object","args":[{"name":"foo","type":"null"}]},{"type":"object","args":[]}]}' <<< '{"bar":false}'
+json: error: <stdin>:1:2: type check error: invalid argument name: expected "foo" or none at all
+json: error: <stdin>:1:2: {"bar":false}
+json: error: <stdin>:1:2:  ^
+{
+command failed: json -d '{"type":"list","args":[{"type":"object","args":[{"name":"foo","type":"null"}]},{"type":"object","args":[]}]}' <<< '{"bar":false}'
+$ json -d '{"type":"list","args":[{"type":"object","args":[]},{"type":"object","args":[{"name":"foo","type":"null"}]}]}' <<< '{"bar":false}'
+json: error: <stdin>:1:2: type check error: invalid argument name: expected "foo" or none at all
+json: error: <stdin>:1:2: {"bar":false}
+json: error: <stdin>:1:2:  ^
+{
+command failed: json -d '{"type":"list","args":[{"type":"object","args":[]},{"type":"object","args":[{"name":"foo","type":"null"}]}]}' <<< '{"bar":false}'
+$
+
+--[ 35 ]------------------------------------------------------------------------
+
+$ json -d '{"type":"list","args":[{"type":"object","args":[]}]}' <<< '{"baz":false}'
+json: error: <stdin>:1:2: type check error: too many arguments
+json: error: <stdin>:1:2: {"baz":false}
+json: error: <stdin>:1:2:  ^
+{
+command failed: json -d '{"type":"list","args":[{"type":"object","args":[]}]}' <<< '{"baz":false}'
+$ json -d '{"type":"list","args":[{"type":"object","args":[{"name":"foo","type":"null"}]},{"type":"object","args":[]}]}' <<< '{"baz":false}'
+json: error: <stdin>:1:2: type check error: invalid argument name: expected "foo" or none at all
+json: error: <stdin>:1:2: {"baz":false}
+json: error: <stdin>:1:2:  ^
+{
+command failed: json -d '{"type":"list","args":[{"type":"object","args":[{"name":"foo","type":"null"}]},{"type":"object","args":[]}]}' <<< '{"baz":false}'
+$ json -d '{"type":"list","args":[{"type":"object","args":[{"name":"foo","type":"null"}]},{"type":"object","args":[{"name":"bar","type":"null"}]}]}' <<< '{"baz":false}'
+json: error: <stdin>:1:2: type check error: invalid argument name: expected "bar" or "foo"
+json: error: <stdin>:1:2: {"baz":false}
+json: error: <stdin>:1:2:  ^
+{
+command failed: json -d '{"type":"list","args":[{"type":"object","args":[{"name":"foo","type":"null"}]},{"type":"object","args":[{"name":"bar","type":"null"}]}]}' <<< '{"baz":false}'
+$ json -d '{"type":"list","args":[{"type":"object","args":[{"name":"foo","type":"null"}]},{"type":"object","args":[{"name":"bar","type":"null"}]},{"type":"object","args":[]}]}' <<< '{"baz":false}'
+json: error: <stdin>:1:2: type check error: invalid argument name: expected "bar", "foo" or, otherwise, none at all
+json: error: <stdin>:1:2: {"baz":false}
+json: error: <stdin>:1:2:  ^
+{
+command failed: json -d '{"type":"list","args":[{"type":"object","args":[{"name":"foo","type":"null"}]},{"type":"object","args":[{"name":"bar","type":"null"}]},{"type":"object","args":[]}]}' <<< '{"baz":false}'
+$
+
+--[ 36 ]------------------------------------------------------------------------
+
+$ json -d '{"type":"list","args":[{"type":"object","args":[{"name":"faa","type":"null"},{"name":"foo","type":"null"}]},{"type":"object","args":[{"name":"faa","type":"null"}]}]}' <<< '{"faa":null,"baz":false}'
+json: error: <stdin>:1:13: type check error: invalid argument name: expected "foo" or none at all
+json: error: <stdin>:1:13: {"faa":null,"baz":false}
+json: error: <stdin>:1:13:             ^
+{"faa":null,
+command failed: json -d '{"type":"list","args":[{"type":"object","args":[{"name":"faa","type":"null"},{"name":"foo","type":"null"}]},{"type":"object","args":[{"name":"faa","type":"null"}]}]}' <<< '{"faa":null,"baz":false}'
+$ json -d '{"type":"list","args":[{"type":"object","args":[{"name":"faa","type":"null"},{"name":"foo","type":"null"}]},{"type":"object","args":[{"name":"faa","type":"null"},{"name":"bar","type":"null"}]}]}' <<< '{"faa":null,"baz":false}'
+json: error: <stdin>:1:13: type check error: invalid argument name: expected "bar" or "foo"
+json: error: <stdin>:1:13: {"faa":null,"baz":false}
+json: error: <stdin>:1:13:             ^
+{"faa":null,
+command failed: json -d '{"type":"list","args":[{"type":"object","args":[{"name":"faa","type":"null"},{"name":"foo","type":"null"}]},{"type":"object","args":[{"name":"faa","type":"null"},{"name":"bar","type":"null"}]}]}' <<< '{"faa":null,"baz":false}'
+$ json -d '{"type":"list","args":[{"type":"object","args":[{"name":"faa","type":"null"},{"name":"foo","type":"null"}]},{"type":"object","args":[{"name":"faa","type":"null"},{"name":"bar","type":"null"}]},{"type":"object","args":[{"name":"faa","type":"null"}]}]}' <<< '{"faa":null,"baz":false}'
+json: error: <stdin>:1:13: type check error: invalid argument name: expected "bar", "foo" or, otherwise, none at all
+json: error: <stdin>:1:13: {"faa":null,"baz":false}
+json: error: <stdin>:1:13:             ^
+{"faa":null,
+command failed: json -d '{"type":"list","args":[{"type":"object","args":[{"name":"faa","type":"null"},{"name":"foo","type":"null"}]},{"type":"object","args":[{"name":"faa","type":"null"},{"name":"bar","type":"null"}]},{"type":"object","args":[{"name":"faa","type":"null"}]}]}' <<< '{"faa":null,"baz":false}'
+$
+
+--[ 37 ]------------------------------------------------------------------------
+
+$ json -d '{"type":"list","args":[{"type":"array","args":"array"},{"type":"array","args":"number"}]}' <<< 'null'
+json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `{"type":"array",...}'
+json: error: <stdin>:1:1: null
+json: error: <stdin>:1:1: ^
+command failed: json -d '{"type":"list","args":[{"type":"array","args":"array"},{"type":"array","args":"number"}]}' <<< 'null'
+$ json -d '{"type":"list","args":[{"type":"array","args":"array"},{"type":"array","args":"number"}]}' <<< '[]'
+[]
+$ json -d '{"type":"list","args":[{"type":"array","args":"array"},{"type":"array","args":"number"}]}' <<< '[[]]'
+[[]]
+$ json -d '{"type":"list","args":[{"type":"array","args":"array"},{"type":"array","args":"number"}]}' <<< '[[],[]]'
+[[],[]]
+$ json -d '{"type":"list","args":[{"type":"array","args":"array"},{"type":"array","args":"number"}]}' <<< '[[0]]'
+[[0]]
+$ json -d '{"type":"list","args":[{"type":"array","args":"array"},{"type":"array","args":"number"}]}' <<< '[[0,1]]'
+[[0,1]]
+$ json -d '{"type":"list","args":[{"type":"array","args":"array"},{"type":"array","args":"number"}]}' <<< '[[null,false,0,"",[],{}],[null,true,1,"",[],{}]]'
+[[null,false,0,"",[],{}],[null,true,1,"",[],{}]]
+$ json -d '{"type":"list","args":[{"type":"array","args":"array"},{"type":"array","args":"number"}]}' <<< '[0]'
+[0]
+$ json -d '{"type":"list","args":[{"type":"array","args":"array"},{"type":"array","args":"number"}]}' <<< '[0,1]'
+[0,1]
+$ json -d '{"type":"list","args":[{"type":"array","args":"array"},{"type":"array","args":"number"}]}' <<< '[false]'
+json: error: <stdin>:1:2: type check error: type mismatch: expected a value of type `"number"' or `"array"' or, otherwise, no value at all
+json: error: <stdin>:1:2: [false]
+json: error: <stdin>:1:2:  ^
+[
+command failed: json -d '{"type":"list","args":[{"type":"array","args":"array"},{"type":"array","args":"number"}]}' <<< '[false]'
+$ json -d '{"type":"list","args":[{"type":"array","args":"array"},{"type":"array","args":"number"}]}' <<< '[[]]'
+[[]]
+$
+
+--[ 38 ]------------------------------------------------------------------------
+
+$ json -d '{"type":"list","args":[{"type":"array","args":"array"},{"type":"array","args":["number"]}]}' <<< 'null'
+json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `{"type":"array",...}'
+json: error: <stdin>:1:1: null
+json: error: <stdin>:1:1: ^
+command failed: json -d '{"type":"list","args":[{"type":"array","args":"array"},{"type":"array","args":["number"]}]}' <<< 'null'
+$ json -d '{"type":"list","args":[{"type":"array","args":"array"},{"type":"array","args":["number"]}]}' <<< '[]'
+[]
+$ json -d '{"type":"list","args":[{"type":"array","args":"array"},{"type":"array","args":["number"]}]}' <<< '[[]]'
+[[]]
+$ json -d '{"type":"list","args":[{"type":"array","args":"array"},{"type":"array","args":["number"]}]}' <<< '[[],[]]'
+[[],[]]
+$ json -d '{"type":"list","args":[{"type":"array","args":"array"},{"type":"array","args":["number"]}]}' <<< '[[0]]'
+[[0]]
+$ json -d '{"type":"list","args":[{"type":"array","args":"array"},{"type":"array","args":["number"]}]}' <<< '[[0,1]]'
+[[0,1]]
+$ json -d '{"type":"list","args":[{"type":"array","args":"array"},{"type":"array","args":["number"]}]}' <<< '[[null,false,0,"",[],{}],[null,true,1,"",[],{}]]'
+[[null,false,0,"",[],{}],[null,true,1,"",[],{}]]
+$ json -d '{"type":"list","args":[{"type":"array","args":"array"},{"type":"array","args":["number"]}]}' <<< '[0]'
+[0]
+$ json -d '{"type":"list","args":[{"type":"array","args":"array"},{"type":"array","args":["number"]}]}' <<< '[0,1]'
+json: error: <stdin>:1:3: type check error: too many arguments
+json: error: <stdin>:1:3: [0,1]
+json: error: <stdin>:1:3:   ^
+[0
+command failed: json -d '{"type":"list","args":[{"type":"array","args":"array"},{"type":"array","args":["number"]}]}' <<< '[0,1]'
+$ json -d '{"type":"list","args":[{"type":"array","args":"array"},{"type":"array","args":["number"]}]}' <<< '[false]'
+json: error: <stdin>:1:2: type check error: type mismatch: expected a value of type `"number"' or `"array"' or, otherwise, no value at all
+json: error: <stdin>:1:2: [false]
+json: error: <stdin>:1:2:  ^
+[
+command failed: json -d '{"type":"list","args":[{"type":"array","args":"array"},{"type":"array","args":["number"]}]}' <<< '[false]'
+$
+
+--[ 39 ]------------------------------------------------------------------------
+
+$ json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":"number"}},{"type":"array","args":["number"]}]}' <<< 'null'
+json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `{"type":"array",...}'
+json: error: <stdin>:1:1: null
+json: error: <stdin>:1:1: ^
+command failed: json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":"number"}},{"type":"array","args":["number"]}]}' <<< 'null'
+$ json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":"number"}},{"type":"array","args":["number"]}]}' <<< '[]'
+[]
+$ json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":"number"}},{"type":"array","args":["number"]}]}' <<< '[false]'
+json: error: <stdin>:1:2: type check error: type mismatch: expected a value of type `"number"' or `{"type":"array","args":...}' or, otherwise, no value at all
+json: error: <stdin>:1:2: [false]
+json: error: <stdin>:1:2:  ^
+[
+command failed: json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":"number"}},{"type":"array","args":["number"]}]}' <<< '[false]'
+$ json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":"number"}},{"type":"array","args":["number"]}]}' <<< '[0]'
+[0]
+$ json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":"number"}},{"type":"array","args":["number"]}]}' <<< '[0,1]'
+json: error: <stdin>:1:3: type check error: too many arguments
+json: error: <stdin>:1:3: [0,1]
+json: error: <stdin>:1:3:   ^
+[0
+command failed: json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":"number"}},{"type":"array","args":["number"]}]}' <<< '[0,1]'
+$ json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":"number"}},{"type":"array","args":["number"]}]}' <<< '[[]]'
+[[]]
+$ json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":"number"}},{"type":"array","args":["number"]}]}' <<< '[[],[]]'
+[[],[]]
+$ json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":"number"}},{"type":"array","args":["number"]}]}' <<< '[[false]]'
+json: error: <stdin>:1:3: type check error: type mismatch: expected a value of type `"number"'
+json: error: <stdin>:1:3: [[false]]
+json: error: <stdin>:1:3:   ^
+[[
+command failed: json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":"number"}},{"type":"array","args":["number"]}]}' <<< '[[false]]'
+$ json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":"number"}},{"type":"array","args":["number"]}]}' <<< '[[0]]'
+[[0]]
+$ json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":"number"}},{"type":"array","args":["number"]}]}' <<< '[[0,1]]'
+[[0,1]]
+$
+
+--[ 40 ]------------------------------------------------------------------------
+
+$ json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":{"type":"list","args":["number","string"]}}},{"type":"array","args":["number"]},{"type":"array","args":["string"]}]}' <<< 'null'
+json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `{"type":"array",...}'
+json: error: <stdin>:1:1: null
+json: error: <stdin>:1:1: ^
+command failed: json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":{"type":"list","args":["number","string"]}}},{"type":"array","args":["number"]},{"type":"array","args":["string"]}]}' <<< 'null'
+$ json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":{"type":"list","args":["number","string"]}}},{"type":"array","args":["number"]},{"type":"array","args":["string"]}]}' <<< '[]'
+[]
+$ json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":{"type":"list","args":["number","string"]}}},{"type":"array","args":["number"]},{"type":"array","args":["string"]}]}' <<< '[0]'
+[0]
+$ json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":{"type":"list","args":["number","string"]}}},{"type":"array","args":["number"]},{"type":"array","args":["string"]}]}' <<< '[0,1]'
+json: error: <stdin>:1:3: type check error: too many arguments
+json: error: <stdin>:1:3: [0,1]
+json: error: <stdin>:1:3:   ^
+[0
+command failed: json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":{"type":"list","args":["number","string"]}}},{"type":"array","args":["number"]},{"type":"array","args":["string"]}]}' <<< '[0,1]'
+$ json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":{"type":"list","args":["number","string"]}}},{"type":"array","args":["number"]},{"type":"array","args":["string"]}]}' <<< '[""]'
+[""]
+$ json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":{"type":"list","args":["number","string"]}}},{"type":"array","args":["number"]},{"type":"array","args":["string"]}]}' <<< '["",""]'
+json: error: <stdin>:1:4: type check error: too many arguments
+json: error: <stdin>:1:4: ["",""]
+json: error: <stdin>:1:4:    ^
+[""
+command failed: json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":{"type":"list","args":["number","string"]}}},{"type":"array","args":["number"]},{"type":"array","args":["string"]}]}' <<< '["",""]'
+$ json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":{"type":"list","args":["number","string"]}}},{"type":"array","args":["number"]},{"type":"array","args":["string"]}]}' <<< '[[0]]'
+[[0]]
+$ json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":{"type":"list","args":["number","string"]}}},{"type":"array","args":["number"]},{"type":"array","args":["string"]}]}' <<< '[[0,1]]'
+[[0,1]]
+$ json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":{"type":"list","args":["number","string"]}}},{"type":"array","args":["number"]},{"type":"array","args":["string"]}]}' <<< '[[0,false]]'
+json: error: <stdin>:1:5: type check error: type mismatch: expected a value of type `"number"' or `"string"'
+json: error: <stdin>:1:5: [[0,false]]
+json: error: <stdin>:1:5:     ^
+[[0,
+command failed: json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":{"type":"list","args":["number","string"]}}},{"type":"array","args":["number"]},{"type":"array","args":["string"]}]}' <<< '[[0,false]]'
+$ json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":{"type":"list","args":["number","string"]}}},{"type":"array","args":["number"]},{"type":"array","args":["string"]}]}' <<< '[[0,""]]'
+[[0,""]]
+$ json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":{"type":"list","args":["number","string"]}}},{"type":"array","args":["number"]},{"type":"array","args":["string"]}]}' <<< '[[""]]'
+[[""]]
+$ json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":{"type":"list","args":["number","string"]}}},{"type":"array","args":["number"]},{"type":"array","args":["string"]}]}' <<< '[["",""]]'
+[["",""]]
+$ json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":{"type":"list","args":["number","string"]}}},{"type":"array","args":["number"]},{"type":"array","args":["string"]}]}' <<< '[["",false]]'
+json: error: <stdin>:1:6: type check error: type mismatch: expected a value of type `"number"' or `"string"'
+json: error: <stdin>:1:6: [["",false]]
+json: error: <stdin>:1:6:      ^
+[["",
+command failed: json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":{"type":"list","args":["number","string"]}}},{"type":"array","args":["number"]},{"type":"array","args":["string"]}]}' <<< '[["",false]]'
+$ json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":{"type":"list","args":["number","string"]}}},{"type":"array","args":["number"]},{"type":"array","args":["string"]}]}' <<< '[["",1]]'
+[["",1]]
+$ 
+
+--[ 41 ]------------------------------------------------------------------------
+
+$ json -Tc <<< '{"type":"list","args":[{"type":"array","args":{"type":"array","args":"number"}},{"type":"array","args":{"type":"array","args":"string"}},{"type":"array","args":["number"]},{"type":"array","args":["string"]}]}'
+json: error: <stdin>:1:47: attribute error: invalid "list" type object: sort of array of array type not yet supported (the other inner array is at 1:104)
+json: error: <stdin>:1:47: ,"args":[{"type":"array","args":{"type":"array","args":"number"}}
+json: error: <stdin>:1:47:                                 ^
+command failed: json -Tc <<< '{"type":"list","args":[{"type":"array","args":{"type":"array","args":"number"}},{"type":"array","args":{"type":"array","args":"string"}},{"type":"array","args":["number"]},{"type":"array","args":["string"]}]}'
+$
+
+--[ 42 ]------------------------------------------------------------------------
+
+$ json -Tc <<< '{"type":"list","args":[{"type":"array","args":{"type":"list","args":["number"]}}]}'
+json: error: <stdin>:1:24: attribute error: invalid "list" type object: sort of array of list type not yet supported (the inner list is at 1:47)
+json: error: <stdin>:1:24: {"type":"list","args":[{"type":"array","args":{"type":"l
+json: error: <stdin>:1:24:                        ^
+command failed: json -Tc <<< '{"type":"list","args":[{"type":"array","args":{"type":"list","args":["number"]}}]}'
+$
+
+--[ 43 ]------------------------------------------------------------------------
+
+$ json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":{"type":"list","args":["number"]}}}]}' <<< 'null'
+json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `{"type":"array",...}'
+json: error: <stdin>:1:1: null
+json: error: <stdin>:1:1: ^
+command failed: json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":{"type":"list","args":["number"]}}}]}' <<< 'null'
+$ json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":{"type":"list","args":["number"]}}}]}' <<< '[]'
+[]
+$ json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":{"type":"list","args":["number"]}}}]}' <<< '[0]'
+json: error: <stdin>:1:2: type check error: type mismatch: expected a value of type `{"type":"array","args":...}' or no value at all
+json: error: <stdin>:1:2: [0]
+json: error: <stdin>:1:2:  ^
+[
+command failed: json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":{"type":"list","args":["number"]}}}]}' <<< '[0]'
+$ json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":{"type":"list","args":["number"]}}}]}' <<< '[[]]'
+[[]]
+$ json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":{"type":"list","args":["number"]}}}]}' <<< '[[false]]'
+json: error: <stdin>:1:3: type check error: type mismatch: expected a value of type `"number"'
+json: error: <stdin>:1:3: [[false]]
+json: error: <stdin>:1:3:   ^
+[[
+command failed: json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":{"type":"list","args":["number"]}}}]}' <<< '[[false]]'
+$ json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":{"type":"list","args":["number"]}}}]}' <<< '[[0]]'
+[[0]]
+$ json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":{"type":"list","args":["number"]}}}]}' <<< '[[0,1]]'
+[[0,1]]
+$ json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":{"type":"list","args":["number"]}}}]}' <<< '[[0,false]]'
+json: error: <stdin>:1:5: type check error: type mismatch: expected a value of type `"number"'
+json: error: <stdin>:1:5: [[0,false]]
+json: error: <stdin>:1:5:     ^
+[[0,
+command failed: json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":{"type":"list","args":["number"]}}}]}' <<< '[[0,false]]'
+$ json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":{"type":"list","args":["number"]}}}]}' <<< '[[0,1],[]]'
+[[0,1],[]]
+$ json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":{"type":"list","args":["number"]}}}]}' <<< '[[0,1],[false]]'
+json: error: <stdin>:1:9: type check error: type mismatch: expected a value of type `"number"'
+json: error: <stdin>:1:9: [[0,1],[false]]
+json: error: <stdin>:1:9:         ^
+[[0,1],[
+command failed: json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":{"type":"list","args":["number"]}}}]}' <<< '[[0,1],[false]]'
+$ json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":{"type":"list","args":["number"]}}}]}' <<< '[[0,1],[0]]'
+[[0,1],[0]]
+$ json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":{"type":"list","args":["number"]}}}]}' <<< '[[0,1],[0,1]]'
+[[0,1],[0,1]]
+$ json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":{"type":"list","args":["number"]}}}]}' <<< '[[0,1],[0,false]]'
+json: error: <stdin>:1:11: type check error: type mismatch: expected a value of type `"number"'
+json: error: <stdin>:1:11: [[0,1],[0,false]]
+json: error: <stdin>:1:11:           ^
+[[0,1],[0,
+command failed: json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":{"type":"list","args":["number"]}}}]}' <<< '[[0,1],[0,false]]'
+$
+
+--[ 44 ]------------------------------------------------------------------------
+
+$ json -Tc <<< '{"type":"list","args":[{"type":"array","args":{"type":"array","args":"number"}},{"type":"array","args":{"type":"array","args":"string"}}]}'
+json: error: <stdin>:1:47: attribute error: invalid "list" type object: sort of array of array type not yet supported (the other inner array is at 1:104)
+json: error: <stdin>:1:47: ,"args":[{"type":"array","args":{"type":"array","args":"number"}}
+json: error: <stdin>:1:47:                                 ^
+command failed: json -Tc <<< '{"type":"list","args":[{"type":"array","args":{"type":"array","args":"number"}},{"type":"array","args":{"type":"array","args":"string"}}]}'
+$
+
+--[ 45 ]------------------------------------------------------------------------
+
+$ json -Tc <<< '{"type":"list","args":[{"type":"array","args":{"type":"array","args":"number"}},{"type":"array","args":{"type":"array","args":["string"]}}]}'
+json: error: <stdin>:1:47: attribute error: invalid "list" type object: sort of array of array type not yet supported (the other inner array is at 1:104)
+json: error: <stdin>:1:47: ,"args":[{"type":"array","args":{"type":"array","args":"number"}}
+json: error: <stdin>:1:47:                                 ^
+command failed: json -Tc <<< '{"type":"list","args":[{"type":"array","args":{"type":"array","args":"number"}},{"type":"array","args":{"type":"array","args":["string"]}}]}'
+$
+
+--[ 46 ]------------------------------------------------------------------------
+
+$ json -Tc <<< '{"type":"list","args":[{"type":"array","args":{"type":"array","args":["number"]}},{"type":"array","args":{"type":"array","args":["string"]}}]}'
+json: error: <stdin>:1:47: attribute error: invalid "list" type object: sort of array of array type not yet supported (the other inner array is at 1:106)
+json: error: <stdin>:1:47: ,"args":[{"type":"array","args":{"type":"array","args":["number"]
+json: error: <stdin>:1:47:                                 ^
+command failed: json -Tc <<< '{"type":"list","args":[{"type":"array","args":{"type":"array","args":["number"]}},{"type":"array","args":{"type":"array","args":["string"]}}]}'
+$
+
+--[ 47 ]------------------------------------------------------------------------
+
+$ json -Tc <<< '{"type":"list","args":[{"type":"array","args":{"type":"array","args":"number"}},{"type":"array","args":[{"type":"array","args":"string"}]}]}'
+json: error: <stdin>:1:47: attribute error: invalid "list" type object: sort of array of array type not yet supported (the other inner array is at 1:105)
+json: error: <stdin>:1:47: ,"args":[{"type":"array","args":{"type":"array","args":"number"}}
+json: error: <stdin>:1:47:                                 ^
+command failed: json -Tc <<< '{"type":"list","args":[{"type":"array","args":{"type":"array","args":"number"}},{"type":"array","args":[{"type":"array","args":"string"}]}]}'
+$
+
+--[ 48 ]------------------------------------------------------------------------
+
+$ json -Tc <<< '{"type":"list","args":[{"type":"array","args":{"type":"array","args":["number"]}},{"type":"array","args":[{"type":"array","args":"string"}]}]}'
+json: error: <stdin>:1:47: attribute error: invalid "list" type object: sort of array of array type not yet supported (the other inner array is at 1:107)
+json: error: <stdin>:1:47: ,"args":[{"type":"array","args":{"type":"array","args":["number"]
+json: error: <stdin>:1:47:                                 ^
+command failed: json -Tc <<< '{"type":"list","args":[{"type":"array","args":{"type":"array","args":["number"]}},{"type":"array","args":[{"type":"array","args":"string"}]}]}'
+$
+
+--[ 49 ]------------------------------------------------------------------------
+
+$ json -Tc <<< '{"type":"list","args":[{"type":"array","args":{"type":"array","args":["number"]}},{"type":"array","args":[{"type":"array","args":["string"]}]}]}'
+json: error: <stdin>:1:47: attribute error: invalid "list" type object: sort of array of array type not yet supported (the other inner array is at 1:107)
+json: error: <stdin>:1:47: ,"args":[{"type":"array","args":{"type":"array","args":["number"]
+json: error: <stdin>:1:47:                                 ^
+command failed: json -Tc <<< '{"type":"list","args":[{"type":"array","args":{"type":"array","args":["number"]}},{"type":"array","args":[{"type":"array","args":["string"]}]}]}'
+$
+
+--[ 50 ]------------------------------------------------------------------------
+
+$ json -Tc <<< '{"type":"list","args":[{"type":"array","args":"array"},{"type":"array","args":[{"type":"array","args":"string"}]}]}'
+json: error: <stdin>:1:47: attribute error: invalid "list" type object: array ambiguity (the other defined at 1:56)
+json: error: <stdin>:1:47: ,"args":[{"type":"array","args":"array"},{"type":"array","args":[
+json: error: <stdin>:1:47:                                 ^
+command failed: json -Tc <<< '{"type":"list","args":[{"type":"array","args":"array"},{"type":"array","args":[{"type":"array","args":"string"}]}]}'
+$
+
+--[ 51 ]------------------------------------------------------------------------
+
+$ json -Tc <<< '[]' 
+json: error: <stdin>:1:1: meta error: invalid top value: it must be a type or an array of "name" objects
+json: error: <stdin>:1:1: []
+json: error: <stdin>:1:1: ^
+command failed: json -Tc <<< '[]'
+$
+
+--[ 52 ]------------------------------------------------------------------------
+
+$ json -Tc <<< '{"type":"list","args":[{"type":"array","args":"type"},{"type":"array","args":[{"type":"array","args":"string"}]}]}'
+json: error: <stdin>:1:47: attribute error: invalid "list" type object: array ambiguity (the other defined at 1:55)
+json: error: <stdin>:1:47: ,"args":[{"type":"array","args":"type"},{"type":"array","args":[{
+json: error: <stdin>:1:47:                                 ^
+command failed: json -Tc <<< '{"type":"list","args":[{"type":"array","args":"type"},{"type":"array","args":[{"type":"array","args":"string"}]}]}'
+$
+
+--[ 53 ]------------------------------------------------------------------------
+
+$ json -d '{"type":"list","args":[{"type":"array","args":"null"},{"type":"array","args":[{"type":"array","args":"string"}]}]}' <<< '[null]'
+[null]
+$ json -d '{"type":"list","args":[{"type":"array","args":"null"},{"type":"array","args":[{"type":"array","args":"string"}]}]}' <<< '[false]'
+json: error: <stdin>:1:2: type check error: type mismatch: expected a value of type `"null"' or `{"type":"array","args":...}' or, otherwise, no value at all
+json: error: <stdin>:1:2: [false]
+json: error: <stdin>:1:2:  ^
+[
+command failed: json -d '{"type":"list","args":[{"type":"array","args":"null"},{"type":"array","args":[{"type":"array","args":"string"}]}]}' <<< '[false]'
+$ json -d '{"type":"list","args":[{"type":"array","args":"null"},{"type":"array","args":[{"type":"array","args":"string"}]}]}' <<< '[[null]]'
+json: error: <stdin>:1:3: type check error: type mismatch: expected a value of type `"string"'
+json: error: <stdin>:1:3: [[null]]
+json: error: <stdin>:1:3:   ^
+[[
+command failed: json -d '{"type":"list","args":[{"type":"array","args":"null"},{"type":"array","args":[{"type":"array","args":"string"}]}]}' <<< '[[null]]'
+$ 
+
+--[ 54 ]------------------------------------------------------------------------
+
+$ json -d '{"type":"list","args":[{"type":"array","args":"array"},"boolean"]}' <<< 'null'
+json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `"boolean"' or `{"type":"array",...}'
+json: error: <stdin>:1:1: null
+json: error: <stdin>:1:1: ^
+command failed: json -d '{"type":"list","args":[{"type":"array","args":"array"},"boolean"]}' <<< 'null'
+$ json -d '{"type":"list","args":[{"type":"array","args":"array"},"boolean"]}' <<< 'false'
+false
+$ json -d '{"type":"list","args":[{"type":"array","args":"array"},"boolean"]}' <<< '[]'
+[]
+$ json -d '{"type":"list","args":[{"type":"array","args":"array"},"boolean"]}' <<< '[null,false,0,"",{},[]]'
+json: error: <stdin>:1:2: type check error: type mismatch: expected a value of type `"array"' or no value at all
+json: error: <stdin>:1:2: [null,false,0,"",{},[]]
+json: error: <stdin>:1:2:  ^
+[
+command failed: json -d '{"type":"list","args":[{"type":"array","args":"array"},"boolean"]}' <<< '[null,false,0,"",{},[]]'
+$ json -d '{"type":"list","args":[{"type":"array","args":"array"},"boolean"]}' <<< '[[null,false,0,"",{},[]]]'
+[[null,false,0,"",{},[]]]
+$
+
+--[ 55 ]------------------------------------------------------------------------
+
+$ json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":"string"}},"boolean"]}' <<< 'null'
+json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `"boolean"' or `{"type":"array",...}'
+json: error: <stdin>:1:1: null
+json: error: <stdin>:1:1: ^
+command failed: json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":"string"}},"boolean"]}' <<< 'null'
+$ json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":"string"}},"boolean"]}' <<< 'false'
+false
+$ json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":"string"}},"boolean"]}' <<< '[]'
+[]
+$ json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":"string"}},"boolean"]}' <<< '[[null]]'
+json: error: <stdin>:1:3: type check error: type mismatch: expected a value of type `"string"'
+json: error: <stdin>:1:3: [[null]]
+json: error: <stdin>:1:3:   ^
+[[
+command failed: json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":"string"}},"boolean"]}' <<< '[[null]]'
+$ json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":"string"}},"boolean"]}' <<< '[["a"]]'
+[["a"]]
+$ json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":"string"}},"boolean"]}' <<< '[["a",null]]'
+json: error: <stdin>:1:7: type check error: type mismatch: expected a value of type `"string"'
+json: error: <stdin>:1:7: [["a",null]]
+json: error: <stdin>:1:7:       ^
+[["a",
+command failed: json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":"string"}},"boolean"]}' <<< '[["a",null]]'
+$ json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":"string"}},"boolean"]}' <<< '[["a","b"]]'
+[["a","b"]]
+$ json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":"string"}},"boolean"]}' <<< '[["a","b",null]]'
+json: error: <stdin>:1:11: type check error: type mismatch: expected a value of type `"string"'
+json: error: <stdin>:1:11: [["a","b",null]]
+json: error: <stdin>:1:11:           ^
+[["a","b",
+command failed: json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":"string"}},"boolean"]}' <<< '[["a","b",null]]'
+$ json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":"string"}},"boolean"]}' <<< '[["a","b","c"]]'
+[["a","b","c"]]
+$
+
+--[ 56 ]------------------------------------------------------------------------
+
+$ json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":["string"]}},"boolean"]}' <<< 'null'
+json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `"boolean"' or `{"type":"array",...}'
+json: error: <stdin>:1:1: null
+json: error: <stdin>:1:1: ^
+command failed: json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":["string"]}},"boolean"]}' <<< 'null'
+$ json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":["string"]}},"boolean"]}' <<< 'false'
+false
+$ json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":["string"]}},"boolean"]}' <<< '[]'
+[]
+$ json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":["string"]}},"boolean"]}' <<< '[[]]'
+json: error: <stdin>:1:3: type check error: too few arguments
+json: error: <stdin>:1:3: [[]]
+json: error: <stdin>:1:3:   ^
+[[
+command failed: json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":["string"]}},"boolean"]}' <<< '[[]]'
+$ json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":["string"]}},"boolean"]}' <<< '[[null]]'
+json: error: <stdin>:1:3: type check error: type mismatch: expected a value of type `"string"'
+json: error: <stdin>:1:3: [[null]]
+json: error: <stdin>:1:3:   ^
+[[
+command failed: json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":["string"]}},"boolean"]}' <<< '[[null]]'
+$ json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":["string"]}},"boolean"]}' <<< '[["a"]]'
+[["a"]]
+$ json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":["string"]}},"boolean"]}' <<< '[["a",null]]'
+json: error: <stdin>:1:6: type check error: too many arguments
+json: error: <stdin>:1:6: [["a",null]]
+json: error: <stdin>:1:6:      ^
+[["a"
+command failed: json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":["string"]}},"boolean"]}' <<< '[["a",null]]'
+$
+
+--[ 57 ]------------------------------------------------------------------------
+
+$ json -d '{"type":"list","args":[{"type":"array","args":[{"type":"array","args":"string"}]},"boolean"]}' <<< 'null'
+json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `"boolean"' or `{"type":"array",...}'
+json: error: <stdin>:1:1: null
+json: error: <stdin>:1:1: ^
+command failed: json -d '{"type":"list","args":[{"type":"array","args":[{"type":"array","args":"string"}]},"boolean"]}' <<< 'null'
+$ json -d '{"type":"list","args":[{"type":"array","args":[{"type":"array","args":"string"}]},"boolean"]}' <<< 'false'
+false
+$ json -d '{"type":"list","args":[{"type":"array","args":[{"type":"array","args":"string"}]},"boolean"]}' <<< '[]'
+json: error: <stdin>:1:2: type check error: too few arguments
+json: error: <stdin>:1:2: []
+json: error: <stdin>:1:2:  ^
+[
+command failed: json -d '{"type":"list","args":[{"type":"array","args":[{"type":"array","args":"string"}]},"boolean"]}' <<< '[]'
+$ json -d '{"type":"list","args":[{"type":"array","args":[{"type":"array","args":"string"}]},"boolean"]}' <<< '[null]'
+json: error: <stdin>:1:2: type check error: type mismatch: expected a value of type `{"type":"array","args":...}'
+json: error: <stdin>:1:2: [null]
+json: error: <stdin>:1:2:  ^
+[
+command failed: json -d '{"type":"list","args":[{"type":"array","args":[{"type":"array","args":"string"}]},"boolean"]}' <<< '[null]'
+$ json -d '{"type":"list","args":[{"type":"array","args":[{"type":"array","args":"string"}]},"boolean"]}' <<< '[[]]'
+[[]]
+$ json -d '{"type":"list","args":[{"type":"array","args":[{"type":"array","args":"string"}]},"boolean"]}' <<< '[[null]]'
+json: error: <stdin>:1:3: type check error: type mismatch: expected a value of type `"string"'
+json: error: <stdin>:1:3: [[null]]
+json: error: <stdin>:1:3:   ^
+[[
+command failed: json -d '{"type":"list","args":[{"type":"array","args":[{"type":"array","args":"string"}]},"boolean"]}' <<< '[[null]]'
+$ json -d '{"type":"list","args":[{"type":"array","args":[{"type":"array","args":"string"}]},"boolean"]}' <<< '[["a"]]'
+[["a"]]
+$ json -d '{"type":"list","args":[{"type":"array","args":[{"type":"array","args":"string"}]},"boolean"]}' <<< '[["a",null]]'
+json: error: <stdin>:1:7: type check error: type mismatch: expected a value of type `"string"'
+json: error: <stdin>:1:7: [["a",null]]
+json: error: <stdin>:1:7:       ^
+[["a",
+command failed: json -d '{"type":"list","args":[{"type":"array","args":[{"type":"array","args":"string"}]},"boolean"]}' <<< '[["a",null]]'
+$ json -d '{"type":"list","args":[{"type":"array","args":[{"type":"array","args":"string"}]},"boolean"]}' <<< '[["a","b"]]'
+[["a","b"]]
+$ json -d '{"type":"list","args":[{"type":"array","args":[{"type":"array","args":"string"}]},"boolean"]}' <<< '[["a","b",null]]'
+json: error: <stdin>:1:11: type check error: type mismatch: expected a value of type `"string"'
+json: error: <stdin>:1:11: [["a","b",null]]
+json: error: <stdin>:1:11:           ^
+[["a","b",
+command failed: json -d '{"type":"list","args":[{"type":"array","args":[{"type":"array","args":"string"}]},"boolean"]}' <<< '[["a","b",null]]'
+$ json -d '{"type":"list","args":[{"type":"array","args":[{"type":"array","args":"string"}]},"boolean"]}' <<< '[["a","b","c"]]'
+[["a","b","c"]]
+$ 
+
+--[ 58 ]------------------------------------------------------------------------
+
+$ json -d '{"type":"list","args":[{"type":"array","args":[{"type":"array","args":["string"]}]},"boolean"]}' <<< 'null'
+json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `"boolean"' or `{"type":"array",...}'
+json: error: <stdin>:1:1: null
+json: error: <stdin>:1:1: ^
+command failed: json -d '{"type":"list","args":[{"type":"array","args":[{"type":"array","args":["string"]}]},"boolean"]}' <<< 'null'
+$ json -d '{"type":"list","args":[{"type":"array","args":[{"type":"array","args":["string"]}]},"boolean"]}' <<< 'false'
+false
+$ json -d '{"type":"list","args":[{"type":"array","args":[{"type":"array","args":["string"]}]},"boolean"]}' <<< '[]'
+json: error: <stdin>:1:2: type check error: too few arguments
+json: error: <stdin>:1:2: []
+json: error: <stdin>:1:2:  ^
+[
+command failed: json -d '{"type":"list","args":[{"type":"array","args":[{"type":"array","args":["string"]}]},"boolean"]}' <<< '[]'
+$ json -d '{"type":"list","args":[{"type":"array","args":[{"type":"array","args":["string"]}]},"boolean"]}' <<< '[null]'
+json: error: <stdin>:1:2: type check error: type mismatch: expected a value of type `{"type":"array","args":[...]}'
+json: error: <stdin>:1:2: [null]
+json: error: <stdin>:1:2:  ^
+[
+command failed: json -d '{"type":"list","args":[{"type":"array","args":[{"type":"array","args":["string"]}]},"boolean"]}' <<< '[null]'
+$ json -d '{"type":"list","args":[{"type":"array","args":[{"type":"array","args":["string"]}]},"boolean"]}' <<< '[[]]'
+json: error: <stdin>:1:3: type check error: too few arguments
+json: error: <stdin>:1:3: [[]]
+json: error: <stdin>:1:3:   ^
+[[
+command failed: json -d '{"type":"list","args":[{"type":"array","args":[{"type":"array","args":["string"]}]},"boolean"]}' <<< '[[]]'
+$ json -d '{"type":"list","args":[{"type":"array","args":[{"type":"array","args":["string"]}]},"boolean"]}' <<< '[[null]]'
+json: error: <stdin>:1:3: type check error: type mismatch: expected a value of type `"string"'
+json: error: <stdin>:1:3: [[null]]
+json: error: <stdin>:1:3:   ^
+[[
+command failed: json -d '{"type":"list","args":[{"type":"array","args":[{"type":"array","args":["string"]}]},"boolean"]}' <<< '[[null]]'
+$ json -d '{"type":"list","args":[{"type":"array","args":[{"type":"array","args":["string"]}]},"boolean"]}' <<< '[["a"]]'
+[["a"]]
+$ json -d '{"type":"list","args":[{"type":"array","args":[{"type":"array","args":["string"]}]},"boolean"]}' <<< '[["a",null]]'
+json: error: <stdin>:1:6: type check error: too many arguments
+json: error: <stdin>:1:6: [["a",null]]
+json: error: <stdin>:1:6:      ^
+[["a"
+command failed: json -d '{"type":"list","args":[{"type":"array","args":[{"type":"array","args":["string"]}]},"boolean"]}' <<< '[["a",null]]'
+$ 
+
+--[ 59 ]------------------------------------------------------------------------
+
+$ json -d '{"type":"list","args":[{"type":"array","args":"object"},"boolean"]}' <<< 'null'
+json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `"boolean"' or `{"type":"array",...}'
+json: error: <stdin>:1:1: null
+json: error: <stdin>:1:1: ^
+command failed: json -d '{"type":"list","args":[{"type":"array","args":"object"},"boolean"]}' <<< 'null'
+$ json -d '{"type":"list","args":[{"type":"array","args":"object"},"boolean"]}' <<< 'false'
+false
+$ json -d '{"type":"list","args":[{"type":"array","args":"object"},"boolean"]}' <<< '[]'
+[]
+$ json -d '{"type":"list","args":[{"type":"array","args":"object"},"boolean"]}' <<< '[{}]'
+[{}]
+$ json -d '{"type":"list","args":[{"type":"array","args":"object"},"boolean"]}' <<< '[{"foo":0,"bar":""}]'
+[{"foo":0,"bar":""}]
+$ json -d '{"type":"list","args":[{"type":"array","args":"object"},"boolean"]}' <<< '[{},{}]'
+[{},{}]
+$ json -d '{"type":"list","args":[{"type":"array","args":"object"},"boolean"]}' <<< '[{"foo":0},{"bar":""}]'
+[{"foo":0},{"bar":""}]
+$
+
+--[ 60 ]------------------------------------------------------------------------
+
+$ json -d '{"type":"list","args":[{"type":"array","args":["object"]},"boolean"]}' <<< 'null'
+json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `"boolean"' or `{"type":"array",...}'
+json: error: <stdin>:1:1: null
+json: error: <stdin>:1:1: ^
+command failed: json -d '{"type":"list","args":[{"type":"array","args":["object"]},"boolean"]}' <<< 'null'
+$ json -d '{"type":"list","args":[{"type":"array","args":["object"]},"boolean"]}' <<< 'false'
+false
+$ json -d '{"type":"list","args":[{"type":"array","args":["object"]},"boolean"]}' <<< '[]'
+json: error: <stdin>:1:2: type check error: too few arguments
+json: error: <stdin>:1:2: []
+json: error: <stdin>:1:2:  ^
+[
+command failed: json -d '{"type":"list","args":[{"type":"array","args":["object"]},"boolean"]}' <<< '[]'
+$ json -d '{"type":"list","args":[{"type":"array","args":["object"]},"boolean"]}' <<< '[{}]'
+[{}]
+$ json -d '{"type":"list","args":[{"type":"array","args":["object"]},"boolean"]}' <<< '[{},{}]'
+json: error: <stdin>:1:4: type check error: too many arguments
+json: error: <stdin>:1:4: [{},{}]
+json: error: <stdin>:1:4:    ^
+[{}
+command failed: json -d '{"type":"list","args":[{"type":"array","args":["object"]},"boolean"]}' <<< '[{},{}]'
+$ json -d '{"type":"list","args":[{"type":"array","args":["object"]},"boolean"]}' <<< '[{"foo":0,"bar":""}]'
+[{"foo":0,"bar":""}]
+$ json -d '{"type":"list","args":[{"type":"array","args":["object"]},"boolean"]}' <<< '[{"foo":0},{"bar":""}]'
+json: error: <stdin>:1:11: type check error: too many arguments
+json: error: <stdin>:1:11: [{"foo":0},{"bar":""}]
+json: error: <stdin>:1:11:           ^
+[{"foo":0}
+command failed: json -d '{"type":"list","args":[{"type":"array","args":["object"]},"boolean"]}' <<< '[{"foo":0},{"bar":""}]'
+$
+
+--[ 61 ]------------------------------------------------------------------------
+
+$ json -d '{"type":"list","args":[{"type":"array","args":[{"type":"object","args":[{"name":"foo","type":"object"}]}]},"boolean"]}' <<< 'null'
+json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `"boolean"' or `{"type":"array",...}'
+json: error: <stdin>:1:1: null
+json: error: <stdin>:1:1: ^
+command failed: json -d '{"type":"list","args":[{"type":"array","args":[{"type":"object","args":[{"name":"foo","type":"object"}]}]},"boolean"]}' <<< 'null'
+$ json -d '{"type":"list","args":[{"type":"array","args":[{"type":"object","args":[{"name":"foo","type":"object"}]}]},"boolean"]}' <<< 'false'
+false
+$ json -d '{"type":"list","args":[{"type":"array","args":[{"type":"object","args":[{"name":"foo","type":"object"}]}]},"boolean"]}' <<< '[]'
+json: error: <stdin>:1:2: type check error: too few arguments
+json: error: <stdin>:1:2: []
+json: error: <stdin>:1:2:  ^
+[
+command failed: json -d '{"type":"list","args":[{"type":"array","args":[{"type":"object","args":[{"name":"foo","type":"object"}]}]},"boolean"]}' <<< '[]'
+$ json -d '{"type":"list","args":[{"type":"array","args":[{"type":"object","args":[{"name":"foo","type":"object"}]}]},"boolean"]}' <<< '[null]'
+json: error: <stdin>:1:2: type check error: type mismatch: expected a value of type `{"type":"object","args":[...]}'
+json: error: <stdin>:1:2: [null]
+json: error: <stdin>:1:2:  ^
+[
+command failed: json -d '{"type":"list","args":[{"type":"array","args":[{"type":"object","args":[{"name":"foo","type":"object"}]}]},"boolean"]}' <<< '[null]'
+$ json -d '{"type":"list","args":[{"type":"array","args":[{"type":"object","args":[{"name":"foo","type":"object"}]}]},"boolean"]}' <<< '[{}]'
+json: error: <stdin>:1:3: type check error: too few arguments
+json: error: <stdin>:1:3: [{}]
+json: error: <stdin>:1:3:   ^
+[{
+command failed: json -d '{"type":"list","args":[{"type":"array","args":[{"type":"object","args":[{"name":"foo","type":"object"}]}]},"boolean"]}' <<< '[{}]'
+$ json -d '{"type":"list","args":[{"type":"array","args":[{"type":"object","args":[{"name":"foo","type":"object"}]}]},"boolean"]}' <<< '[{"bar":null}]'
+json: error: <stdin>:1:3: type check error: invalid argument name: expected "foo"
+json: error: <stdin>:1:3: [{"bar":null}]
+json: error: <stdin>:1:3:   ^
+[{
+command failed: json -d '{"type":"list","args":[{"type":"array","args":[{"type":"object","args":[{"name":"foo","type":"object"}]}]},"boolean"]}' <<< '[{"bar":null}]'
+$ json -d '{"type":"list","args":[{"type":"array","args":[{"type":"object","args":[{"name":"foo","type":"object"}]}]},"boolean"]}' <<< '[{"foo":null}]'
+json: error: <stdin>:1:9: type check error: type mismatch: expected a value of type `"object"'
+json: error: <stdin>:1:9: [{"foo":null}]
+json: error: <stdin>:1:9:         ^
+[{"foo":
+command failed: json -d '{"type":"list","args":[{"type":"array","args":[{"type":"object","args":[{"name":"foo","type":"object"}]}]},"boolean"]}' <<< '[{"foo":null}]'
+$ json -d '{"type":"list","args":[{"type":"array","args":[{"type":"object","args":[{"name":"foo","type":"object"}]}]},"boolean"]}' <<< '[{"foo":{}}]'
+[{"foo":{}}]
+$ json -d '{"type":"list","args":[{"type":"array","args":[{"type":"object","args":[{"name":"foo","type":"object"}]}]},"boolean"]}' <<< '[{"foo":{"bar":null}}]'
+[{"foo":{"bar":null}}]
+$ 
+
+--[ 62 ]------------------------------------------------------------------------
+
+$ json -Tc <<< '{"type":"list","args":[{"type":"object","args":[{"name":"foo","type":{"type":"list","args":["number"]}}]}]}'
+json: error: <stdin>:1:24: attribute error: invalid "list" type object: sort of object of list type not yet supported (the inner list is at 1:70)
+json: error: <stdin>:1:24: {"type":"list","args":[{"type":"object","args":[{"name":
+json: error: <stdin>:1:24:                        ^
+command failed: json -Tc <<< '{"type":"list","args":[{"type":"object","args":[{"name":"foo","type":{"type":"list","args":["number"]}}]}]}'
+$
+
+--[ 63 ]------------------------------------------------------------------------
+
+$ json -Tc <<< '{"type":"list","args":[{"type":"object","args":[{"name":"foo","type":"null"},{"name":"bar","type":{"type":"list","args":["number"]}}]}]}'
+json: error: <stdin>:1:24: attribute error: invalid "list" type object: sort of object of list type not yet supported (the inner list is at 1:99)
+json: error: <stdin>:1:24: {"type":"list","args":[{"type":"object","args":[{"name":
+json: error: <stdin>:1:24:                        ^
+command failed: json -Tc <<< '{"type":"list","args":[{"type":"object","args":[{"name":"foo","type":"null"},{"name":"bar","type":{"type":"list","args":["number"]}}]}]}'
+$
+
+--[ 64 ]------------------------------------------------------------------------
+
+# stev: this is a duplication of #42
+$ json -Tc <<< '{"type":"list","args":[{"type":"array","args":{"type":"list","args":["number"]}}]}'
+json: error: <stdin>:1:24: attribute error: invalid "list" type object: sort of array of list type not yet supported (the inner list is at 1:47)
+json: error: <stdin>:1:24: {"type":"list","args":[{"type":"array","args":{"type":"l
+json: error: <stdin>:1:24:                        ^
+command failed: json -Tc <<< '{"type":"list","args":[{"type":"array","args":{"type":"list","args":["number"]}}]}'
+$
+
+--[ 65 ]------------------------------------------------------------------------
+
+$ json -Tc <<< '{"type":"list","args":[{"type":"array","args":[{"type":"list","args":["number"]}]}]}'
+json: error: <stdin>:1:24: attribute error: invalid "list" type object: sort of array of list type not yet supported (the inner list is at 1:48)
+json: error: <stdin>:1:24: {"type":"list","args":[{"type":"array","args":[{"type":"
+json: error: <stdin>:1:24:                        ^
+command failed: json -Tc <<< '{"type":"list","args":[{"type":"array","args":[{"type":"list","args":["number"]}]}]}'
+$
+
+--[ 66 ]------------------------------------------------------------------------
+
+$ json -Tc <<< '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":[{"plain":1}]}]}'
+json: error: <stdin>:1:47: attribute error: invalid "list" type object: array ambiguity (the other defined at 1:57)
+json: error: <stdin>:1:47: ,"args":[{"type":"array","args":"number"},{"type":"array","args":
+json: error: <stdin>:1:47:                                 ^
+command failed: json -Tc <<< '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":[{"plain":1}]}]}'
+$
+
+--[ 67 ]------------------------------------------------------------------------
+
+$ json -Tc <<< '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":[{"plain":1},{"plain":2}]}]}'
+json: error: <stdin>:1:47: attribute error: invalid "list" type object: array ambiguity (the other defined at 1:57)
+json: error: <stdin>:1:47: ,"args":[{"type":"array","args":"number"},{"type":"array","args":
+json: error: <stdin>:1:47:                                 ^
+command failed: json -Tc <<< '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":[{"plain":1},{"plain":2}]}]}'
+$ 
+
+--[ 68 ]------------------------------------------------------------------------
+
+$ json -Tc <<< '{"type":"list","args":[{"type":"array","args":{"plain":1}},{"type":"array","args":["number"]}]}'
+json: error: <stdin>:1:47: attribute error: invalid "list" type object: array ambiguity (the other defined at 1:60)
+json: error: <stdin>:1:47: ,"args":[{"type":"array","args":{"plain":1}},{"type":"array","arg
+json: error: <stdin>:1:47:                                 ^
+command failed: json -Tc <<< '{"type":"list","args":[{"type":"array","args":{"plain":1}},{"type":"array","args":["number"]}]}'
+$
+
+--[ 69 ]------------------------------------------------------------------------
+
+$ json -Tc <<< '{"type":"list","args":[{"type":"array","args":{"plain":1}},{"type":"array","args":{"plain":2}},{"type":"array","args":["number"]}]}'
+json: error: <stdin>:1:47: attribute error: invalid "list" type object: array ambiguity (the other defined at 1:96)
+json: error: <stdin>:1:47: ,"args":[{"type":"array","args":{"plain":1}},{"type":"array","arg
+json: error: <stdin>:1:47:                                 ^
+command failed: json -Tc <<< '{"type":"list","args":[{"type":"array","args":{"plain":1}},{"type":"array","args":{"plain":2}},{"type":"array","args":["number"]}]}'
+$ 
+
+--[ 70 ]------------------------------------------------------------------------
+
+$ json -Tc <<< '{"type":"list","args":[{"type":"array","args":{"plain":2}},{"type":"array","args":{"plain":1}},{"type":"array","args":["number"]}]}'
+json: error: <stdin>:1:83: attribute error: invalid "list" type object: array ambiguity (the other defined at 1:96)
+json: error: <stdin>:1:83: ain":2}},{"type":"array","args":{"plain":1}},{"type":"array","arg
+json: error: <stdin>:1:83:                                 ^
+command failed: json -Tc <<< '{"type":"list","args":[{"type":"array","args":{"plain":2}},{"type":"array","args":{"plain":1}},{"type":"array","args":["number"]}]}'
+$ 
+
+--[ 71 ]------------------------------------------------------------------------
+
+$ json -Tc <<< '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":{"plain":1}}]}'
+json: error: <stdin>:1:80: attribute error: invalid "list" type object: array argument ambiguity (the other is at 1:47)
+json: error: <stdin>:1:80: number"},{"type":"array","args":{"plain":1}}]}
+json: error: <stdin>:1:80:                                 ^
+command failed: json -Tc <<< '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":{"plain":1}}]}'
+$
+
+--[ 72 ]------------------------------------------------------------------------
+
+$ json -Tc <<< '{"type":"list","args":[{"type":"array","args":["number"]},{"type":"array","args":[{"plain":1}]}]}'
+json: error: <stdin>:1:83: attribute error: invalid "list" type object: array argument ambiguity (the other is at 1:48)
+json: error: <stdin>:1:83: mber"]},{"type":"array","args":[{"plain":1}]}]}
+json: error: <stdin>:1:83:                                 ^
+command failed: json -Tc <<< '{"type":"list","args":[{"type":"array","args":["number"]},{"type":"array","args":[{"plain":1}]}]}'
+$
+
+--[ 73 ]------------------------------------------------------------------------
+
+$ json -Tc <<< '{"type":"list","args":[{"type":"array","args":[{"plain":0},"number"]},{"type":"array","args":[{"plain":0},{"plain":1}]}]}'
+json: error: <stdin>:1:107: attribute error: invalid "list" type object: array argument ambiguity (the other is at 1:60)
+json: error: <stdin>:1:107: pe":"array","args":[{"plain":0},{"plain":1}]}]}
+json: error: <stdin>:1:107:                                 ^
+command failed: json -Tc <<< '{"type":"list","args":[{"type":"array","args":[{"plain":0},"number"]},{"type":"array","args":[{"plain":0},{"plain":1}]}]}'
+$
+
+--[ 74 ]------------------------------------------------------------------------
+
+$ json -Tc <<< '{"type":"list","args":[{"type":"object","args":[{"name":"foo","type":"number"}]},{"type":"object","args":[{"name":"foo","type":{"plain":1}}]}]}'
+json: error: <stdin>:1:128: attribute error: invalid "list" type object: object argument ambiguity (the other is at 1:70)
+json: error: <stdin>:1:128: t","args":[{"name":"foo","type":{"plain":1}}]}]}
+json: error: <stdin>:1:128:                                 ^
+command failed: json -Tc <<< '{"type":"list","args":[{"type":"object","args":[{"name":"foo","type":"number"}]},{"type":"object","args":[{"name":"foo","type":{"plain":1}}]}]}'
+$
+
+--[ 75 ]------------------------------------------------------------------------
+
+$ json -Tc <<< '{"type":"list","args":[{"type":"object","args":[{"name":"foo","type":"type"},{"name":"bar","type":"number"}]},{"type":"object","args":[{"name":"foo","type":"type"},{"name":"bar","type":{"plain":1}}]}]}'
+json: error: <stdin>:1:186: attribute error: invalid "list" type object: object argument ambiguity (the other is at 1:99)
+json: error: <stdin>:1:186: e":"type"},{"name":"bar","type":{"plain":1}}]}]}
+json: error: <stdin>:1:186:                                 ^
+command failed: json -Tc <<< '{"type":"list","args":[{"type":"object","args":[{"name":"foo","type":"type"},{"name":"bar","type":"number"}]},{"type":"object","args":[{"name":"foo","type":"type"},{"name":"bar","type":{"plain":1}}]}]}'
+$
+
+--[ 76 ]------------------------------------------------------------------------
+
+$ json -Tc <<< '{"type":"list","args":[{"type":"array","args":"array"},{"type":"array","args":[{"type":"array","args":"type"}]}]}'
+json: error: <stdin>:1:47: attribute error: invalid "list" type object: array ambiguity (the other defined at 1:56)
+json: error: <stdin>:1:47: ,"args":[{"type":"array","args":"array"},{"type":"array","args":[
+json: error: <stdin>:1:47:                                 ^
+command failed: json -Tc <<< '{"type":"list","args":[{"type":"array","args":"array"},{"type":"array","args":[{"type":"array","args":"type"}]}]}'
+$
+
+--[ 77 ]------------------------------------------------------------------------
+
+$ json -Tc <<< '{"type":"list","args":[{"type":"array","args":"array"},{"type":"array","args":[{"type":"array","args":[]}]}]}'
+json: error: <stdin>:1:47: attribute error: invalid "list" type object: array ambiguity (the other defined at 1:56)
+json: error: <stdin>:1:47: ,"args":[{"type":"array","args":"array"},{"type":"array","args":[
+json: error: <stdin>:1:47:                                 ^
+command failed: json -Tc <<< '{"type":"list","args":[{"type":"array","args":"array"},{"type":"array","args":[{"type":"array","args":[]}]}]}'
+$
+
+--[ 78 ]------------------------------------------------------------------------
+
+$ json -Tc <<< '{"type":"list","args":[{"type":"array","args":"object"},{"type":"array","args":[{"type":"object","args":[]}]}]}'
+json: error: <stdin>:1:47: attribute error: invalid "list" type object: array ambiguity (the other defined at 1:57)
+json: error: <stdin>:1:47: ,"args":[{"type":"array","args":"object"},{"type":"array","args":
+json: error: <stdin>:1:47:                                 ^
+command failed: json -Tc <<< '{"type":"list","args":[{"type":"array","args":"object"},{"type":"array","args":[{"type":"object","args":[]}]}]}'
+$
+
+--[ 79 ]------------------------------------------------------------------------
+
+$ json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":[{"plain":1},"object"]}]}' <<< 'null'
+json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `{"type":"array",...}'
+json: error: <stdin>:1:1: null
+json: error: <stdin>:1:1: ^
+command failed: json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":[{"plain":1},"object"]}]}' <<< 'null'
+$ json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":[{"plain":1},"object"]}]}' <<< '[]'
+[]
+$ json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":[{"plain":1},"object"]}]}' <<< '[null]'
+json: error: <stdin>:1:2: type check error: type mismatch: expected a value of type `"number"' or `{"plain":1}' or, otherwise, no value at all
+json: error: <stdin>:1:2: [null]
+json: error: <stdin>:1:2:  ^
+[
+command failed: json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":[{"plain":1},"object"]}]}' <<< '[null]'
+$ json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":[{"plain":1},"object"]}]}' <<< '[0]'
+[0]
+$ json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":[{"plain":1},"object"]}]}' <<< '[1]'
+[1]
+$ json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":[{"plain":1},"object"]}]}' <<< '[{}]'
+json: error: <stdin>:1:2: type check error: type mismatch: expected a value of type `"number"' or `{"plain":1}' or, otherwise, no value at all
+json: error: <stdin>:1:2: [{}]
+json: error: <stdin>:1:2:  ^
+[
+command failed: json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":[{"plain":1},"object"]}]}' <<< '[{}]'
+$ json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":[{"plain":1},"object"]}]}' <<< '[0,null]'
+json: error: <stdin>:1:4: type check error: type mismatch: expected a value of type `"number"'
+json: error: <stdin>:1:4: [0,null]
+json: error: <stdin>:1:4:    ^
+[0,
+command failed: json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":[{"plain":1},"object"]}]}' <<< '[0,null]'
+$ json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":[{"plain":1},"object"]}]}' <<< '[0,0]'
+[0,0]
+$ json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":[{"plain":1},"object"]}]}' <<< '[0,1]'
+[0,1]
+$ json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":[{"plain":1},"object"]}]}' <<< '[0,{}]'
+json: error: <stdin>:1:4: type check error: type mismatch: expected a value of type `"number"'
+json: error: <stdin>:1:4: [0,{}]
+json: error: <stdin>:1:4:    ^
+[0,
+command failed: json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":[{"plain":1},"object"]}]}' <<< '[0,{}]'
+$ json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":[{"plain":1},"object"]}]}' <<< '[1,null]'
+json: error: <stdin>:1:4: type check error: type mismatch: expected a value of type `"number"' or `"object"'
+json: error: <stdin>:1:4: [1,null]
+json: error: <stdin>:1:4:    ^
+[1,
+command failed: json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":[{"plain":1},"object"]}]}' <<< '[1,null]'
+$ json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":[{"plain":1},"object"]}]}' <<< '[1,0]'
+[1,0]
+$ json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":[{"plain":1},"object"]}]}' <<< '[1,1]'
+[1,1]
+$ json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":[{"plain":1},"object"]}]}' <<< '[1,{}]'
+[1,{}]
+$ json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":[{"plain":1},"object"]}]}' <<< '[1,2,3]'
+[1,2,3]
+$ json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":[{"plain":1},"object"]}]}' <<< '[1,{},null]'
+json: error: <stdin>:1:6: type check error: too many arguments
+json: error: <stdin>:1:6: [1,{},null]
+json: error: <stdin>:1:6:      ^
+[1,{}
+command failed: json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":[{"plain":1},"object"]}]}' <<< '[1,{},null]'
+$ 
+
+--[ 80 ]------------------------------------------------------------------------
+
+$ json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":[{"plain":1},{"plain":2},"object"]}]}' <<< 'null'
+json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `{"type":"array",...}'
+json: error: <stdin>:1:1: null
+json: error: <stdin>:1:1: ^
+command failed: json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":[{"plain":1},{"plain":2},"object"]}]}' <<< 'null'
+$ json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":[{"plain":1},{"plain":2},"object"]}]}' <<< '[]'
+[]
+$ json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":[{"plain":1},{"plain":2},"object"]}]}' <<< '[null]'
+json: error: <stdin>:1:2: type check error: type mismatch: expected a value of type `"number"' or `{"plain":1}' or, otherwise, no value at all
+json: error: <stdin>:1:2: [null]
+json: error: <stdin>:1:2:  ^
+[
+command failed: json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":[{"plain":1},{"plain":2},"object"]}]}' <<< '[null]'
+$ json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":[{"plain":1},{"plain":2},"object"]}]}' <<< '[0]'
+[0]
+$ json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":[{"plain":1},{"plain":2},"object"]}]}' <<< '[1]'
+[1]
+$ json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":[{"plain":1},{"plain":2},"object"]}]}' <<< '[2]'
+[2]
+$ json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":[{"plain":1},{"plain":2},"object"]}]}' <<< '[{}]'
+json: error: <stdin>:1:2: type check error: type mismatch: expected a value of type `"number"' or `{"plain":1}' or, otherwise, no value at all
+json: error: <stdin>:1:2: [{}]
+json: error: <stdin>:1:2:  ^
+[
+command failed: json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":[{"plain":1},{"plain":2},"object"]}]}' <<< '[{}]'
+$ json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":[{"plain":1},{"plain":2},"object"]}]}' <<< '[0,null]'
+json: error: <stdin>:1:4: type check error: type mismatch: expected a value of type `"number"'
+json: error: <stdin>:1:4: [0,null]
+json: error: <stdin>:1:4:    ^
+[0,
+command failed: json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":[{"plain":1},{"plain":2},"object"]}]}' <<< '[0,null]'
+$ json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":[{"plain":1},{"plain":2},"object"]}]}' <<< '[0,1]'
+[0,1]
+$ json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":[{"plain":1},{"plain":2},"object"]}]}' <<< '[0,2]'
+[0,2]
+$ json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":[{"plain":1},{"plain":2},"object"]}]}' <<< '[0,{}]'
+json: error: <stdin>:1:4: type check error: type mismatch: expected a value of type `"number"'
+json: error: <stdin>:1:4: [0,{}]
+json: error: <stdin>:1:4:    ^
+[0,
+command failed: json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":[{"plain":1},{"plain":2},"object"]}]}' <<< '[0,{}]'
+$ json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":[{"plain":1},{"plain":2},"object"]}]}' <<< '[1,null]'
+json: error: <stdin>:1:4: type check error: type mismatch: expected a value of type `"number"' or `{"plain":2}'
+json: error: <stdin>:1:4: [1,null]
+json: error: <stdin>:1:4:    ^
+[1,
+command failed: json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":[{"plain":1},{"plain":2},"object"]}]}' <<< '[1,null]'
+$ json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":[{"plain":1},{"plain":2},"object"]}]}' <<< '[1,0]'
+[1,0]
+$ json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":[{"plain":1},{"plain":2},"object"]}]}' <<< '[1,1]'
+[1,1]
+$ json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":[{"plain":1},{"plain":2},"object"]}]}' <<< '[1,2]'
+[1,2]
+$ json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":[{"plain":1},{"plain":2},"object"]}]}' <<< '[1,{}]'
+json: error: <stdin>:1:4: type check error: type mismatch: expected a value of type `"number"' or `{"plain":2}'
+json: error: <stdin>:1:4: [1,{}]
+json: error: <stdin>:1:4:    ^
+[1,
+command failed: json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":[{"plain":1},{"plain":2},"object"]}]}' <<< '[1,{}]'
+$ json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":[{"plain":1},{"plain":2},"object"]}]}' <<< '[2,null]'
+json: error: <stdin>:1:4: type check error: type mismatch: expected a value of type `"number"'
+json: error: <stdin>:1:4: [2,null]
+json: error: <stdin>:1:4:    ^
+[2,
+command failed: json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":[{"plain":1},{"plain":2},"object"]}]}' <<< '[2,null]'
+$ json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":[{"plain":1},{"plain":2},"object"]}]}' <<< '[2,0]'
+[2,0]
+$ json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":[{"plain":1},{"plain":2},"object"]}]}' <<< '[2,1]'
+[2,1]
+$ json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":[{"plain":1},{"plain":2},"object"]}]}' <<< '[2,2]'
+[2,2]
+$ json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":[{"plain":1},{"plain":2},"object"]}]}' <<< '[2,{}]'
+json: error: <stdin>:1:4: type check error: type mismatch: expected a value of type `"number"'
+json: error: <stdin>:1:4: [2,{}]
+json: error: <stdin>:1:4:    ^
+[2,
+command failed: json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":[{"plain":1},{"plain":2},"object"]}]}' <<< '[2,{}]'
+$ json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":[{"plain":1},{"plain":2},"object"]}]}' <<< '[1,2,null]'
+json: error: <stdin>:1:6: type check error: type mismatch: expected a value of type `"number"' or `"object"'
+json: error: <stdin>:1:6: [1,2,null]
+json: error: <stdin>:1:6:      ^
+[1,2,
+command failed: json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":[{"plain":1},{"plain":2},"object"]}]}' <<< '[1,2,null]'
+$ json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":[{"plain":1},{"plain":2},"object"]}]}' <<< '[1,2,0]'
+[1,2,0]
+$ json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":[{"plain":1},{"plain":2},"object"]}]}' <<< '[1,2,1]'
+[1,2,1]
+$ json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":[{"plain":1},{"plain":2},"object"]}]}' <<< '[1,2,2]'
+[1,2,2]
+$ json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":[{"plain":1},{"plain":2},"object"]}]}' <<< '[1,2,{}]'
+[1,2,{}]
+$ json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":[{"plain":1},{"plain":2},"object"]}]}' <<< '[1,2,3,4]'
+[1,2,3,4]
+$ json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":[{"plain":1},{"plain":2},"object"]}]}' <<< '[1,2,{},null]'
+json: error: <stdin>:1:8: type check error: too many arguments
+json: error: <stdin>:1:8: [1,2,{},null]
+json: error: <stdin>:1:8:        ^
+[1,2,{}
+command failed: json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":[{"plain":1},{"plain":2},"object"]}]}' <<< '[1,2,{},null]'
+$ 
+
+

@@ -1,0 +1,472 @@
+# Copyright (C) 2016  Stefan Vargyas
+# 
+# This file is part of Json-Type.
+# 
+# Json-Type is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# Json-Type is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with Json-Type.  If not, see <http://www.gnu.org/licenses/>.
+
+#
+# json bugs test suite:
+#
+
+$ . ~/regtest2.sh
+$ alias json-bugs-regtest='regtest2-selftest -f test-json-bugs.txt -a exec=pipe -B'
+
+# output all test names:
+$ json-bugs-regtest -N
+...
+
+# run all tests:
+$ json-bugs-regtest -A
+...
+
+$ json-bugs-regtest -VArt > json-bugs-regtest.output
+$ diff -u -Lold json-bugs-regtest.output -Lnew <(json-bugs-regtest -VArt)|diffview
+
+--[ prereq ]--------------------------------------------------------------------
+
+$ json() { set -o pipefail && LD_LIBRARY_PATH=../lib ../src/json --terse --verbose --literal-value "$@" 2>&1|sed -r '/error:/s|(/dev/fd/)[0-9]+|\1??|'; }
+$
+
+--[ 0 ]-------------------------------------------------------------------------
+
+# [FIXED]
+# the JSON input has a correct type yet the type checking fails
+$ json -t <(echo '{"type":"list","args":["number",{"type":"array","args":"number"}]}') <<< '[1]'
+[1]
+$
+
+--[ 1 ]-------------------------------------------------------------------------
+
+$ json -t <(echo '{"type":"list","args":[{"type":"object","args":[{"name":"foo","type":"boolean"}]},{"type":"object","args":[{"name":"foo","type":{"type":"object","args":[]}}]}]}') <<< '{"foo":false}'
+{"foo":false}
+$ json -t <(echo '{"type":"list","args":[{"type":"object","args":[{"name":"foo","type":"boolean"}]},{"type":"object","args":[{"name":"foo","type":{"type":"object","args":[]}}]}]}') <<< '{"foo":{"bar":0}}'
+json: error: <stdin>:1:9: type check error: too many arguments
+json: error: <stdin>:1:9: {"foo":{"bar":0}}
+json: error: <stdin>:1:9:         ^
+{"foo":{
+command failed: json -t <(echo '{"type":"list","args":[{"type":"object","args":[{"name":"foo","type":"boolean"}]},{"type":"object","args":[{"name":"foo","type":{"type":"object","args":[]}}]}]}') <<< '{"foo":{"bar":0}}'
+# [FIXED]
+# the JSON input has a correct type yet the type checking fails
+$ json -t <(echo '{"type":"list","args":[{"type":"object","args":[{"name":"foo","type":"boolean"}]},{"type":"object","args":[{"name":"foo","type":{"type":"object","args":[]}}]}]}') <<< '{"foo":{}}'
+{"foo":{}}
+$
+
+--[ 2 ]-------------------------------------------------------------------------
+
+$ json -t <(echo '{"type":"list","args":[{"type":"object","args":[{"name":"foo","type":"boolean"}]},{"type":"object","args":[{"name":"foo","type":{"type":"array","args":[]}}]}]}') <<< '{"foo":false}'
+{"foo":false}
+$ json -t <(echo '{"type":"list","args":[{"type":"object","args":[{"name":"foo","type":"boolean"}]},{"type":"object","args":[{"name":"foo","type":{"type":"array","args":[]}}]}]}') <<< '{"foo":[0]}'
+json: error: <stdin>:1:9: type check error: too many arguments
+json: error: <stdin>:1:9: {"foo":[0]}
+json: error: <stdin>:1:9:         ^
+{"foo":[
+command failed: json -t <(echo '{"type":"list","args":[{"type":"object","args":[{"name":"foo","type":"boolean"}]},{"type":"object","args":[{"name":"foo","type":{"type":"array","args":[]}}]}]}') <<< '{"foo":[0]}'
+# [FIXED]
+# the JSON input has a correct type yet the type checking fails
+$ json -t <(echo '{"type":"list","args":[{"type":"object","args":[{"name":"foo","type":"boolean"}]},{"type":"object","args":[{"name":"foo","type":{"type":"array","args":[]}}]}]}') <<< '{"foo":[]}'
+{"foo":[]}
+$
+
+--[ 3 ]-------------------------------------------------------------------------
+
+$ json -t <(echo '{"type":"list","args":[{"type":"object","args":[{"name":"foo","type":"boolean"}]},{"type":"object","args":[{"name":"foo","type":{"type":"array","args":[]}}]},{"type":"object","args":[{"name":"foo","type":{"type":"array","args":["number"]}}]}]}') <<< '{"foo":false}'
+json: error: /dev/fd/??:1:129: type lib error: attribute error: invalid "list" type object: sort of object of array type not yet supported (the other inner array is at 1:205)
+command failed: json -t <(echo '{"type":"list","args":[{"type":"object","args":[{"name":"foo","type":"boolean"}]},{"type":"object","args":[{"name":"foo","type":{"type":"array","args":[]}}]},{"type":"object","args":[{"name":"foo","type":{"type":"array","args":["number"]}}]}]}') <<< '{"foo":false}'
+$ json -t <(echo '{"type":"list","args":[{"type":"object","args":[{"name":"foo","type":"boolean"}]},{"type":"object","args":[{"name":"foo","type":{"type":"array","args":[]}}]},{"type":"object","args":[{"name":"foo","type":{"type":"array","args":["number"]}}]}]}') <<< '{"foo":[]}'
+json: error: /dev/fd/??:1:129: type lib error: attribute error: invalid "list" type object: sort of object of array type not yet supported (the other inner array is at 1:205)
+command failed: json -t <(echo '{"type":"list","args":[{"type":"object","args":[{"name":"foo","type":"boolean"}]},{"type":"object","args":[{"name":"foo","type":{"type":"array","args":[]}}]},{"type":"object","args":[{"name":"foo","type":{"type":"array","args":["number"]}}]}]}') <<< '{"foo":[]}'
+# [FIXED]
+# the JSON input has a correct type yet the type checking fails
+$ json -t <(echo '{"type":"list","args":[{"type":"object","args":[{"name":"foo","type":"boolean"}]},{"type":"object","args":[{"name":"foo","type":{"type":"array","args":[]}}]},{"type":"object","args":[{"name":"foo","type":{"type":"array","args":["number"]}}]}]}') <<< '{"foo":[1]}'
+json: error: /dev/fd/??:1:129: type lib error: attribute error: invalid "list" type object: sort of object of array type not yet supported (the other inner array is at 1:205)
+command failed: json -t <(echo '{"type":"list","args":[{"type":"object","args":[{"name":"foo","type":"boolean"}]},{"type":"object","args":[{"name":"foo","type":{"type":"array","args":[]}}]},{"type":"object","args":[{"name":"foo","type":{"type":"array","args":["number"]}}]}]}') <<< '{"foo":[1]}'
+$
+
+--[ 4 ]-------------------------------------------------------------------------
+
+# [FIXED]
+# the JSON input has a correct type yet the type checking fails
+$ json -t <(echo '{"type":"list","args":[{"type":"array","args":[{"plain":0}]}]}') <<< '[0]'
+[0]
+$
+
+--[ 5 ]-------------------------------------------------------------------------
+
+# [FIXED]
+# the JSON input has a correct type yet the type checking fails
+$ json -t <(echo '{"type":"list","args":[{"type":"array","args":[{"plain":0},{"plain":1}]}]}') <<< '[0,1]'
+[0,1]
+$
+
+--[ 6 ]-------------------------------------------------------------------------
+
+# [FIXED]
+# the JSON input below should have passed the type checking successfully
+$ json -d '{"type":"object","args":[{"name":"foo","type":{"type":"list","args":[{"type":"array","args":[]},{"type":"array","args":["number"]}]}}]}' <<< '{"foo":[1]}'
+{"foo":[1]}
+$
+
+--[ 7 ]-------------------------------------------------------------------------
+
+# [FIXED]
+# the bug above can be narrowed down to the following invocation
+$ json -d '{"type":"list","args":[{"type":"array","args":[]},{"type":"array","args":["number"]}]}' <<< '[1]'
+[1]
+$
+
+--[ 8 ]-------------------------------------------------------------------------
+
+# [FIXED]
+# this one belongs to the same category as the above
+$ json -d '{"type":"list","args":[{"type":"array","args":["number"]},{"type":"array","args":["number","number"]}]}' <<< '[1,2]'
+[1,2]
+$
+
+--[ 9 ]-------------------------------------------------------------------------
+
+# [FIXED]
+# the JSON input shouldn't have passed type checking
+$ json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":"string"}]}' <<< '[1,""]'
+json: error: <stdin>:1:4: type check error: type mismatch: expected a value of type `"number"'
+json: error: <stdin>:1:4: [1,""]
+json: error: <stdin>:1:4:    ^
+[1,
+command failed: json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":"string"}]}' <<< '[1,""]'
+$
+
+--[ 10 ]------------------------------------------------------------------------
+
+# [FIXED]
+# the JSON input below should have passed the type checking successfully
+$ json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":"string"},{"type":"array","args":["number","string"]}]}' <<< '[1,2]'
+[1,2]
+$
+
+--[ 11 ]------------------------------------------------------------------------
+
+# [FIXED]
+# the following type definition is ambiguous and must be rejected
+$ json -Tc <<< '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":{"plain":1}}]}'
+json: error: <stdin>:1:80: attribute error: invalid "list" type object: array argument ambiguity (the other is at 1:47)
+json: error: <stdin>:1:80: number"},{"type":"array","args":{"plain":1}}]}
+json: error: <stdin>:1:80:                                 ^
+command failed: json -Tc <<< '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":{"plain":1}}]}'
+## # stev: 2016-04-07 13:52:21: not sure anymore that the behavior above is indeed a bug
+## $ json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":{"plain":1}}]}' <<< '[0]' 
+## [0]
+## $ json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":{"plain":1}}]}' <<< '[1]' 
+## [1]
+## # stev: 2016-04-09 17:35:32: taking into account the outputs below, we have indeed a bug! --
+## # and indeed the type definition must be rejected!
+## $ json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":{"plain":1}}]}' <<< '[1,1]'
+## [1,1]
+## $ json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":{"plain":1}}]}' <<< '[1,2]'
+## json: error: <stdin>:1:4: type check error: type mismatch: expected a value of type `{"plain":1}'
+## json: error: <stdin>:1:4: [1,2]
+## json: error: <stdin>:1:4:    ^
+## [1,
+## command failed: json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":{"plain":1}}]}' <<< '[1,2]'
+$
+
+--[ 12 ]------------------------------------------------------------------------
+
+# [FIXED]
+# the JSON input below should have passed the type checking successfully
+$ json -d '{"type":"list","args":[{"type":"object","args":[{"name":"foo","type":"number"}]},{"type":"object","args":[{"name":"foo","type":"number"},{"name":"bar","type":"number"}]}]}' <<< '{"foo":0,"bar":1}'
+{"foo":0,"bar":1}
+$
+
+--[ 13 ]------------------------------------------------------------------------
+
+# [FIXED]
+# the following type definition is ambiguous and must be rejected
+$ json -Tc <<< '{"type":"list","args":[{"type":"array","args":"type"},{"type":"array","args":"array"}]}'
+json: error: <stdin>:1:47: attribute error: invalid "list" type object: array argument ambiguity (the other is at 1:78)
+json: error: <stdin>:1:47: ,"args":[{"type":"array","args":"type"},{"type":"array","args":"a
+json: error: <stdin>:1:47:                                 ^
+command failed: json -Tc <<< '{"type":"list","args":[{"type":"array","args":"type"},{"type":"array","args":"array"}]}'
+$
+
+--[ 14 ]------------------------------------------------------------------------
+
+# [FIXED]
+# the following type definition is ambiguous and must be rejected
+$ json -Tc <<< '{"type":"list","args":[{"type":"array","args":["type","boolean"]},{"type":"array","args":["array","number"]}]}'
+json: error: <stdin>:1:48: attribute error: invalid "list" type object: array argument ambiguity (the other is at 1:91)
+json: error: <stdin>:1:48: "args":[{"type":"array","args":["type","boolean"]},{"type":"array
+json: error: <stdin>:1:48:                                 ^
+command failed: json -Tc <<< '{"type":"list","args":[{"type":"array","args":["type","boolean"]},{"type":"array","args":["array","number"]}]}'
+$
+
+--[ 15 ]------------------------------------------------------------------------
+
+# [FIXED]
+# the following type definition is ambiguous and must be rejected
+$ json -Tc <<< '{"type":"list","args":[{"type":"object","args":[{"name":"foo","type":"type"},{"name":"bar","type":"boolean"}]},{"type":"object","args":[{"name":"foo","type":"array"},{"name":"bar","type":"number"}]}]}'
+json: error: <stdin>:1:70: attribute error: invalid "list" type object: object argument ambiguity (the other is at 1:158)
+json: error: <stdin>:1:70: t","args":[{"name":"foo","type":"type"},{"name":"bar","type":"boo
+json: error: <stdin>:1:70:                                 ^
+command failed: json -Tc <<< '{"type":"list","args":[{"type":"object","args":[{"name":"foo","type":"type"},{"name":"bar","type":"boolean"}]},{"type":"object","args":[{"name":"foo","type":"array"},{"name":"bar","type":"number"}]}]}'
+$
+
+--[ 16 ]------------------------------------------------------------------------
+
+# note that the bug below belong to the same category as bug #3
+# [FIXED]
+# the type def below is not ambiguous, yet the type checking fails
+$ json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":"number"}},{"type":"array","args":{"type":"array","args":"string"}}]}' <<< '[[""]]'
+json: error: <text>:1:47: type lib error: attribute error: invalid "list" type object: sort of array of array type not yet supported (the other inner array is at 1:104)
+command failed: json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":"number"}},{"type":"array","args":{"type":"array","args":"string"}}]}' <<< '[[""]]'
+# note that a similar attribute error is got for the following two type definitions, even if the inputs are correctly typed:
+$ json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":["number"]}},{"type":"array","args":{"type":"array","args":["string"]}}]}' <<< '[[""]]'
+json: error: <text>:1:47: type lib error: attribute error: invalid "list" type object: sort of array of array type not yet supported (the other inner array is at 1:106)
+command failed: json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":["number"]}},{"type":"array","args":{"type":"array","args":["string"]}}]}' <<< '[[""]]'
+$ json -d '{"type":"list","args":[{"type":"array","args":{"type":"object","args":[{"name":"foo","type":"number"}]}},{"type":"array","args":{"type":"object","args":[{"name":"foo","type":"string"}]}}]}' <<< '[{"foo":""}]'
+json: error: <text>:1:47: type lib error: attribute error: invalid "list" type object: sort of array of object type not yet supported (the other inner object is at 1:129)
+command failed: json -d '{"type":"list","args":[{"type":"array","args":{"type":"object","args":[{"name":"foo","type":"number"}]}},{"type":"array","args":{"type":"object","args":[{"name":"foo","type":"string"}]}}]}' <<< '[{"foo":""}]'
+$ json -d '{"type":"list","args":[{"type":"array","args":{"type":"object","args":[{"name":"foo","type":"number"}]}},{"type":"array","args":{"type":"object","args":[{"name":"bar","type":"string"}]}}]}' <<< '[{"bar":""}]'
+json: error: <text>:1:129: type lib error: attribute error: invalid "list" type object: sort of array of object type not yet supported (the other inner object is at 1:47)
+command failed: json -d '{"type":"list","args":[{"type":"array","args":{"type":"object","args":[{"name":"foo","type":"number"}]}},{"type":"array","args":{"type":"object","args":[{"name":"bar","type":"string"}]}}]}' <<< '[{"bar":""}]'
+$ json -d '{"type":"list","args":[{"type":"array","args":["boolean",{"type":"array","args":"number"}]},{"type":"array","args":["boolean",{"type":"array","args":"string"}]}]}' <<< '[false,[""]]'
+json: error: <text>:1:58: type lib error: attribute error: invalid "list" type object: sort of array of array type not yet supported (the other inner array is at 1:127)
+command failed: json -d '{"type":"list","args":[{"type":"array","args":["boolean",{"type":"array","args":"number"}]},{"type":"array","args":["boolean",{"type":"array","args":"string"}]}]}' <<< '[false,[""]]'
+$
+
+--[ 17 ]------------------------------------------------------------------------
+
+# [FIXED]
+# apparently correct JSON input yet it is rejected; this is in fact an ambiguity issue
+$ json -d '{"type":"list","args":[{"type":"array","args":{"type":"list","args":["number"]}},{"type":"array","args":["number","number"]}]}' <<< '[1]'
+json: error: <text>:1:24: type lib error: attribute error: invalid "list" type object: sort of array of list type not yet supported (the inner list is at 1:47)
+command failed: json -d '{"type":"list","args":[{"type":"array","args":{"type":"list","args":["number"]}},{"type":"array","args":["number","number"]}]}' <<< '[1]'
+# the same type of ambiguity as in the def below:
+$ json -Tc <<< '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":["number","number"]}]}'
+json: error: <stdin>:1:47: attribute error: invalid "list" type object: array ambiguity (the other defined at 1:57)
+json: error: <stdin>:1:47: ,"args":[{"type":"array","args":"number"},{"type":"array","args":
+json: error: <stdin>:1:47:                                 ^
+command failed: json -Tc <<< '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":["number","number"]}]}'
+$
+
+--[ 18 ]------------------------------------------------------------------------
+
+# [FIXED]
+# the type def below should have been rejected as ambiguous
+$ json -Tc <<< '{"type":"list","args":[{"type":"array","args":{"type":"list","args":["number"]}},{"type":"array","args":["number"]}]}'
+json: error: <stdin>:1:24: attribute error: invalid "list" type object: sort of array of list type not yet supported (the inner list is at 1:47)
+json: error: <stdin>:1:24: {"type":"list","args":[{"type":"array","args":{"type":"l
+json: error: <stdin>:1:24:                        ^
+command failed: json -Tc <<< '{"type":"list","args":[{"type":"array","args":{"type":"list","args":["number"]}},{"type":"array","args":["number"]}]}'
+$
+
+--[ 19 ]------------------------------------------------------------------------
+
+# [FIXED]
+# the type def below should have been rejected as ambiguous
+$ json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":"number"}},{"type":"array","args":{"type":"list","args":["number"]}}]}' <<< '[0]'
+json: error: <text>:1:81: type lib error: attribute error: invalid "list" type object: sort of array of list type not yet supported (the inner list is at 1:104)
+command failed: json -d '{"type":"list","args":[{"type":"array","args":{"type":"array","args":"number"}},{"type":"array","args":{"type":"list","args":["number"]}}]}' <<< '[0]'
+$
+
+--[ 20 ]------------------------------------------------------------------------
+
+# [FIXED]
+# correctly typed JSON input, yet
+$ json -d '{"type":"list","args":[{"type":"array","args":{"type":"list","args":["number"]}}]}' <<< '[0]'
+json: error: <text>:1:24: type lib error: attribute error: invalid "list" type object: sort of array of list type not yet supported (the inner list is at 1:47)
+command failed: json -d '{"type":"list","args":[{"type":"array","args":{"type":"list","args":["number"]}}]}' <<< '[0]'
+$
+
+--[ 21 ]------------------------------------------------------------------------
+
+# [FIXED]
+# correctly types JSON input, yet
+$ json -d '{"type":"list","args":[{"type":"array","args":{"type":"list","args":["number"]}}]}' <<< '[0,1]'
+json: error: <text>:1:24: type lib error: attribute error: invalid "list" type object: sort of array of list type not yet supported (the inner list is at 1:47)
+command failed: json -d '{"type":"list","args":[{"type":"array","args":{"type":"list","args":["number"]}}]}' <<< '[0,1]'
+$
+
+--[ 22 ]------------------------------------------------------------------------
+
+# incorrect error message; it should have been: expected a value of type `"null"' or `"number"' or, otherwise, no value at all
+$ json -d '{"type":"list","args":[{"type":"array","args":"null"},{"type":"array","args":["number"]}]}' <<< '[false]'
+json: error: <stdin>:1:2: type check error: type mismatch: expected a value of type `"null"' or `"number"' or, otherwise, no value at all
+json: error: <stdin>:1:2: [false]
+json: error: <stdin>:1:2:  ^
+[
+command failed: json -d '{"type":"list","args":[{"type":"array","args":"null"},{"type":"array","args":["number"]}]}' <<< '[false]'
+$
+
+--[ 23 ]------------------------------------------------------------------------
+
+$ json -d '{"type":"list","args":[{"type":"object","args":[{"name":"faa","type":"null"}]},{"type":"object","args":[]}]}' <<< '{"faa":null}'
+{"faa":null}
+$ json -d '{"type":"list","args":[{"type":"object","args":[{"name":"faa","type":"null"}]},{"type":"object","args":[]}]}' <<< '{"faa":false}'
+json: error: <stdin>:1:8: type check error: type mismatch: expected a value of type `"null"'
+json: error: <stdin>:1:8: {"faa":false}
+json: error: <stdin>:1:8:        ^
+{"faa":
+command failed: json -d '{"type":"list","args":[{"type":"object","args":[{"name":"faa","type":"null"}]},{"type":"object","args":[]}]}' <<< '{"faa":false}'
+# [FIXED]
+# rejected correct JSON input
+$ json -d '{"type":"list","args":[{"type":"object","args":[{"name":"faa","type":"null"}]},{"type":"object","args":[]}]}' <<< '{}'
+{}
+$
+
+--[ 24 ]------------------------------------------------------------------------
+
+$ json -d '{"type":"list","args":[{"type":"array","args":"null"},{"type":"array","args":["number","number"]}]}' <<< '[]'
+[]
+$ json -d '{"type":"list","args":[{"type":"array","args":"null"},{"type":"array","args":["number","number"]}]}' <<< '[null]'
+[null]
+$ json -d '{"type":"list","args":[{"type":"array","args":"null"},{"type":"array","args":["number","number"]}]}' <<< '[null,null]'
+[null,null]
+$ json -d '{"type":"list","args":[{"type":"array","args":"null"},{"type":"array","args":["number","number"]}]}' <<< '[null,null,null]'
+[null,null,null]
+$ json -d '{"type":"list","args":[{"type":"array","args":"null"},{"type":"array","args":["number","number"]}]}' <<< '[1]'
+json: error: <stdin>:1:3: type check error: too few arguments
+json: error: <stdin>:1:3: [1]
+json: error: <stdin>:1:3:   ^
+[1
+command failed: json -d '{"type":"list","args":[{"type":"array","args":"null"},{"type":"array","args":["number","number"]}]}' <<< '[1]'
+$ json -d '{"type":"list","args":[{"type":"array","args":"null"},{"type":"array","args":["number","number"]}]}' <<< '[1,false]'
+json: error: <stdin>:1:4: type check error: type mismatch: expected a value of type `"number"'
+json: error: <stdin>:1:4: [1,false]
+json: error: <stdin>:1:4:    ^
+[1,
+command failed: json -d '{"type":"list","args":[{"type":"array","args":"null"},{"type":"array","args":["number","number"]}]}' <<< '[1,false]'
+$ json -d '{"type":"list","args":[{"type":"array","args":"null"},{"type":"array","args":["number","number"]}]}' <<< '[1,1]'
+[1,1]
+$ json -d '{"type":"list","args":[{"type":"array","args":"null"},{"type":"array","args":["number","number"]}]}' <<< '[1,1,false]'
+json: error: <stdin>:1:5: type check error: too many arguments
+json: error: <stdin>:1:5: [1,1,false]
+json: error: <stdin>:1:5:     ^
+[1,1
+command failed: json -d '{"type":"list","args":[{"type":"array","args":"null"},{"type":"array","args":["number","number"]}]}' <<< '[1,1,false]'
+$ json -d '{"type":"list","args":[{"type":"array","args":"null"},{"type":"array","args":["number","number"]}]}' <<< '[1,1,1]'
+json: error: <stdin>:1:5: type check error: too many arguments
+json: error: <stdin>:1:5: [1,1,1]
+json: error: <stdin>:1:5:     ^
+[1,1
+command failed: json -d '{"type":"list","args":[{"type":"array","args":"null"},{"type":"array","args":["number","number"]}]}' <<< '[1,1,1]'
+$ json -d '{"type":"list","args":[{"type":"array","args":"null"},{"type":"array","args":["number","number"]}]}' <<< '[false]'
+json: error: <stdin>:1:2: type check error: type mismatch: expected a value of type `"null"' or `"number"' or, otherwise, no value at all
+json: error: <stdin>:1:2: [false]
+json: error: <stdin>:1:2:  ^
+[
+command failed: json -d '{"type":"list","args":[{"type":"array","args":"null"},{"type":"array","args":["number","number"]}]}' <<< '[false]'
+$ json -d '{"type":"list","args":[{"type":"array","args":"null"},{"type":"array","args":["number","number"]}]}' <<< '[null,false]'
+json: error: <stdin>:1:7: type check error: type mismatch: expected a value of type `"null"'
+json: error: <stdin>:1:7: [null,false]
+json: error: <stdin>:1:7:       ^
+[null,
+command failed: json -d '{"type":"list","args":[{"type":"array","args":"null"},{"type":"array","args":["number","number"]}]}' <<< '[null,false]'
+$ json -d '{"type":"list","args":[{"type":"array","args":"null"},{"type":"array","args":["number","number"]}]}' <<< '[null,null,false]'
+json: error: <stdin>:1:12: type check error: type mismatch: expected a value of type `"null"'
+json: error: <stdin>:1:12: [null,null,false]
+json: error: <stdin>:1:12:            ^
+[null,null,
+command failed: json -d '{"type":"list","args":[{"type":"array","args":"null"},{"type":"array","args":["number","number"]}]}' <<< '[null,null,false]'
+# incorrect JSON input which is not rejected
+$ json -d '{"type":"list","args":[{"type":"array","args":"null"},{"type":"array","args":["number","number"]}]}' <<< '[null,1]'
+json: error: <stdin>:1:7: type check error: type mismatch: expected a value of type `"null"'
+json: error: <stdin>:1:7: [null,1]
+json: error: <stdin>:1:7:       ^
+[null,
+command failed: json -d '{"type":"list","args":[{"type":"array","args":"null"},{"type":"array","args":["number","number"]}]}' <<< '[null,1]'
+$
+
+--[ 25 ]------------------------------------------------------------------------
+
+## $ json -d '{"type":"list","args":[{"type":"array","args":["null"]},{"type":"array","args":{"plain":null}}]}' <<< '[]'
+## []
+## $ json -d '{"type":"list","args":[{"type":"array","args":["null"]},{"type":"array","args":{"plain":null}}]}' <<< '[null]'
+## [null]
+## # rejected correct JSON input
+## $ json -d '{"type":"list","args":[{"type":"array","args":["null"]},{"type":"array","args":{"plain":null}}]}' <<< '[null,null]'
+## [null,null]
+## $ json -d '{"type":"list","args":[{"type":"array","args":["null"]},{"type":"array","args":{"plain":null}}]}' <<< '[null,null,null]'
+## [null,null,null]
+# stev: 2016-05-16 14:45:22: the type is rejected due to ambiguity:
+$ json -Tc <<< '{"type":"list","args":[{"type":"array","args":["null"]},{"type":"array","args":{"plain":null}}]}'
+json: error: <stdin>:1:80: attribute error: invalid "list" type object: array ambiguity (the other defined at 1:24)
+json: error: <stdin>:1:80: "null"]},{"type":"array","args":{"plain":null}}]}
+json: error: <stdin>:1:80:                                 ^
+command failed: json -Tc <<< '{"type":"list","args":[{"type":"array","args":["null"]},{"type":"array","args":{"plain":null}}]}'
+$
+
+--[ 26 ]------------------------------------------------------------------------
+
+$ json -d '{"type":"list","args":[{"type":"array","args":[]}]}' <<< '[]'
+[]
+# invalid JSON input: too few arguments
+$ json -d '{"type":"list","args":[{"type":"array","args":["null"]}]}' <<< '[]'
+json: error: <stdin>:1:2: type check error: too few arguments
+json: error: <stdin>:1:2: []
+json: error: <stdin>:1:2:  ^
+[
+command failed: json -d '{"type":"list","args":[{"type":"array","args":["null"]}]}' <<< '[]'
+$
+
+--[ 27 ]------------------------------------------------------------------------
+
+# invalid JSON input: too few arguments
+$ json -d '{"type":"list","args":[{"type":"array","args":["null","null"]}]}' <<< '[null]'
+json: error: <stdin>:1:6: type check error: too few arguments
+json: error: <stdin>:1:6: [null]
+json: error: <stdin>:1:6:      ^
+[null
+command failed: json -d '{"type":"list","args":[{"type":"array","args":["null","null"]}]}' <<< '[null]'
+$ json -d '{"type":"list","args":[{"type":"array","args":["null","null","null"]}]}' <<< '[null]'
+json: error: <stdin>:1:6: type check error: too few arguments
+json: error: <stdin>:1:6: [null]
+json: error: <stdin>:1:6:      ^
+[null
+command failed: json -d '{"type":"list","args":[{"type":"array","args":["null","null","null"]}]}' <<< '[null]'
+$ json -d '{"type":"list","args":[{"type":"array","args":["null","null","null"]}]}' <<< '[null,null]'
+json: error: <stdin>:1:11: type check error: too few arguments
+json: error: <stdin>:1:11: [null,null]
+json: error: <stdin>:1:11:           ^
+[null,null
+command failed: json -d '{"type":"list","args":[{"type":"array","args":["null","null","null"]}]}' <<< '[null,null]'
+$ json -d '{"type":"list","args":[{"type":"array","args":["null","null","null"]}]}' <<< '[null,null,null]'
+[null,null,null]
+$ json -d '{"type":"list","args":[{"type":"array","args":["null","null","null"]}]}' <<< '[null,null,null,null]' 
+json: error: <stdin>:1:16: type check error: too many arguments
+json: error: <stdin>:1:16: [null,null,null,null]
+json: error: <stdin>:1:16:                ^
+[null,null,null
+command failed: json -d '{"type":"list","args":[{"type":"array","args":["null","null","null"]}]}' <<< '[null,null,null,null]'
+$
+
+--[ 28 ]------------------------------------------------------------------------
+
+$ json -d '"type"' <<< '1'
+1
+$ json <<< ''
+json: error: <stdin>:2:1: parse error: unexpected token
+json: error: <stdin>:2:1: 
+json: error: <stdin>:2:1: ^
+command failed: json <<< ''
+# the following failed assertion occur in the front-end on '\n' input
+# when specifying a type in the command line:
+# json: error: <stdin>:2:1: parse error: unexpected token
+# json: fatal error: assertion failed: json-base.c:218:pos_error_verbose: x < e
+$ json -d '"type"' <<< ''
+json: error: <stdin>:2:1: parse error: unexpected token
+json: error: <stdin>:2:1: 
+json: error: <stdin>:2:1: ^
+command failed: json -d '"type"' <<< ''
+$
+
+

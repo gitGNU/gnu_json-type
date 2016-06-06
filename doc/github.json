@@ -1,0 +1,295 @@
+[
+    {
+        "name": "commits",
+        "type": {
+            "type": "array",
+            "args": {
+                "type": "object",
+                "args": [
+                    {
+                        "name": "sha",
+                        "type": "string"
+                    },
+                    {
+                        "name": "commit",
+                        "type": {
+                            "type": "object",
+                            "args": [
+                                {
+                                    "name": "author",
+                                    "type": {
+                                        "type": "object",
+                                        "args": [
+                                            {
+                                                "name": "name",
+                                                "type": "string"
+                                            },
+                                            {
+                                                "name": "email",
+                                                "type": "string"
+                                            },
+                                            {
+                                                "name": "date",
+                                                "type": "string"
+                                            }
+                                        ]
+                                    }
+                                },
+                                {
+                                    "name": "committer",
+                                    "type": {
+                                        "type": "object",
+                                        "args": [
+                                            {
+                                                "name": "name",
+                                                "type": "string"
+                                            },
+                                            {
+                                                "name": "email",
+                                                "type": "string"
+                                            },
+                                            {
+                                                "name": "date",
+                                                "type": "string"
+                                            }
+                                        ]
+                                    }
+                                },
+                                {
+                                    "name": "message",
+                                    "type": "string"
+                                },
+                                {
+                                    "name": "tree",
+                                    "type": {
+                                        "type": "object",
+                                        "args": [
+                                            {
+                                                "name": "sha",
+                                                "type": "string"
+                                            },
+                                            {
+                                                "name": "url",
+                                                "type": "string"
+                                            }
+                                        ]
+                                    }
+                                },
+                                {
+                                    "name": "url",
+                                    "type": "string"
+                                },
+                                {
+                                    "name": "comment_count",
+                                    "type": "number"
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "name": "url",
+                        "type": "string"
+                    },
+                    {
+                        "name": "html_url",
+                        "type": "string"
+                    },
+                    {
+                        "name": "comments_url",
+                        "type": "string"
+                    },
+                    {
+                        "name": "author",
+                        "type": {
+                            "type": "list",
+                            "args": [
+                                "null",
+                                "string",
+                                {
+                                    "type": "object",
+                                    "args": [
+                                        {
+                                            "name": "login",
+                                            "type": "string"
+                                        },
+                                        {
+                                            "name": "id",
+                                            "type": "number"
+                                        },
+                                        {
+                                            "name": "avatar_url",
+                                            "type": "string"
+                                        },
+                                        {
+                                            "name": "gravatar_id",
+                                            "type": "string"
+                                        },
+                                        {
+                                            "name": "url",
+                                            "type": "string"
+                                        },
+                                        {
+                                            "name": "html_url",
+                                            "type": "string"
+                                        },
+                                        {
+                                            "name": "followers_url",
+                                            "type": "string"
+                                        },
+                                        {
+                                            "name": "following_url",
+                                            "type": "string"
+                                        },
+                                        {
+                                            "name": "gists_url",
+                                            "type": "string"
+                                        },
+                                        {
+                                            "name": "starred_url",
+                                            "type": "string"
+                                        },
+                                        {
+                                            "name": "subscriptions_url",
+                                            "type": "string"
+                                        },
+                                        {
+                                            "name": "organizations_url",
+                                            "type": "string"
+                                        },
+                                        {
+                                            "name": "repos_url",
+                                            "type": "string"
+                                        },
+                                        {
+                                            "name": "events_url",
+                                            "type": "string"
+                                        },
+                                        {
+                                            "name": "received_events_url",
+                                            "type": "string"
+                                        },
+                                        {
+                                            "name": "type",
+                                            "type": "string"
+                                        },
+                                        {
+                                            "name": "site_admin",
+                                            "type": "boolean"
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "name": "committer",
+                        "type": {
+                            "type": "list",
+                            "args": [
+                                "null",
+                                "string",
+                                {
+                                    "type": "object",
+                                    "args": [
+                                        {
+                                            "name": "login",
+                                            "type": "string"
+                                        },
+                                        {
+                                            "name": "id",
+                                            "type": "number"
+                                        },
+                                        {
+                                            "name": "avatar_url",
+                                            "type": "string"
+                                        },
+                                        {
+                                            "name": "gravatar_id",
+                                            "type": "string"
+                                        },
+                                        {
+                                            "name": "url",
+                                            "type": "string"
+                                        },
+                                        {
+                                            "name": "html_url",
+                                            "type": "string"
+                                        },
+                                        {
+                                            "name": "followers_url",
+                                            "type": "string"
+                                        },
+                                        {
+                                            "name": "following_url",
+                                            "type": "string"
+                                        },
+                                        {
+                                            "name": "gists_url",
+                                            "type": "string"
+                                        },
+                                        {
+                                            "name": "starred_url",
+                                            "type": "string"
+                                        },
+                                        {
+                                            "name": "subscriptions_url",
+                                            "type": "string"
+                                        },
+                                        {
+                                            "name": "organizations_url",
+                                            "type": "string"
+                                        },
+                                        {
+                                            "name": "repos_url",
+                                            "type": "string"
+                                        },
+                                        {
+                                            "name": "events_url",
+                                            "type": "string"
+                                        },
+                                        {
+                                            "name": "received_events_url",
+                                            "type": "string"
+                                        },
+                                        {
+                                            "name": "type",
+                                            "type": "string"
+                                        },
+                                        {
+                                            "name": "site_admin",
+                                            "type": "boolean"
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "name": "parents",
+                        "type": {
+                            "type": "array",
+                            "args": {
+                                "type": "object",
+                                "args": [
+                                    {
+                                        "name": "sha",
+                                        "type": "string"
+                                    },
+                                    {
+                                        "name": "url",
+                                        "type": "string"
+                                    },
+                                    {
+                                        "name": "html_url",
+                                        "type": "string"
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    }
+]
+

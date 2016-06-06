@@ -1,0 +1,349 @@
+                                   Json-Type
+                                   ~~~~~~~~~
+                        Stefan Vargyas, stvar@yahoo.com
+
+                                  May 21, 2016
+
+
+Table of Contents
+-----------------
+
+0. Copyright
+1. The Json-Type Library and Program
+2. Configuring Json-Type
+3. Building and Testing Json-Type
+4. Primary Use Cases of Json-Type
+   a. Obtain brief help information from 'json'
+   b. Obtain the type definition of given JSON input
+   c. Ask 'json' to do type checking of given JSON input
+   d. Make a compiled (shared object) type library
+5. References
+
+
+0. Copyright
+============
+
+This program is GPL-licensed free software. Its author is Stefan Vargyas. You
+can redistribute it and/or modify it under the terms of the GNU General Public
+License as published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
+
+You should have received a copy of the GNU General Public License along with
+this program (look up for the file COPYING in the top directory of the source
+tree). If not, see http://gnu.org/licenses/gpl.html.
+
+
+1. The Json-Type Library and Program
+====================================
+
+The Json-Type library's and program's vocation is that of a fully-compliant
+RFC 7159 [1] and ECMA 404 [2] push parser -- including validation of UTF8
+encodings as per the Unicode Standard 8.0.0 [3] -- and, more importantly,
+that of a very efficient on-the-fly type checker of JSON input.
+
+The most preeminent feature of the type checker is that it does not build any
+kind of a DOM tree nor an AST of the JSON input provided prior to proceed with
+the type validation. Alternatively, the type checker runs alongside the parser,
+obeying the very logic of the push-parsing itself: while consuming given chunks
+of input text one at a time, it stops as soon as it is detecting a type error
+occurrence in the input given.
+
+Aside from managing the bounded token buffer within the parser and two bounded
+stacks -- one in use by the parser and the other by the type checker --, there
+is no other kind of memory management nor any kind of expensive computations
+that the library does while parsing and validating for types the input. (Neither
+'malloc', nor its friends are used, except for the mentioned buffer and stacks.)
+As a result, Json-Type handles gracefully and efficiently inputs of huge size.
+
+Json-Type has a two-tiered structure: the core of its functionality in enclosed
+into a shared object (dynamic library) 'json.so', while 'json', the front-end,
+the main program arranges for the user all the use-cases of the library through
+a convenient and comprehensive command line interface.
+
+
+2. Configuring Json-Type
+========================
+
+Json-Type is written in modern C and was developed under a GNU/Linux environment
+using the GCC C compiler v4.3.4 and an experimental v4.8.0 build from sources (a
+version which is not yet supporting `-std=c11'). The development of Json-Type's
+test suite was based completely on GNU/Linux power-tools: bash, coreutils, awk,
+sed and ssed (aka super-sed), grep, diff and patch to name only a few.
+
+The header file 'config.h', located in the top directory of the source tree,
+contains a couple of compile-time 'CONFIG_*' parameters which determines the
+well-functioning of Json-Type.
+
+Before proceeding further to build Json-Type, please assure yourself that each
+of these parameters in 'config.h' have a meaningful value, in accordance with
+the target platform (machine and compiler) on which the program is supposed to
+be built.
+
+Important to note is that Json-Type depends on it being build with GCC: it uses
+a few notable extensions to the C language and to the C standard library GCC is
+providing. Only two examples: the ubiquitous usage of the built-in function
+'__builtin_types_compatible_p' within a wide range of preprocessor macros
+and the extensively used C extension of the so called 'compound statement
+enclosed in parentheses' expressions (also for the construction of a wide
+array of useful C macros).
+
+Even though I did not investigated thoroughly, I know no serious impediment
+building Json-Type with any recent version of clang.
+
+
+3. Building and Testing Json-Type
+=================================
+
+The library and the client program are supposed to be build by GNU Make. I
+used version 3.81. To start the build procedure simply issue the following
+command in the top directory of the source tree:
+
+  $ make
+
+Expect to get neither warnings nor errors out of make. If everything went OK,
+make is supposed to have produced the two binaries:
+
+  src/json     the Json-Type client program
+  lib/json.so  the Json-Type library
+
+To clean-up the source tree of compiler generated files or to remove all
+the files obtained from make, issue one of the following, respectively:
+
+  $ make clean
+
+  $ make allclean
+
+The received package comes along with a comprehensive test-suite contained in
+'test' directory. The shell script 'test/test.sh' starts the whole test-suite
+of Json-Type and it can be invoked simply by issuing:
+
+  $ make test
+
+The main test script 'test/test.sh' invokes each of the shell scripts of form
+'test/test-*.sh' -- which subsequently are calling for a number of other shell
+scripts placed in the sub-directories of 'test'. These scripts are bash scripts
+which depend upon a handful of power-tools commonly found of every GNU/Linux
+installation.  The 'test' directory contains also the source files from which
+the test bash scripts were generated: the files 'test/test-*.txt'.
+
+Upon running 'test/test.sh', the output obtained from the shell script would
+be long series of lines of the kind:
+
+  test: GROUP:CASE RESULT
+
+GROUP is the name of the group of tests located in the directory 'test/GROUP',
+CASE is the name of the test case and RESULT is either 'OK' or 'failed'. The
+expected behavior would be that of all test cases to succeed. In the case of
+things going the wrong way for a particular test case, more verbose output is
+obtainable when running the corresponding 'test/GROUP/test-CASE.sh' script on
+its own. It will produce a diff between expected and actual output of 'json'.
+
+Note that any user's explicit invocation of these bash test scripts must be
+initiated from within the 'test' directory.
+
+The programs used by the testing scripts 'test/*/test-*.sh' are the following:
+
+  * GNU bash 3.2.51,
+  * GNU Coreutils 8.12 (shuf and tee),
+  * GNU diff 2.8.7 (part of diffutils package),
+  * GNU gcc 4.3.4, and
+  * GNU sed 4.1.5.
+
+
+4. Primary Use Cases of Json-Type
+=================================
+
+After building Json-Type by running make in the top directory, you got the
+binaries 'src/json' and 'lib/json.so'. For running 'json' you must set a proper
+LD_LIBRARY_PATH for the dynamic loader to find 'json.so'. A convenient variant
+would be to just define the following shell function:
+
+  $ json() { LD_LIBRARY_PATH=lib src/json "$@"; }
+
+4.a. Obtain brief help information from 'json'
+----------------------------------------------
+
+Issuing the following command would produce succinct information about the
+wealth of command line options of 'json'. With only a few exceptions, for
+which details are to come below, the output of 'json' is self-explanatory:
+
+  $ json --help
+
+4.b. Obtain the type definition of given JSON input
+---------------------------------------------------
+
+For any given JSON value, Json-Type is able to produce the type which defines
+strictly the respective JSON value. Before one would attempt to get to know the
+type specification rules (they are documented in the file 'doc/type-spec.txt'),
+it could be more effective and interesting to ask 'json' through the command
+line option `-Y|--type-print' to produce the types of various simple JSON texts
+(the option `-l|--literal-value' is used below also: tells 'json' to allow
+literals as top JSON values on its input):
+
+  $ json -l -Y <<< null
+  {
+      "plain": null
+  }
+
+  $ json -l -Y <<< false
+  {
+      "plain": false
+  }
+
+  $ json -l -Y <<< 0
+  {
+      "plain": 0
+  }
+
+  $ json -l -Y <<< '""'
+  {
+      "plain": ""
+  }
+
+  $ json -Y <<< '{}'
+  {
+      "type": "object",
+      "args": []
+  }
+
+  $ json -Y <<< '[]'
+  {
+      "type": "array",
+      "args": []
+  }
+
+4.c. Ask 'json' to do type checking of given JSON input
+-------------------------------------------------------
+
+The action options of 'json' does not imply type checking by default. One has to
+use the options `-d|--type-def' or `-t|--type-lib' to specify a type -- based on
+which the type validation is done. 
+
+  $ json -Ol -d '{"plain":0}' <<< 0 && echo OK
+  OK
+
+  $ json -Ol -d '{"plain":1}' <<< 0
+  json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `{"plain":1}'
+
+Adding `-v|--verbose' to any 'json' invocation instructs it to enhance its error
+reporting with context information:
+
+  $ json -Ol -d '{"plain":1}' <<< 0 --verbose
+  json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `{"plain":1}'
+  json: error: <stdin>:1:1: 0
+  json: error: <stdin>:1:1: ^
+
+Note that type checking any input JSON value using the type obtained from option
+`-Y|--type-print' applied to the same JSON value, will always have to succeed:
+
+  $ json -O -t <(json -Y <<< '{}') <<< '{}' && echo OK
+  OK
+
+Here are a few more simple examples of type checking:
+
+  $ json -Y <<< '{"foo":null}'
+  {
+      "type": "object",
+      "args": [
+          {
+              "name": "foo",
+              "type": {
+                  "plain": null
+              }
+          }
+      ]
+  }
+
+  $ json -OV -t <(json -Y <<< '{"foo":null}') <<< '{}'
+  json: error: <stdin>:1:2: type check error: too few arguments
+  json: error: <stdin>:1:2: {}
+  json: error: <stdin>:1:2:  ^
+
+  $ json -OV -t <(json -Y <<< '{"foo":null}') <<< '{"bar":null}'
+  json: error: <stdin>:1:2: type check error: invalid argument name: expected "foo"
+  json: error: <stdin>:1:2: {"bar":null}
+  json: error: <stdin>:1:2:  ^
+
+  $ json -OV -t <(json -Y <<< '{"foo":null}') <<< '{"foo":false}'
+  json: error: <stdin>:1:8: type check error: type mismatch: expected a value of type `{"plain":null}'
+  json: error: <stdin>:1:8: {"foo":false}
+  json: error: <stdin>:1:8:        ^
+
+  $ json -OV -t <(json -Y <<< '{"foo":null}') <<< '{"foo":null,"bar":null}'
+  json: error: <stdin>:1:12: type check error: too many arguments
+  json: error: <stdin>:1:12: {"foo":null,"bar":null}
+  json: error: <stdin>:1:12:            ^
+
+4.d. Make a compiled (shared object) type library
+-------------------------------------------------
+
+Above have been seen the options `-d|--type-def' and `-t|--type-lib', which
+pass in to 'json' type definitions as text strings and, respectively, as text
+files. Besides the text form, Json-Type accepts type definitions in certain
+compiled form too:
+
+Suppose that the user develops a consistently-sized text type library which is
+to be used very frequently and seldom be changed. Then it would be desirable
+that Json-Type to not have to repeatedly parse the text library for building
+up its internal structures each time 'json' is invoked. Instead, just get in
+via `-t|--type-lib' an already compiled version of the initial text type
+library in form of a shared object (dynamic library).
+
+This can be achieved very easily with the help of option `-T|--typelib-func'.
+
+Let's say the user's text type library is named 'jsonrpc.json' and that he
+intents to obtain 'jsonrpc.so' in a directory of his choice, which already
+hosts 'jsonrpc.json'.
+
+The procedure for obtaining 'jsonrpc.so' is very simple, as follows:
+
+  Step 1: obtain 'jsonrpc.mk' and 'jsonrpc.c'
+  -------------------------------------------
+  Json-Type provides the generic makefile 'json-type-module.mk' and the generic
+  C source file 'json-type-module.c' in $JSON_TYPE_HOME/lib. ($JSON_TYPE_HOME is
+  the path to the directory were the source tree of Json-Type is located.)
+
+  These files need no manual changes, but only to be copied in the user's type
+  library directory:
+
+  $ export JSON_TYPE_HOME=...
+
+  $ cp $JSON_TYPE_HOME/lib/json-type-module.mk jsonrpc.mk
+
+  $ cp $JSON_TYPE_HOME/lib/json-type-module.c jsonrpc.c
+
+  Step 2: generate 'jsonrpc.def' out of 'jsonrpc.json'
+  ----------------------------------------------------
+  The file 'jsonrpc.def' will contain C definitions for all the structures used
+  by Json-Type for type checking according to the type specification contained
+  in 'jsonrpc.json'.
+
+  $ json -Td jsonrpc.json > jsonrpc.def
+
+  Step 3: make 'jsonrpc.so'
+  -------------------------
+  Upon having generated 'jsonrpc.def', obtaining the shared library 'jsonrpc.so'
+  is a matter of simply issuing 'make':
+
+  $ make -f jsonrpc.mk
+
+  Note that $JSON_TYPE_HOME needs to be defined prior the call to 'make'. If it
+  is not defined in the current environment, then pass it in explicitly:
+
+  $ make -f jsonrpc.mk JSON_TYPE_HOME=...
+
+
+5. References
+=============
+
+[1] The JavaScript Object Notation (JSON) Data Interchange Format
+    https://tools.ietf.org/html/rfc7159
+
+[2] Standard ECMA-404: The JSON Data Interchange Format
+    http://www.ecma-international.org/publications/standards/Ecma-404.htm
+    http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf
+
+[3] The Unicode Standard, Version 8.0.0
+    http://www.unicode.org/versions/Unicode8.0.0
+
+

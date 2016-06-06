@@ -1,0 +1,359 @@
+# Copyright (C) 2016  Stefan Vargyas
+# 
+# This file is part of Json-Type.
+# 
+# Json-Type is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# Json-Type is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with Json-Type.  If not, see <http://www.gnu.org/licenses/>.
+
+#
+# json trie test suite:
+#
+
+$ . ~/regtest2.sh
+$ alias json-trie-regtest='regtest2-selftest -f test-json-trie.txt -a exec=pipe -B'
+
+# output all test names:
+$ json-trie-regtest -N
+...
+
+# run all tests:
+$ json-trie-regtest -A
+...
+
+--[ prereq ]--------------------------------------------------------------------
+
+$ test -x ../lib/test-trie
+$ print() { printf '%s\n' "$@"; }
+$ set -o pipefail
+$
+
+--[ empty ]---------------------------------------------------------------------
+
+$ test-trie() { ../lib/test-trie -T; }
+$ echo -n|test-trie
+trie=null
+$ print|test-trie
+trie={"val":"","lo":null,"hi":null}
+node={"val":"","lo":null,"hi":null}
+char='\0'
+$
+
+--[ base ]----------------------------------------------------------------------
+
+$ test-trie() { ../lib/test-trie -T; }
+$ print a b|test-trie
+trie={"sym":"a","lo":null,"eq":{"val":"a","lo":null,"hi":null},"hi":{"sym":"b","lo":null,"eq":{"val":"b","lo":null,"hi":null},"hi":null}}
+node={"sym":"a","lo":null,"eq":{"val":"a","lo":null,"hi":null},"hi":{"sym":"b","lo":null,"eq":{"val":"b","lo":null,"hi":null},"hi":null}}
+char='a'
+char='b'
+node={"val":"a","lo":null,"hi":null}
+char='\0'
+node={"val":"b","lo":null,"hi":null}
+char='\0'
+$ print b a|test-trie
+trie={"sym":"b","lo":{"sym":"a","lo":null,"eq":{"val":"a","lo":null,"hi":null},"hi":null},"eq":{"val":"b","lo":null,"hi":null},"hi":null}
+node={"sym":"b","lo":{"sym":"a","lo":null,"eq":{"val":"a","lo":null,"hi":null},"hi":null},"eq":{"val":"b","lo":null,"hi":null},"hi":null}
+char='a'
+char='b'
+node={"val":"a","lo":null,"hi":null}
+char='\0'
+node={"val":"b","lo":null,"hi":null}
+char='\0'
+$ print a b c|test-trie
+trie={"sym":"a","lo":null,"eq":{"val":"a","lo":null,"hi":null},"hi":{"sym":"b","lo":null,"eq":{"val":"b","lo":null,"hi":null},"hi":{"sym":"c","lo":null,"eq":{"val":"c","lo":null,"hi":null},"hi":null}}}
+node={"sym":"a","lo":null,"eq":{"val":"a","lo":null,"hi":null},"hi":{"sym":"b","lo":null,"eq":{"val":"b","lo":null,"hi":null},"hi":{"sym":"c","lo":null,"eq":{"val":"c","lo":null,"hi":null},"hi":null}}}
+char='a'
+char='b'
+char='c'
+node={"val":"a","lo":null,"hi":null}
+char='\0'
+node={"val":"b","lo":null,"hi":null}
+char='\0'
+node={"val":"c","lo":null,"hi":null}
+char='\0'
+$ print b c a|test-trie
+trie={"sym":"b","lo":{"sym":"a","lo":null,"eq":{"val":"a","lo":null,"hi":null},"hi":null},"eq":{"val":"b","lo":null,"hi":null},"hi":{"sym":"c","lo":null,"eq":{"val":"c","lo":null,"hi":null},"hi":null}}
+node={"sym":"b","lo":{"sym":"a","lo":null,"eq":{"val":"a","lo":null,"hi":null},"hi":null},"eq":{"val":"b","lo":null,"hi":null},"hi":{"sym":"c","lo":null,"eq":{"val":"c","lo":null,"hi":null},"hi":null}}
+char='a'
+char='b'
+char='c'
+node={"val":"a","lo":null,"hi":null}
+char='\0'
+node={"val":"b","lo":null,"hi":null}
+char='\0'
+node={"val":"c","lo":null,"hi":null}
+char='\0'
+$ print c b a|test-trie
+trie={"sym":"c","lo":{"sym":"b","lo":{"sym":"a","lo":null,"eq":{"val":"a","lo":null,"hi":null},"hi":null},"eq":{"val":"b","lo":null,"hi":null},"hi":null},"eq":{"val":"c","lo":null,"hi":null},"hi":null}
+node={"sym":"c","lo":{"sym":"b","lo":{"sym":"a","lo":null,"eq":{"val":"a","lo":null,"hi":null},"hi":null},"eq":{"val":"b","lo":null,"hi":null},"hi":null},"eq":{"val":"c","lo":null,"hi":null},"hi":null}
+char='a'
+char='b'
+char='c'
+node={"val":"a","lo":null,"hi":null}
+char='\0'
+node={"val":"b","lo":null,"hi":null}
+char='\0'
+node={"val":"c","lo":null,"hi":null}
+char='\0'
+$ print a c b|test-trie
+trie={"sym":"a","lo":null,"eq":{"val":"a","lo":null,"hi":null},"hi":{"sym":"c","lo":{"sym":"b","lo":null,"eq":{"val":"b","lo":null,"hi":null},"hi":null},"eq":{"val":"c","lo":null,"hi":null},"hi":null}}
+node={"sym":"a","lo":null,"eq":{"val":"a","lo":null,"hi":null},"hi":{"sym":"c","lo":{"sym":"b","lo":null,"eq":{"val":"b","lo":null,"hi":null},"hi":null},"eq":{"val":"c","lo":null,"hi":null},"hi":null}}
+char='a'
+char='b'
+char='c'
+node={"val":"a","lo":null,"hi":null}
+char='\0'
+node={"val":"b","lo":null,"hi":null}
+char='\0'
+node={"val":"c","lo":null,"hi":null}
+char='\0'
+$ print b a c|test-trie
+trie={"sym":"b","lo":{"sym":"a","lo":null,"eq":{"val":"a","lo":null,"hi":null},"hi":null},"eq":{"val":"b","lo":null,"hi":null},"hi":{"sym":"c","lo":null,"eq":{"val":"c","lo":null,"hi":null},"hi":null}}
+node={"sym":"b","lo":{"sym":"a","lo":null,"eq":{"val":"a","lo":null,"hi":null},"hi":null},"eq":{"val":"b","lo":null,"hi":null},"hi":{"sym":"c","lo":null,"eq":{"val":"c","lo":null,"hi":null},"hi":null}}
+char='a'
+char='b'
+char='c'
+node={"val":"a","lo":null,"hi":null}
+char='\0'
+node={"val":"b","lo":null,"hi":null}
+char='\0'
+node={"val":"c","lo":null,"hi":null}
+char='\0'
+$ print c a b|test-trie
+trie={"sym":"c","lo":{"sym":"a","lo":null,"eq":{"val":"a","lo":null,"hi":null},"hi":{"sym":"b","lo":null,"eq":{"val":"b","lo":null,"hi":null},"hi":null}},"eq":{"val":"c","lo":null,"hi":null},"hi":null}
+node={"sym":"c","lo":{"sym":"a","lo":null,"eq":{"val":"a","lo":null,"hi":null},"hi":{"sym":"b","lo":null,"eq":{"val":"b","lo":null,"hi":null},"hi":null}},"eq":{"val":"c","lo":null,"hi":null},"hi":null}
+char='a'
+char='b'
+char='c'
+node={"val":"a","lo":null,"hi":null}
+char='\0'
+node={"val":"b","lo":null,"hi":null}
+char='\0'
+node={"val":"c","lo":null,"hi":null}
+char='\0'
+$ print ab|test-trie
+trie={"sym":"a","lo":null,"eq":{"sym":"b","lo":null,"eq":{"val":"ab","lo":null,"hi":null},"hi":null},"hi":null}
+node={"sym":"a","lo":null,"eq":{"sym":"b","lo":null,"eq":{"val":"ab","lo":null,"hi":null},"hi":null},"hi":null}
+char='a'
+node={"sym":"b","lo":null,"eq":{"val":"ab","lo":null,"hi":null},"hi":null}
+char='b'
+node={"val":"ab","lo":null,"hi":null}
+char='\0'
+$ print z ax abc abd aef aeg|test-trie
+trie={"sym":"z","lo":{"sym":"a","lo":null,"eq":{"sym":"x","lo":{"sym":"b","lo":null,"eq":{"sym":"c","lo":null,"eq":{"val":"abc","lo":null,"hi":null},"hi":{"sym":"d","lo":null,"eq":{"val":"abd","lo":null,"hi":null},"hi":null}},"hi":{"sym":"e","lo":null,"eq":{"sym":"f","lo":null,"eq":{"val":"aef","lo":null,"hi":null},"hi":{"sym":"g","lo":null,"eq":{"val":"aeg","lo":null,"hi":null},"hi":null}},"hi":null}},"eq":{"val":"ax","lo":null,"hi":null},"hi":null},"hi":null},"eq":{"val":"z","lo":null,"hi":null},"hi":null}
+node={"sym":"z","lo":{"sym":"a","lo":null,"eq":{"sym":"x","lo":{"sym":"b","lo":null,"eq":{"sym":"c","lo":null,"eq":{"val":"abc","lo":null,"hi":null},"hi":{"sym":"d","lo":null,"eq":{"val":"abd","lo":null,"hi":null},"hi":null}},"hi":{"sym":"e","lo":null,"eq":{"sym":"f","lo":null,"eq":{"val":"aef","lo":null,"hi":null},"hi":{"sym":"g","lo":null,"eq":{"val":"aeg","lo":null,"hi":null},"hi":null}},"hi":null}},"eq":{"val":"ax","lo":null,"hi":null},"hi":null},"hi":null},"eq":{"val":"z","lo":null,"hi":null},"hi":null}
+char='a'
+char='z'
+node={"sym":"x","lo":{"sym":"b","lo":null,"eq":{"sym":"c","lo":null,"eq":{"val":"abc","lo":null,"hi":null},"hi":{"sym":"d","lo":null,"eq":{"val":"abd","lo":null,"hi":null},"hi":null}},"hi":{"sym":"e","lo":null,"eq":{"sym":"f","lo":null,"eq":{"val":"aef","lo":null,"hi":null},"hi":{"sym":"g","lo":null,"eq":{"val":"aeg","lo":null,"hi":null},"hi":null}},"hi":null}},"eq":{"val":"ax","lo":null,"hi":null},"hi":null}
+char='b'
+char='e'
+char='x'
+node={"val":"z","lo":null,"hi":null}
+char='\0'
+node={"sym":"c","lo":null,"eq":{"val":"abc","lo":null,"hi":null},"hi":{"sym":"d","lo":null,"eq":{"val":"abd","lo":null,"hi":null},"hi":null}}
+char='c'
+char='d'
+node={"sym":"f","lo":null,"eq":{"val":"aef","lo":null,"hi":null},"hi":{"sym":"g","lo":null,"eq":{"val":"aeg","lo":null,"hi":null},"hi":null}}
+char='f'
+char='g'
+node={"val":"ax","lo":null,"hi":null}
+char='\0'
+node={"val":"abc","lo":null,"hi":null}
+char='\0'
+node={"val":"abd","lo":null,"hi":null}
+char='\0'
+node={"val":"aef","lo":null,"hi":null}
+char='\0'
+node={"val":"aeg","lo":null,"hi":null}
+char='\0'
+$ print aef ae abg a abc ab abd|test-trie
+trie={"sym":"a","lo":null,"eq":{"sym":"e","lo":{"sym":"b","lo":{"val":"a","lo":null,"hi":null},"eq":{"sym":"g","lo":{"sym":"c","lo":{"val":"ab","lo":null,"hi":null},"eq":{"val":"abc","lo":null,"hi":null},"hi":{"sym":"d","lo":null,"eq":{"val":"abd","lo":null,"hi":null},"hi":null}},"eq":{"val":"abg","lo":null,"hi":null},"hi":null},"hi":null},"eq":{"sym":"f","lo":{"val":"ae","lo":null,"hi":null},"eq":{"val":"aef","lo":null,"hi":null},"hi":null},"hi":null},"hi":null}
+node={"sym":"a","lo":null,"eq":{"sym":"e","lo":{"sym":"b","lo":{"val":"a","lo":null,"hi":null},"eq":{"sym":"g","lo":{"sym":"c","lo":{"val":"ab","lo":null,"hi":null},"eq":{"val":"abc","lo":null,"hi":null},"hi":{"sym":"d","lo":null,"eq":{"val":"abd","lo":null,"hi":null},"hi":null}},"eq":{"val":"abg","lo":null,"hi":null},"hi":null},"hi":null},"eq":{"sym":"f","lo":{"val":"ae","lo":null,"hi":null},"eq":{"val":"aef","lo":null,"hi":null},"hi":null},"hi":null},"hi":null}
+char='a'
+node={"sym":"e","lo":{"sym":"b","lo":{"val":"a","lo":null,"hi":null},"eq":{"sym":"g","lo":{"sym":"c","lo":{"val":"ab","lo":null,"hi":null},"eq":{"val":"abc","lo":null,"hi":null},"hi":{"sym":"d","lo":null,"eq":{"val":"abd","lo":null,"hi":null},"hi":null}},"eq":{"val":"abg","lo":null,"hi":null},"hi":null},"hi":null},"eq":{"sym":"f","lo":{"val":"ae","lo":null,"hi":null},"eq":{"val":"aef","lo":null,"hi":null},"hi":null},"hi":null}
+char='\0'
+char='b'
+char='e'
+node={"sym":"g","lo":{"sym":"c","lo":{"val":"ab","lo":null,"hi":null},"eq":{"val":"abc","lo":null,"hi":null},"hi":{"sym":"d","lo":null,"eq":{"val":"abd","lo":null,"hi":null},"hi":null}},"eq":{"val":"abg","lo":null,"hi":null},"hi":null}
+char='\0'
+char='c'
+char='d'
+char='g'
+node={"sym":"f","lo":{"val":"ae","lo":null,"hi":null},"eq":{"val":"aef","lo":null,"hi":null},"hi":null}
+char='\0'
+char='f'
+node={"val":"abc","lo":null,"hi":null}
+char='\0'
+node={"val":"abd","lo":null,"hi":null}
+char='\0'
+node={"val":"abg","lo":null,"hi":null}
+char='\0'
+node={"val":"aef","lo":null,"hi":null}
+char='\0'
+$
+
+--[ shuf ]----------------------------------------------------------------------
+
+$ test-trie() { shuf|../lib/test-trie -T|sed -r '1{s/^(trie=).*$/\1{...}/;b};/^node=\{"val":"[^"]+","lo":null,"hi":null\}$/b;s/^(node=\{).*(\})$/\1...\2/'; }
+$ print a b|test-trie
+trie={...}
+node={...}
+char='a'
+char='b'
+node={"val":"a","lo":null,"hi":null}
+char='\0'
+node={"val":"b","lo":null,"hi":null}
+char='\0'
+$ print a b c|test-trie
+trie={...}
+node={...}
+char='a'
+char='b'
+char='c'
+node={"val":"a","lo":null,"hi":null}
+char='\0'
+node={"val":"b","lo":null,"hi":null}
+char='\0'
+node={"val":"c","lo":null,"hi":null}
+char='\0'
+$ print z ax abc abd aef aeg|test-trie
+trie={...}
+node={...}
+char='a'
+char='z'
+node={...}
+char='b'
+char='e'
+char='x'
+node={"val":"z","lo":null,"hi":null}
+char='\0'
+node={...}
+char='c'
+char='d'
+node={...}
+char='f'
+char='g'
+node={"val":"ax","lo":null,"hi":null}
+char='\0'
+node={"val":"abc","lo":null,"hi":null}
+char='\0'
+node={"val":"abd","lo":null,"hi":null}
+char='\0'
+node={"val":"aef","lo":null,"hi":null}
+char='\0'
+node={"val":"aeg","lo":null,"hi":null}
+char='\0'
+$ print aef ae abg a abc ab abd|test-trie
+trie={...}
+node={...}
+char='a'
+node={...}
+char='\0'
+char='b'
+char='e'
+node={...}
+char='\0'
+char='c'
+char='d'
+char='g'
+node={...}
+char='\0'
+char='f'
+node={"val":"abc","lo":null,"hi":null}
+char='\0'
+node={"val":"abd","lo":null,"hi":null}
+char='\0'
+node={"val":"abg","lo":null,"hi":null}
+char='\0'
+node={"val":"aef","lo":null,"hi":null}
+char='\0'
+$
+
+--[ depths ]--------------------------------------------------------------------
+
+$ test-trie() { ../lib/test-trie -D; }
+$ print|test-trie
+iter:     1
+sib-iter: 1
+lvl-iter: 1
+$ print a b|test-trie
+iter:     3
+sib-iter: 2
+lvl-iter: 2
+$ print b a|test-trie
+iter:     3
+sib-iter: 2
+lvl-iter: 2
+$ print a b c|test-trie
+iter:     4
+sib-iter: 3
+lvl-iter: 3
+$ print b c a|test-trie
+iter:     3
+sib-iter: 2
+lvl-iter: 3
+$ print c b a|test-trie
+iter:     4
+sib-iter: 3
+lvl-iter: 3
+$ print a c b|test-trie
+iter:     4
+sib-iter: 3
+lvl-iter: 3
+$ print b a c|test-trie
+iter:     3
+sib-iter: 2
+lvl-iter: 3
+$ print c a b|test-trie
+iter:     4
+sib-iter: 3
+lvl-iter: 3
+$ print ab|test-trie
+iter:     3
+sib-iter: 1
+lvl-iter: 1
+$ print z ax abc abd aef aeg|test-trie
+iter:     8
+sib-iter: 2
+lvl-iter: 6
+$ print aef ae abg a abc ab abd|test-trie
+iter:     7
+sib-iter: 1
+lvl-iter: 7
+$ print '' a|test-trie
+iter:     3
+sib-iter: 2
+lvl-iter: 2
+$ print aw ax by bz|test-trie
+iter:     5
+sib-iter: 2
+lvl-iter: 4
+$
+
+--[ sgb-words ]-----------------------------------------------------------------
+
+$ wc -l < sgb-words.txt
+5757
+$ test-trie() { set -o pipefail && ../lib/test-trie -p 2M -D < sgb-words.txt; }
+$ test-trie
+iter:     29
+sib-iter: 14
+lvl-iter: 5757
+$ test-trie() { set -o pipefail && ../lib/test-trie -p 2M -T "$@" < sgb-words.txt 2>&1 >/dev/null|sed -r '/fatal error:/s/:[0-9]+:/:???:/'; }
+$ test-trie -l 5756
+test-trie: fatal error: trie-impl.h:???:test_trie_lvl_iterator_inc: stack overflow
+command failed: test-trie -l 5756
+$ test-trie -l 5757
+$
+
+
