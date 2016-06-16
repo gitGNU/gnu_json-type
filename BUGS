@@ -24,6 +24,25 @@
 --------------------------------------------------------------------------------
 
 $ date
+Thu Jun 16 08:26:26 EEST 2016
+
+$ json -O <<< '{"a":1;}' --no-verbose
+json: error: <stdin>:1:7: lex error: invalid char
+$ json -O <<< '{"a":1;}' -V
+json: error: <stdin>:1:7: lex error: invalid char
+json: error: <stdin>:1:7: {"a":1;}
+json: error: <stdin>:1:7:       ^
+$ json -Tc <<< '{"a":1;}' --no-verbose
+json: error: <stdin>:1:7: parse error: invalid char
+# stev: BUG: the front end shouldn't fail to print out the error context:
+$ json -Tc <<< '{"a":1;}' -V
+json: error: <stdin>:1:7: parse error: invalid char
+json: error: <stdin>: 'error-context-size' is too small for printing out input error context
+$
+
+--------------------------------------------------------------------------------
+
+$ date
 Mon May  9 13:04:30 EEST 2016
 
 $ json -d '"type"' <<< '1'

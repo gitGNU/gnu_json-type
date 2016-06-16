@@ -298,6 +298,7 @@ $
 
 --[ 22 ]------------------------------------------------------------------------
 
+# [FIXED]
 # incorrect error message; it should have been: expected a value of type `"null"' or `"number"' or, otherwise, no value at all
 $ json -d '{"type":"list","args":[{"type":"array","args":"null"},{"type":"array","args":["number"]}]}' <<< '[false]'
 json: error: <stdin>:1:2: type check error: type mismatch: expected a value of type `"null"' or `"number"' or, otherwise, no value at all
@@ -377,6 +378,7 @@ json: error: <stdin>:1:12: [null,null,false]
 json: error: <stdin>:1:12:            ^
 [null,null,
 command failed: json -d '{"type":"list","args":[{"type":"array","args":"null"},{"type":"array","args":["number","number"]}]}' <<< '[null,null,false]'
+# [FIXED]
 # incorrect JSON input which is not rejected
 $ json -d '{"type":"list","args":[{"type":"array","args":"null"},{"type":"array","args":["number","number"]}]}' <<< '[null,1]'
 json: error: <stdin>:1:7: type check error: type mismatch: expected a value of type `"null"'
@@ -397,6 +399,7 @@ $
 ## [null,null]
 ## $ json -d '{"type":"list","args":[{"type":"array","args":["null"]},{"type":"array","args":{"plain":null}}]}' <<< '[null,null,null]'
 ## [null,null,null]
+# [FIXED]
 # stev: 2016-05-16 14:45:22: the type is rejected due to ambiguity:
 $ json -Tc <<< '{"type":"list","args":[{"type":"array","args":["null"]},{"type":"array","args":{"plain":null}}]}'
 json: error: <stdin>:1:80: attribute error: invalid "list" type object: array ambiguity (the other defined at 1:24)
@@ -409,6 +412,7 @@ $
 
 $ json -d '{"type":"list","args":[{"type":"array","args":[]}]}' <<< '[]'
 []
+# [FIXED]
 # invalid JSON input: too few arguments
 $ json -d '{"type":"list","args":[{"type":"array","args":["null"]}]}' <<< '[]'
 json: error: <stdin>:1:2: type check error: too few arguments
@@ -420,6 +424,7 @@ $
 
 --[ 27 ]------------------------------------------------------------------------
 
+# [FIXED]
 # invalid JSON input: too few arguments
 $ json -d '{"type":"list","args":[{"type":"array","args":["null","null"]}]}' <<< '[null]'
 json: error: <stdin>:1:6: type check error: too few arguments
@@ -458,6 +463,7 @@ json: error: <stdin>:2:1: parse error: unexpected token
 json: error: <stdin>:2:1: 
 json: error: <stdin>:2:1: ^
 command failed: json <<< ''
+# [FIXED]
 # the following failed assertion occur in the front-end on '\n' input
 # when specifying a type in the command line:
 # json: error: <stdin>:2:1: parse error: unexpected token
@@ -467,6 +473,31 @@ json: error: <stdin>:2:1: parse error: unexpected token
 json: error: <stdin>:2:1: 
 json: error: <stdin>:2:1: ^
 command failed: json -d '"type"' <<< ''
+$
+
+--[ 29 ]------------------------------------------------------------------------
+
+$ json -O <<< '{"a":1;}' --no-verbose
+json: error: <stdin>:1:7: lex error: invalid char
+command failed: json -O <<< '{"a":1;}' --no-verbose
+$ json -O <<< '{"a":1;}' -V
+json: error: <stdin>:1:7: lex error: invalid char
+json: error: <stdin>:1:7: {"a":1;}
+json: error: <stdin>:1:7:       ^
+command failed: json -O <<< '{"a":1;}' -V
+$ json -Tc <<< '{"a":1;}' --no-verbose
+json: error: <stdin>:1:7: parse error: invalid char
+command failed: json -Tc <<< '{"a":1;}' --no-verbose
+# [FIXED]
+# the front end shouldn't fail to print out the error context
+# $ json -Tc <<< '{"a":1;}' -V
+# json: error: <stdin>:1:7: parse error: invalid char
+# json: error: <stdin>: 'error-context-size' is too small for printing out input error context
+$ json -Tc <<< '{"a":1;}' -V
+json: error: <stdin>:1:7: parse error: invalid char
+json: error: <stdin>:1:7: {"a":1;}
+json: error: <stdin>:1:7:       ^
+command failed: json -Tc <<< '{"a":1;}' -V
 $
 
 
