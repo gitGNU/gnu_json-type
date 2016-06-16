@@ -317,7 +317,7 @@ static void json_intf_destroy_type_lib(struct json_intf_t* intf)
 #define JSON_INTF_INIT_OBJ2(n, c, ...) \
     JSON_INTF_INIT_OBJ_(n, _ ## c, ## __VA_ARGS__)
 
-struct json_intf_t* json_intf_create()
+static struct json_intf_t* json_intf_create()
 {
     struct json_intf_t* intf;
 
