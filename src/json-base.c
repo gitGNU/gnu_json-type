@@ -558,7 +558,7 @@ int obj_json_base_run(struct obj_json_base_t* this)
             // 'buf' will contain a preset amount
             // of the input given such that to be
             // able to output an error context of
-            // requested size; it this case, 'buf'
+            // requested size; in this case, 'buf'
             // is fixed-size preallocated
 
             m = this->err_ctxt;
@@ -585,17 +585,13 @@ int obj_json_base_run(struct obj_json_base_t* this)
         mem_buf_enlarge(this->buf, i);
     }
 
-    if (this->verbose &&
-        !this->no_error &&
-        this->fixed_size_buf) {
-        text_address_init(&a.buf);
-        text_address_init(&a.input);
-        a.error = 0;
+    text_address_init(&a.buf);
+    text_address_init(&a.input);
+    a.error = 0;
 
-        a.size = this->err_ctxt;
-        ASSERT_SIZE_INC_NO_OVERFLOW(a.size);
-        a.size ++;
-    }
+    a.size = this->err_ctxt;
+    ASSERT_SIZE_INC_NO_OVERFLOW(a.size);
+    a.size ++;
 
     for (;;) {
         ssize_t r;
@@ -766,10 +762,11 @@ int obj_json_base_run(struct obj_json_base_t* this)
     PRINT_DEBUG(
         "< a.buf={%zu,%zu,%zu} "
         "a.input={%zu,%zu,%zu} "
-        "a.error=%zu a.size=%zu",
+        "a.error=%zu a.size=%zu t=%s",
         a.buf.beg, a.buf.line, a.buf.col,
         a.input.beg, a.input.line, a.input.col,
-        a.error, a.size);
+        a.error, a.size, ARRAY_NULL_ELEM(
+            error_states, t));
 
     if (this->buf != NULL)
         ASSERT_SIZE_ADD_NO_OVERFLOW(
