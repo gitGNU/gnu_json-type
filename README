@@ -55,9 +55,9 @@ that the library does while parsing and validating for types the input. (Neither
 'malloc', nor its friends are used, except for the mentioned buffer and stacks.)
 As a result, Json-Type handles gracefully and efficiently inputs of huge size.
 
-Json-Type has a two-tiered structure: the core of its functionality in enclosed
-into a shared object (dynamic library) 'json.so', while 'json', the front-end,
-the main program arranges for the user all the use-cases of the library through
+Json-Type has a two-tiered structure: the core of its functionality is enclosed
+in a shared object (dynamic library) 'json.so', while 'json', the front-end, 
+the main program assembles for the user all the use-cases of the library into
 a convenient and comprehensive command line interface.
 
 
@@ -100,14 +100,14 @@ command in the top directory of the source tree:
 
   $ make
 
-Expect to get neither warnings nor errors out of make. If everything went OK,
-make is supposed to have produced the two binaries:
+Expect to get neither warnings nor errors out of 'make'. If everything went OK,
+'make' is supposed to have produced the two binaries:
 
   src/json     the Json-Type client program
   lib/json.so  the Json-Type library
 
 To clean-up the source tree of compiler generated files or to remove all
-the files obtained from make, issue one of the following, respectively:
+the files obtained from 'make', issue one of the following, respectively:
 
   $ make clean
 
@@ -153,7 +153,7 @@ The programs used by the testing scripts 'test/*/test-*.sh' are the following:
 4. Primary Use Cases of Json-Type
 =================================
 
-After building Json-Type by running make in the top directory, you got the
+After building Json-Type by running 'make' in the top directory, you got the
 binaries 'src/json' and 'lib/json.so'. For running 'json' you must set a proper
 LD_LIBRARY_PATH for the dynamic loader to find 'json.so'. A convenient variant
 would be to just define the following shell function:
@@ -225,7 +225,7 @@ which the type validation is done.
   $ json -Ol -d '{"plain":1}' <<< 0
   json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `{"plain":1}'
 
-Adding `-v|--verbose' to any 'json' invocation instructs it to enhance its error
+Adding `-V|--verbose' to any 'json' invocation instructs it to enhance its error
 reporting with context information:
 
   $ json -Ol -d '{"plain":1}' <<< 0 --verbose
