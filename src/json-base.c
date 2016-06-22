@@ -802,8 +802,11 @@ int obj_json_base_run(struct obj_json_base_t* this)
     else
     if (e && t != before_error && !c) {
         // stev: make 'a.error' a relative offset
-        if (a.error >= a.buf.beg)
+        if (a.error >= a.buf.beg) {
             a.error -= a.buf.beg;
+            c = this->buf != NULL &&
+                this->buf->len < a.error;
+        }
         else
             c = true;
     }
