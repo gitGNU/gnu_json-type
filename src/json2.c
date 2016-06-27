@@ -94,15 +94,25 @@ static struct obj_json2_string_t* push_string(
 {
     const size_t n =
         sizeof(struct obj_json2_string_t);
+    const size_t m =
+        MEM_ALIGNOF(struct obj_json2_string_t);
     struct obj_json2_string_t* r;
-    size_t s = len;
+    size_t s = len, a;
     char* p;
+
+    p = stack->top != NULL
+        ? (char*) stack->top + stack->top->size
+        : stack->buf;
+    a = PTR_ALIGN_SIZE(p, m);
 
     ASSERT_SIZE_INC_NO_OVERFLOW(s);
     s ++;
 
     ASSERT_SIZE_ADD_NO_OVERFLOW(s, n);
     s += n;
+
+    ASSERT_SIZE_ADD_NO_OVERFLOW(s, a);
+    s += a;
 
     if (s > stack->unused)
         fatal_error("string stack overflow (by %zu bytes)",
@@ -126,11 +136,8 @@ static struct obj_json2_string_t* push_string(
         ASSERT(t + s <= stack->size);
     }
 #endif
-    p = stack->top != NULL
-        ? (char*) stack->top + stack->top->size
-        : stack->buf;
 
-    r = (struct obj_json2_string_t*) p;
+    r = (struct obj_json2_string_t*) (p + a);
     r->prev = stack->top;
     r->size = s;
 
@@ -152,11 +159,6 @@ static void pop_string(
 
     if (stack->top != str)
         fatal_error("invalid popping from string stack");
-
-    if (str->prev != NULL)
-        ASSERT(
-            str->prev->size > 0 &&
-            str->prev->size + (char*) str->prev == (char*) str);
 
     ASSERT(str->size > n);
     ASSERT_SIZE_ADD_NO_OVERFLOW(stack->unused, str->size);
