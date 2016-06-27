@@ -43,7 +43,7 @@
 
 static const char program[] = STRINGIFY(PROGRAM);
 static const char library[] = STRINGIFY(LIBRARY);
-static const char verdate[] = "0.8 -- 2016-06-04 21:57"; // $ date +'%F %R'
+static const char verdate[] = "0.8 -- 2016-06-27 20:05"; // $ date +'%F %R'
 
 static const char license[] =
 "Copyright (C) 2016  Stefan Vargyas.\n"
