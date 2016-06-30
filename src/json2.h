@@ -21,8 +21,6 @@
 #include "obj.h"
 #include "json-base.h"
 
-struct obj_json2_node_t;
-struct obj_json2_node_pool_t;
 struct obj_json2_string_stack_t;
 
 struct obj_json2_t
@@ -31,11 +29,9 @@ struct obj_json2_t
 
     struct obj_json_base_t json_base;
 
-    struct obj_json2_node_pool_t* pool;
     struct obj_json2_string_stack_t* stack;
 
-    struct obj_json2_node_t* path;
-    struct obj_json2_node_t* last;
+    bits_t last: 1;
 };
 
 #endif/*__JSON2_H */

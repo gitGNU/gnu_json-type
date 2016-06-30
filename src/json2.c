@@ -44,6 +44,7 @@ struct obj_json2_string_t
 {
     size_t size;
     struct obj_json2_string_t* prev;
+    struct obj_json2_string_t* next;
     uchar_t ptr[0];
 };
 
@@ -91,7 +92,7 @@ static void destroy_string_stack(
     free(stack);
 }
 
-static struct obj_json2_string_t* push_string(
+static void push_string(
     struct obj_json2_string_stack_t* stack,
     const uchar_t* str,
     size_t len)
@@ -123,6 +124,15 @@ static struct obj_json2_string_t* push_string(
 
     r = (struct obj_json2_string_t*) (stack->ptr + a);
     r->prev = stack->top;
+    if (r->prev != NULL) {
+        r->next = r->prev->next;
+        r->next->prev = r;
+        r->prev->next = r;
+    }
+    else {
+        r->next = r;
+        r->prev = r;
+    }
     r->size = s;
 
     memcpy(r->ptr, str, len);
@@ -130,172 +140,86 @@ static struct obj_json2_string_t* push_string(
 
     stack->ptr += s;
     stack->top = r;
-
-    return r;
 }
 
 static void pop_string(
-    struct obj_json2_string_stack_t* stack,
-    struct obj_json2_string_t* str)
+    struct obj_json2_string_stack_t* stack)
 {
+    const struct obj_json2_string_t* r;
     size_t u;
-
-    if (stack->top != str)
-        fatal_error("invalid popping from string stack");
 
     ASSERT_STRING_STACK_INVARIANTS(stack);
 
+    r = stack->top;
+    if (r == NULL)
+        return;
+
     u = PTR_DIFF(stack->ptr, stack->buf);
-    ASSERT(u >= str->size);
+    ASSERT(u >= r->size);
 
-    stack->ptr -= str->size;
-    stack->top = str->prev;
-}
-
-struct obj_json2_node_t
-{
-    struct obj_json2_string_t* str;
-    struct obj_json2_node_t* parent;
-};
-
-struct obj_json2_node_pool_t
-{
-    size_t size;
-    size_t used;
-    struct obj_json2_node_t* free_nodes;
-    struct obj_json2_node_t nodes[0];
-};
-
-static struct obj_json2_node_pool_t* create_node_pool(size_t size)
-{
-    struct obj_json2_node_pool_t* pool;
-    const size_t p = sizeof(struct obj_json2_node_pool_t);
-    const size_t n = sizeof(struct obj_json2_node_t);
-    size_t s;
-
-    ASSERT(size > 0);
-
-    VERIFY_SIZE_MUL_NO_OVERFLOW(n, size);
-    s = n * size;
-
-    VERIFY_SIZE_ADD_NO_OVERFLOW(s, p);
-    s += p;
-
-    if (!(pool = malloc(s)))
-        OOM_ERROR("malloc failed creating obj_json2_node_pool_t");
-
-    memset(pool, 0, s);
-    pool->size = size;
-
-    return pool;
-}
-
-static void destroy_node_pool(
-    struct obj_json2_node_pool_t* pool)
-{
-    free(pool);
-}
-
-static struct obj_json2_node_t* alloc_node(
-    struct obj_json2_node_pool_t* pool)
-{
-    struct obj_json2_node_t* node;
-
-    if (pool->free_nodes) {
-        node = pool->free_nodes;
-        pool->free_nodes = pool->free_nodes->parent;
+    stack->ptr -= r->size;
+    if (r->next != r) {
+        r->prev->next = r->next;
+        r->next->prev = r->prev;
+        stack->top = r->prev;
     }
-    else {
-        if (pool->used >= pool->size)
-            fatal_error("node pool overflow");
-
-        node = pool->nodes + pool->used ++;
-    }
-
-    memset(node, 0, sizeof(struct obj_json2_node_t));
-
-    return node;
-}
-
-static void free_node(
-    struct obj_json2_node_pool_t* pool,
-    struct obj_json2_node_t* node)
-{
-    node->parent = pool->free_nodes;
-    pool->free_nodes = node;
+    else
+        stack->top = NULL;
 }
 
 static void set_last(
     struct obj_json2_t* this,
     const uchar_t* str, size_t len)
 {
-    if (this->last == NULL)
-        this->last = alloc_node(this->pool);
-    else
-        pop_string(this->stack, this->last->str);
-
-    this->last->str = push_string(this->stack, str, len);
+    if (this->last)
+        pop_string(this->stack);
+    push_string(this->stack, str, len);
+    this->last = true;
 }
 
 static void push_last(struct obj_json2_t* this)
 {
-    if (this->last) {
-        this->last->parent = this->path;
-        this->path = this->last;
-        this->last = NULL;
-    }
+    ASSERT(this->last);
+    this->last = false;
 }
 
 static void pop_last(struct obj_json2_t* this)
 {
-    if (this->last) {
-        pop_string(this->stack, this->last->str);
-        free_node(this->pool, this->last);
-    }
-    this->last = this->path;
-    this->path = this->path ? this->path->parent : NULL;
-    if (this->last)
-        this->last->parent = NULL;
+    pop_string(this->stack);
+    this->last = true;
 }
 
-static void print_node(
-    struct obj_json2_t* this, struct obj_json2_node_t* node)
+static void print_path(struct obj_json2_t* this)
 {
-    if (node)
-        print_fmt("/%s", node->str->ptr);
+    const struct obj_json2_string_t* s;
+
+    s = this->stack->top;
+    if (s == NULL)
+        return;
+
+    do {
+        s = s->next;
+        if (s->next != this->stack->top || this->last)
+            print_fmt("/%s", s->ptr);
+    } while (s != this->stack->top);
 }
 
-static void print_path(
-    struct obj_json2_t* this, struct obj_json2_node_t* node)
+static void print_path_nl(struct obj_json2_t* this)
 {
-    if (node) {
-        print_path(this, node->parent);
-        print_node(this, node);
-    }
-}
-
-static void print_full_path(struct obj_json2_t* this)
-{
-    print_path(this, this->path);
-    print_node(this, this->last);
-}
-
-static void print_full_path_nl(struct obj_json2_t* this)
-{
-    print_full_path(this);
+    print_path(this);
     print_chr('\n');
 }
 
 static void print_bool(struct obj_json2_t* this, bool val)
 {
-    print_full_path(this);
+    print_path(this);
     print_fmt("=%d\n", val);
 }
 
 static void print_number(
     struct obj_json2_t* this, const uchar_t* str, size_t len)
 {
-    print_full_path(this);
+    print_path(this);
     print_fmt("=%.*s\n", SIZE_AS_INT(len), str);
 }
 
@@ -314,7 +238,7 @@ static void print_string(
             s = len;
         ASSERT(s <= len);
 
-        print_full_path(this);
+        print_path(this);
         print_fmt("=%.*s\n", SIZE_AS_INT(s), str);
 
         if (n)
@@ -328,7 +252,7 @@ static void print_string(
 
 static bool json2_null(struct obj_json2_t* this)
 {
-    print_full_path_nl(this);
+    print_path_nl(this);
     return true;
 }
 
@@ -373,7 +297,7 @@ static bool json2_object_end(struct obj_json2_t* this)
 
 static bool json2_array_sep(struct obj_json2_t* this)
 {
-    print_full_path_nl(this);
+    print_path_nl(this);
     return true;
 }
 
@@ -410,19 +334,15 @@ static void obj_json2_init(
         : obj_json_base_init_obj)(
             JSON_BASE(this), opts, &handler, this);
 
-    this->pool = create_node_pool(VERIFY_SIZE_NOT_NULL(
-        opts->sizes_json2_pool_size));
     this->stack = create_string_stack(VERIFY_SIZE_NOT_NULL(
         opts->sizes_json2_stack_size));
 
-    this->path = NULL;
-    this->last = NULL;
+    this->last = true;
 }
 
 static void obj_json2_done(struct obj_json2_t* this)
 {
     destroy_string_stack(this->stack);
-    destroy_node_pool(this->pool);
 
     obj_json_base_done(JSON_BASE(this));
 
