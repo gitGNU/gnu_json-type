@@ -40,13 +40,7 @@ CASE(STACK,                                                                    \
  json2_stack_size,                                                             \
 "json2-stack-size",                                                            \
                   "       ", , "json2 stack size", ,                           \
-1, KB(10), KB(1)                                                               \
-)
-CASE(POOL,                                                                     \
- json2_pool_size,                                                              \
-"json2-pool-size",                                                             \
-                 "        ", , "json2 memory pool size", ,                     \
-1, MB(2), KB(128)                                                              \
+1, KB(128), KB(10)                                                             \
 )
 CASE(WIDTH,                                                                    \
  error_ctxt_size,                                                              \
