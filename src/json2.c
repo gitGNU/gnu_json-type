@@ -199,8 +199,7 @@ static void print_path(struct obj_json2_t* this)
 
     do {
         s = s->next;
-        if (s->next != this->stack->top || this->last)
-            print_fmt("/%s", s->ptr);
+        print_fmt("/%s", s->ptr);
     } while (s != this->stack->top);
 }
 
