@@ -54,6 +54,22 @@ Therefore a few illustrating type definitions should be more than welcomed.
         ]
     }
 
+  * open array of number or open array of strings:
+
+    {
+        "type": "list",
+        "args": [
+            {
+                "type": "array",
+                "args": "number"
+            },
+            {
+                "type": "array",
+                "args": "string"
+            }
+        ]
+    }
+
   * an object of three arguments:
     - the 1st argument have its  name `"foo"' and its type `"type"',
     - the 2nd argument must have its name either `"bar"' or `"bav"' and
