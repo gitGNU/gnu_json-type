@@ -37,6 +37,7 @@ for t in \
     type-checker \
     type-checker-list \
     type-cases \
+    type-path \
     trie \
     bugs
 do

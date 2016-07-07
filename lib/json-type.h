@@ -29,6 +29,7 @@ enum json_type_node_type_t
     json_type_object_node_type,
     json_type_array_node_type,
     json_type_list_node_type,
+    json_type_this_node_type,
 };
 
 // the simple types, i.e. all types below, except for:
@@ -150,7 +151,45 @@ struct json_type_list_node_t
     size_t size;
 };
 
+enum json_type_path_arg_type_t
+{
+    json_type_path_arg_key_type,
+    json_type_path_arg_num_type
+};
+
+struct json_type_path_arg_t
+{
+    enum json_type_path_arg_type_t type;
+    union {
+        const uchar_t* key;
+        size_t         num;
+    } val;
+    struct json_text_pos_t pos;
+};
+
+struct json_type_path_t
+{
+    struct json_text_pos_t pos;
+    const struct json_type_path_arg_t* args;
+    size_t size;
+    bool dollar;
+};
+
+// the string value:
+//   `"$path"',
+// where $path obeys the rules:
+//   path : ( "this" | "$" KEY ) arg*
+//   arg  : "." KEY | "[" NUM "]"
+//   KEY  : [^$.[]]+
+//   NUM  : [0-9]+
+
+struct json_type_this_node_t
+{
+    struct json_type_path_t path;
+};
+
 struct json_type_list_attr_t;
+struct json_type_this_attr_t;
 
 struct json_type_node_t
 {
@@ -161,6 +200,7 @@ struct json_type_node_t
         struct json_type_object_node_t object;
         struct json_type_array_node_t  array;
         struct json_type_list_node_t   list;
+        struct json_type_this_node_t   this;
     } node;
     union {
         // const struct json_type_any_attr_t*    any;
@@ -168,6 +208,7 @@ struct json_type_node_t
         // const struct json_type_object_attr_t* object;
         // const struct json_type_array_attr_t*  array;
         const struct json_type_list_attr_t*      list;
+        const struct json_type_this_attr_t*      this;
     } attr;
     struct json_text_pos_t pos;
 };
@@ -225,6 +266,11 @@ struct json_type_list_attr_t
     const struct json_type_object_trie_t* object;
     const struct json_type_trie_t*        open_array;
     const struct json_type_trie_t*        closed_array;
+};
+
+struct json_type_this_attr_t
+{
+    const struct json_type_node_t* node;
 };
 
 enum json_type_def_type_t

@@ -1,0 +1,1150 @@
+# Copyright (C) 2016  Stefan Vargyas
+# 
+# This file is part of Json-Type.
+# 
+# Json-Type is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# Json-Type is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with Json-Type.  If not, see <http://www.gnu.org/licenses/>.
+
+#
+# json type path test suite:
+#
+
+$ . ~/regtest2.sh
+$ alias json-type-path-regtest='regtest2-selftest -f test-json-type-path.txt -a exec=pipe -B'
+
+# output all test names:
+$ json-type-path-regtest -N
+...
+
+# run all tests:
+$ json-type-path-regtest -A
+...
+
+--[ prereq ]--------------------------------------------------------------------
+
+$ json() { set -o pipefail && LD_LIBRARY_PATH=../lib ../src/json --literal-value -e 64 -V -Ta "$@"|LD_LIBRARY_PATH=../lib ../src/json --from-ast-print --verbose 2>/dev/null; }
+$
+
+--[ syntax ]--------------------------------------------------------------------
+
+$ json <<< '"thi"'
+json: error: <stdin>:1:1: meta error: invalid top value: it must be a type or an array of "name" objects
+json: error: <stdin>:1:1: "thi"
+json: error: <stdin>:1:1: ^
+command failed: json <<< '"thi"'
+$
+
+--[ syntax2 ]-------------------------------------------------------------------
+
+#
+# meta command:
+# $ for s in s this ' ' '\n' '$' '.' '[' ']'; do c="json <<< '\"this$s\"'"; echo "$ $c"; eval "$c"; test "$?" -eq 0 || echo "command failed: $c"; done
+#
+$ json <<< '"thiss"'
+json: error: <stdin>:1:6: meta error: invalid type path: invalid char
+json: error: <stdin>:1:6: "thiss"
+json: error: <stdin>:1:6:      ^
+command failed: json <<< '"thiss"'
+$ json <<< '"thisthis"'
+json: error: <stdin>:1:6: meta error: invalid type path: invalid char
+json: error: <stdin>:1:6: "thisthis"
+json: error: <stdin>:1:6:      ^
+command failed: json <<< '"thisthis"'
+$ json <<< '"this "'
+json: error: <stdin>:1:6: meta error: invalid type path: invalid char
+json: error: <stdin>:1:6: "this "
+json: error: <stdin>:1:6:      ^
+command failed: json <<< '"this "'
+$ json <<< '"this\n"'
+json: error: <stdin>:1:6: meta error: invalid type path: invalid char
+json: error: <stdin>:1:6: "this\\n"
+json: error: <stdin>:1:6:      ^
+command failed: json <<< '"this\n"'
+$ json <<< '"this$"'
+json: error: <stdin>:1:6: meta error: invalid type path: unexpected char
+json: error: <stdin>:1:6: "this$"
+json: error: <stdin>:1:6:      ^
+command failed: json <<< '"this$"'
+$ json <<< '"this."'
+json: error: <stdin>:1:7: meta error: invalid type path: expected key name
+json: error: <stdin>:1:7: "this."
+json: error: <stdin>:1:7:       ^
+command failed: json <<< '"this."'
+$ json <<< '"this["'
+json: error: <stdin>:1:7: meta error: invalid type path: expected number
+json: error: <stdin>:1:7: "this["
+json: error: <stdin>:1:7:       ^
+command failed: json <<< '"this["'
+$ json <<< '"this]"'
+json: error: <stdin>:1:6: meta error: invalid type path: unexpected char
+json: error: <stdin>:1:6: "this]"
+json: error: <stdin>:1:6:      ^
+command failed: json <<< '"this]"'
+$
+
+--[ syntax3 ]-------------------------------------------------------------------
+
+#
+# meta command:
+# $ for s in '$' '.' '[' ']'; do c="json <<< '\"\$$s\"'"; echo "$ $c"; eval "$c"; test "$?" -eq 0 || echo "command failed: $c"; done
+#
+$ json <<< '"$$"'
+json: error: <stdin>:1:3: meta error: invalid type path: expected key name
+json: error: <stdin>:1:3: "$$"
+json: error: <stdin>:1:3:   ^
+command failed: json <<< '"$$"'
+$ json <<< '"$."'
+json: error: <stdin>:1:3: meta error: invalid type path: expected key name
+json: error: <stdin>:1:3: "$."
+json: error: <stdin>:1:3:   ^
+command failed: json <<< '"$."'
+$ json <<< '"$["'
+json: error: <stdin>:1:3: meta error: invalid type path: expected key name
+json: error: <stdin>:1:3: "$["
+json: error: <stdin>:1:3:   ^
+command failed: json <<< '"$["'
+$ json <<< '"$]"'
+json: error: <stdin>:1:3: meta error: invalid type path: expected key name
+json: error: <stdin>:1:3: "$]"
+json: error: <stdin>:1:3:   ^
+command failed: json <<< '"$]"'
+$
+
+--[ syntax4 ]-------------------------------------------------------------------
+
+#
+# meta command:
+# $ for s in '$' '.' '[' ']'; do c="json <<< '\"this.$s\"'"; echo "$ $c"; eval "$c"; test "$?" -eq 0 || echo "command failed: $c"; done
+#
+$ json <<< '"this.$"'
+json: error: <stdin>:1:7: meta error: invalid type path: expected key name
+json: error: <stdin>:1:7: "this.$"
+json: error: <stdin>:1:7:       ^
+command failed: json <<< '"this.$"'
+$ json <<< '"this.."'
+json: error: <stdin>:1:7: meta error: invalid type path: expected key name
+json: error: <stdin>:1:7: "this.."
+json: error: <stdin>:1:7:       ^
+command failed: json <<< '"this.."'
+$ json <<< '"this.["'
+json: error: <stdin>:1:7: meta error: invalid type path: expected key name
+json: error: <stdin>:1:7: "this.["
+json: error: <stdin>:1:7:       ^
+command failed: json <<< '"this.["'
+$ json <<< '"this.]"'
+json: error: <stdin>:1:7: meta error: invalid type path: expected key name
+json: error: <stdin>:1:7: "this.]"
+json: error: <stdin>:1:7:       ^
+command failed: json <<< '"this.]"'
+$
+
+--[ syntax5 ]-------------------------------------------------------------------
+
+#
+# meta command:
+# $ for s in '$' '.' '[' ']'; do c="json <<< '\"this.foo.$s\"'"; echo "$ $c"; eval "$c"; test "$?" -eq 0 || echo "command failed: $c"; done
+#
+$ json <<< '"this.foo.$"'
+json: error: <stdin>:1:11: meta error: invalid type path: expected key name
+json: error: <stdin>:1:11: "this.foo.$"
+json: error: <stdin>:1:11:           ^
+command failed: json <<< '"this.foo.$"'
+$ json <<< '"this.foo.."'
+json: error: <stdin>:1:11: meta error: invalid type path: expected key name
+json: error: <stdin>:1:11: "this.foo.."
+json: error: <stdin>:1:11:           ^
+command failed: json <<< '"this.foo.."'
+$ json <<< '"this.foo.["'
+json: error: <stdin>:1:11: meta error: invalid type path: expected key name
+json: error: <stdin>:1:11: "this.foo.["
+json: error: <stdin>:1:11:           ^
+command failed: json <<< '"this.foo.["'
+$ json <<< '"this.foo.]"'
+json: error: <stdin>:1:11: meta error: invalid type path: expected key name
+json: error: <stdin>:1:11: "this.foo.]"
+json: error: <stdin>:1:11:           ^
+command failed: json <<< '"this.foo.]"'
+$
+
+--[ syntax6 ]-------------------------------------------------------------------
+
+#
+# meta command:
+# $ for s in ' ' '\n' '$' '.' '[' ']' - 0 '0 ' '0\n' '0$' '0.' '0[' '0-' '1234567890123456789012345678901234567890]'; do c="json <<< '\"this[$s\"'"; echo "$ $c"; eval "$c"; test "$?" -eq 0 || echo "command failed: $c"; done
+#
+$ json <<< '"this[ "'
+json: error: <stdin>:1:7: meta error: invalid type path: expected number
+json: error: <stdin>:1:7: "this[ "
+json: error: <stdin>:1:7:       ^
+command failed: json <<< '"this[ "'
+$ json <<< '"this[\n"'
+json: error: <stdin>:1:7: meta error: invalid type path: expected number
+json: error: <stdin>:1:7: "this[\\n"
+json: error: <stdin>:1:7:       ^
+command failed: json <<< '"this[\n"'
+$ json <<< '"this[$"'
+json: error: <stdin>:1:7: meta error: invalid type path: expected number
+json: error: <stdin>:1:7: "this[$"
+json: error: <stdin>:1:7:       ^
+command failed: json <<< '"this[$"'
+$ json <<< '"this[."'
+json: error: <stdin>:1:7: meta error: invalid type path: expected number
+json: error: <stdin>:1:7: "this[."
+json: error: <stdin>:1:7:       ^
+command failed: json <<< '"this[."'
+$ json <<< '"this[["'
+json: error: <stdin>:1:7: meta error: invalid type path: expected number
+json: error: <stdin>:1:7: "this[["
+json: error: <stdin>:1:7:       ^
+command failed: json <<< '"this[["'
+$ json <<< '"this[]"'
+json: error: <stdin>:1:7: meta error: invalid type path: expected number
+json: error: <stdin>:1:7: "this[]"
+json: error: <stdin>:1:7:       ^
+command failed: json <<< '"this[]"'
+$ json <<< '"this[-"'
+json: error: <stdin>:1:7: meta error: invalid type path: expected number
+json: error: <stdin>:1:7: "this[-"
+json: error: <stdin>:1:7:       ^
+command failed: json <<< '"this[-"'
+$ json <<< '"this[0"'
+json: error: <stdin>:1:8: meta error: invalid type path: unexpected end of path
+json: error: <stdin>:1:8: "this[0"
+json: error: <stdin>:1:8:        ^
+command failed: json <<< '"this[0"'
+$ json <<< '"this[0 "'
+json: error: <stdin>:1:8: meta error: invalid type path: invalid char
+json: error: <stdin>:1:8: "this[0 "
+json: error: <stdin>:1:8:        ^
+command failed: json <<< '"this[0 "'
+$ json <<< '"this[0\n"'
+json: error: <stdin>:1:8: meta error: invalid type path: invalid char
+json: error: <stdin>:1:8: "this[0\\n"
+json: error: <stdin>:1:8:        ^
+command failed: json <<< '"this[0\n"'
+$ json <<< '"this[0$"'
+json: error: <stdin>:1:8: meta error: invalid type path: unexpected char
+json: error: <stdin>:1:8: "this[0$"
+json: error: <stdin>:1:8:        ^
+command failed: json <<< '"this[0$"'
+$ json <<< '"this[0."'
+json: error: <stdin>:1:8: meta error: invalid type path: unexpected char
+json: error: <stdin>:1:8: "this[0."
+json: error: <stdin>:1:8:        ^
+command failed: json <<< '"this[0."'
+$ json <<< '"this[0["'
+json: error: <stdin>:1:8: meta error: invalid type path: unexpected char
+json: error: <stdin>:1:8: "this[0["
+json: error: <stdin>:1:8:        ^
+command failed: json <<< '"this[0["'
+$ json <<< '"this[0-"'
+json: error: <stdin>:1:8: meta error: invalid type path: invalid char
+json: error: <stdin>:1:8: "this[0-"
+json: error: <stdin>:1:8:        ^
+command failed: json <<< '"this[0-"'
+$ json <<< '"this[1234567890123456789012345678901234567890]"'
+json: error: <stdin>:1:7: meta error: invalid type path: invalid number
+json: error: <stdin>:1:7: "this[1234567890123456789012345678901234567890]"
+json: error: <stdin>:1:7:       ^
+command failed: json <<< '"this[1234567890123456789012345678901234567890]"'
+$
+
+--[ syntax7 ]-------------------------------------------------------------------
+
+#
+# meta command:
+# $ for s in ' ' '\n' '$' '.' '[' ']' - 0 '0 ' '0\n' '0$' '0.' '0[' '0-' '1234567890123456789012345678901234567890]'; do c="json <<< '\"this.foo[$s\"'"; echo "$ $c"; eval "$c"; test "$?" -eq 0 || echo "command failed: $c"; done
+#
+$ json <<< '"this.foo[ "'
+json: error: <stdin>:1:11: meta error: invalid type path: expected number
+json: error: <stdin>:1:11: "this.foo[ "
+json: error: <stdin>:1:11:           ^
+command failed: json <<< '"this.foo[ "'
+$ json <<< '"this.foo[\n"'
+json: error: <stdin>:1:11: meta error: invalid type path: expected number
+json: error: <stdin>:1:11: "this.foo[\\n"
+json: error: <stdin>:1:11:           ^
+command failed: json <<< '"this.foo[\n"'
+$ json <<< '"this.foo[$"'
+json: error: <stdin>:1:11: meta error: invalid type path: expected number
+json: error: <stdin>:1:11: "this.foo[$"
+json: error: <stdin>:1:11:           ^
+command failed: json <<< '"this.foo[$"'
+$ json <<< '"this.foo[."'
+json: error: <stdin>:1:11: meta error: invalid type path: expected number
+json: error: <stdin>:1:11: "this.foo[."
+json: error: <stdin>:1:11:           ^
+command failed: json <<< '"this.foo[."'
+$ json <<< '"this.foo[["'
+json: error: <stdin>:1:11: meta error: invalid type path: expected number
+json: error: <stdin>:1:11: "this.foo[["
+json: error: <stdin>:1:11:           ^
+command failed: json <<< '"this.foo[["'
+$ json <<< '"this.foo[]"'
+json: error: <stdin>:1:11: meta error: invalid type path: expected number
+json: error: <stdin>:1:11: "this.foo[]"
+json: error: <stdin>:1:11:           ^
+command failed: json <<< '"this.foo[]"'
+$ json <<< '"this.foo[-"'
+json: error: <stdin>:1:11: meta error: invalid type path: expected number
+json: error: <stdin>:1:11: "this.foo[-"
+json: error: <stdin>:1:11:           ^
+command failed: json <<< '"this.foo[-"'
+$ json <<< '"this.foo[0"'
+json: error: <stdin>:1:12: meta error: invalid type path: unexpected end of path
+json: error: <stdin>:1:12: "this.foo[0"
+json: error: <stdin>:1:12:            ^
+command failed: json <<< '"this.foo[0"'
+$ json <<< '"this.foo[0 "'
+json: error: <stdin>:1:12: meta error: invalid type path: invalid char
+json: error: <stdin>:1:12: "this.foo[0 "
+json: error: <stdin>:1:12:            ^
+command failed: json <<< '"this.foo[0 "'
+$ json <<< '"this.foo[0\n"'
+json: error: <stdin>:1:12: meta error: invalid type path: invalid char
+json: error: <stdin>:1:12: "this.foo[0\\n"
+json: error: <stdin>:1:12:            ^
+command failed: json <<< '"this.foo[0\n"'
+$ json <<< '"this.foo[0$"'
+json: error: <stdin>:1:12: meta error: invalid type path: unexpected char
+json: error: <stdin>:1:12: "this.foo[0$"
+json: error: <stdin>:1:12:            ^
+command failed: json <<< '"this.foo[0$"'
+$ json <<< '"this.foo[0."'
+json: error: <stdin>:1:12: meta error: invalid type path: unexpected char
+json: error: <stdin>:1:12: "this.foo[0."
+json: error: <stdin>:1:12:            ^
+command failed: json <<< '"this.foo[0."'
+$ json <<< '"this.foo[0["'
+json: error: <stdin>:1:12: meta error: invalid type path: unexpected char
+json: error: <stdin>:1:12: "this.foo[0["
+json: error: <stdin>:1:12:            ^
+command failed: json <<< '"this.foo[0["'
+$ json <<< '"this.foo[0-"'
+json: error: <stdin>:1:12: meta error: invalid type path: invalid char
+json: error: <stdin>:1:12: "this.foo[0-"
+json: error: <stdin>:1:12:            ^
+command failed: json <<< '"this.foo[0-"'
+$ json <<< '"this.foo[1234567890123456789012345678901234567890]"'
+json: error: <stdin>:1:11: meta error: invalid type path: invalid number
+json: error: <stdin>:1:11: "this.foo[1234567890123456789012345678901234567890]"
+json: error: <stdin>:1:11:           ^
+command failed: json <<< '"this.foo[1234567890123456789012345678901234567890]"'
+$
+
+--[ syntax8 ]-------------------------------------------------------------------
+
+#
+# meta command:
+# $ for s in '$' '.' '[' ']'; do for w in '' ' ' '\n'; do [[ -n "$w" && "$s" == [$.\]] ]] && continue; c="json <<< '\"\$foo$s$w\"'"; echo "$ $c"; eval "$c"; test "$?" -eq 0 || echo "command failed: $c"; done; done
+#
+$ json <<< '"$foo$"'
+json: error: <stdin>:1:6: meta error: invalid type path: unexpected char
+json: error: <stdin>:1:6: "$foo$"
+json: error: <stdin>:1:6:      ^
+command failed: json <<< '"$foo$"'
+$ json <<< '"$foo."'
+json: error: <stdin>:1:7: meta error: invalid type path: expected key name
+json: error: <stdin>:1:7: "$foo."
+json: error: <stdin>:1:7:       ^
+command failed: json <<< '"$foo."'
+$ json <<< '"$foo["'
+json: error: <stdin>:1:7: meta error: invalid type path: expected number
+json: error: <stdin>:1:7: "$foo["
+json: error: <stdin>:1:7:       ^
+command failed: json <<< '"$foo["'
+$ json <<< '"$foo[ "'
+json: error: <stdin>:1:7: meta error: invalid type path: expected number
+json: error: <stdin>:1:7: "$foo[ "
+json: error: <stdin>:1:7:       ^
+command failed: json <<< '"$foo[ "'
+$ json <<< '"$foo[\n"'
+json: error: <stdin>:1:7: meta error: invalid type path: expected number
+json: error: <stdin>:1:7: "$foo[\\n"
+json: error: <stdin>:1:7:       ^
+command failed: json <<< '"$foo[\n"'
+$ json <<< '"$foo]"'
+json: error: <stdin>:1:6: meta error: invalid type path: unexpected char
+json: error: <stdin>:1:6: "$foo]"
+json: error: <stdin>:1:6:      ^
+command failed: json <<< '"$foo]"'
+$
+
+--[ syntax9 ]-------------------------------------------------------------------
+
+#
+# meta command:
+# $ for s in '$' '.' '[' ']'; do for w in '' ' ' '\n'; do [[ -n "$w" && "$s" == [$.\]] ]] && continue; c="json <<< '\"\$foo.bar$s$w\"'"; echo "$ $c"; eval "$c"; test "$?" -eq 0 || echo "command failed: $c"; done; done
+#
+$ json <<< '"$foo.bar$"'
+json: error: <stdin>:1:10: meta error: invalid type path: unexpected char
+json: error: <stdin>:1:10: "$foo.bar$"
+json: error: <stdin>:1:10:          ^
+command failed: json <<< '"$foo.bar$"'
+$ json <<< '"$foo.bar."'
+json: error: <stdin>:1:11: meta error: invalid type path: expected key name
+json: error: <stdin>:1:11: "$foo.bar."
+json: error: <stdin>:1:11:           ^
+command failed: json <<< '"$foo.bar."'
+$ json <<< '"$foo.bar["'
+json: error: <stdin>:1:11: meta error: invalid type path: expected number
+json: error: <stdin>:1:11: "$foo.bar["
+json: error: <stdin>:1:11:           ^
+command failed: json <<< '"$foo.bar["'
+$ json <<< '"$foo.bar[ "'
+json: error: <stdin>:1:11: meta error: invalid type path: expected number
+json: error: <stdin>:1:11: "$foo.bar[ "
+json: error: <stdin>:1:11:           ^
+command failed: json <<< '"$foo.bar[ "'
+$ json <<< '"$foo.bar[\n"'
+json: error: <stdin>:1:11: meta error: invalid type path: expected number
+json: error: <stdin>:1:11: "$foo.bar[\\n"
+json: error: <stdin>:1:11:           ^
+command failed: json <<< '"$foo.bar[\n"'
+$ json <<< '"$foo.bar]"'
+json: error: <stdin>:1:10: meta error: invalid type path: unexpected char
+json: error: <stdin>:1:10: "$foo.bar]"
+json: error: <stdin>:1:10:          ^
+command failed: json <<< '"$foo.bar]"'
+$
+
+--[ syntax10 ]------------------------------------------------------------------
+
+#
+# meta command:
+# $ for s in '$' '.' '[' ']' - 0 '0 ' '0\n' '0$' '0.' '0[' '0-' '1234567890123456789012345678901234567890]'; do c="json <<< '\"\$foo[$s\"'"; echo "$ $c"; eval "$c"; test "$?" -eq 0 || echo "command failed: $c"; done
+#
+$ json <<< '"$foo[$"'
+json: error: <stdin>:1:7: meta error: invalid type path: expected number
+json: error: <stdin>:1:7: "$foo[$"
+json: error: <stdin>:1:7:       ^
+command failed: json <<< '"$foo[$"'
+$ json <<< '"$foo[."'
+json: error: <stdin>:1:7: meta error: invalid type path: expected number
+json: error: <stdin>:1:7: "$foo[."
+json: error: <stdin>:1:7:       ^
+command failed: json <<< '"$foo[."'
+$ json <<< '"$foo[["'
+json: error: <stdin>:1:7: meta error: invalid type path: expected number
+json: error: <stdin>:1:7: "$foo[["
+json: error: <stdin>:1:7:       ^
+command failed: json <<< '"$foo[["'
+$ json <<< '"$foo[]"'
+json: error: <stdin>:1:7: meta error: invalid type path: expected number
+json: error: <stdin>:1:7: "$foo[]"
+json: error: <stdin>:1:7:       ^
+command failed: json <<< '"$foo[]"'
+$ json <<< '"$foo[-"'
+json: error: <stdin>:1:7: meta error: invalid type path: expected number
+json: error: <stdin>:1:7: "$foo[-"
+json: error: <stdin>:1:7:       ^
+command failed: json <<< '"$foo[-"'
+$ json <<< '"$foo[0"'
+json: error: <stdin>:1:8: meta error: invalid type path: unexpected end of path
+json: error: <stdin>:1:8: "$foo[0"
+json: error: <stdin>:1:8:        ^
+command failed: json <<< '"$foo[0"'
+$ json <<< '"$foo[0 "'
+json: error: <stdin>:1:8: meta error: invalid type path: invalid char
+json: error: <stdin>:1:8: "$foo[0 "
+json: error: <stdin>:1:8:        ^
+command failed: json <<< '"$foo[0 "'
+$ json <<< '"$foo[0\n"'
+json: error: <stdin>:1:8: meta error: invalid type path: invalid char
+json: error: <stdin>:1:8: "$foo[0\\n"
+json: error: <stdin>:1:8:        ^
+command failed: json <<< '"$foo[0\n"'
+$ json <<< '"$foo[0$"'
+json: error: <stdin>:1:8: meta error: invalid type path: unexpected char
+json: error: <stdin>:1:8: "$foo[0$"
+json: error: <stdin>:1:8:        ^
+command failed: json <<< '"$foo[0$"'
+$ json <<< '"$foo[0."'
+json: error: <stdin>:1:8: meta error: invalid type path: unexpected char
+json: error: <stdin>:1:8: "$foo[0."
+json: error: <stdin>:1:8:        ^
+command failed: json <<< '"$foo[0."'
+$ json <<< '"$foo[0["'
+json: error: <stdin>:1:8: meta error: invalid type path: unexpected char
+json: error: <stdin>:1:8: "$foo[0["
+json: error: <stdin>:1:8:        ^
+command failed: json <<< '"$foo[0["'
+$ json <<< '"$foo[0-"'
+json: error: <stdin>:1:8: meta error: invalid type path: invalid char
+json: error: <stdin>:1:8: "$foo[0-"
+json: error: <stdin>:1:8:        ^
+command failed: json <<< '"$foo[0-"'
+$ json <<< '"$foo[1234567890123456789012345678901234567890]"'
+json: error: <stdin>:1:7: meta error: invalid type path: invalid number
+json: error: <stdin>:1:7: "$foo[1234567890123456789012345678901234567890]"
+json: error: <stdin>:1:7:       ^
+command failed: json <<< '"$foo[1234567890123456789012345678901234567890]"'
+$
+
+--[ syntax11 ]------------------------------------------------------------------
+
+#
+# meta command:
+# $ for s in '$' '.' '[' ']' - 0 '0 ' '0\n' '0$' '0.' '0[' '0-' '1234567890123456789012345678901234567890]'; do c="json <<< '\"\$foo.bar[$s\"'"; echo "$ $c"; eval "$c"; test "$?" -eq 0 || echo "command failed: $c"; done
+#
+$ json <<< '"$foo.bar[$"'
+json: error: <stdin>:1:11: meta error: invalid type path: expected number
+json: error: <stdin>:1:11: "$foo.bar[$"
+json: error: <stdin>:1:11:           ^
+command failed: json <<< '"$foo.bar[$"'
+$ json <<< '"$foo.bar[."'
+json: error: <stdin>:1:11: meta error: invalid type path: expected number
+json: error: <stdin>:1:11: "$foo.bar[."
+json: error: <stdin>:1:11:           ^
+command failed: json <<< '"$foo.bar[."'
+$ json <<< '"$foo.bar[["'
+json: error: <stdin>:1:11: meta error: invalid type path: expected number
+json: error: <stdin>:1:11: "$foo.bar[["
+json: error: <stdin>:1:11:           ^
+command failed: json <<< '"$foo.bar[["'
+$ json <<< '"$foo.bar[]"'
+json: error: <stdin>:1:11: meta error: invalid type path: expected number
+json: error: <stdin>:1:11: "$foo.bar[]"
+json: error: <stdin>:1:11:           ^
+command failed: json <<< '"$foo.bar[]"'
+$ json <<< '"$foo.bar[-"'
+json: error: <stdin>:1:11: meta error: invalid type path: expected number
+json: error: <stdin>:1:11: "$foo.bar[-"
+json: error: <stdin>:1:11:           ^
+command failed: json <<< '"$foo.bar[-"'
+$ json <<< '"$foo.bar[0"'
+json: error: <stdin>:1:12: meta error: invalid type path: unexpected end of path
+json: error: <stdin>:1:12: "$foo.bar[0"
+json: error: <stdin>:1:12:            ^
+command failed: json <<< '"$foo.bar[0"'
+$ json <<< '"$foo.bar[0 "'
+json: error: <stdin>:1:12: meta error: invalid type path: invalid char
+json: error: <stdin>:1:12: "$foo.bar[0 "
+json: error: <stdin>:1:12:            ^
+command failed: json <<< '"$foo.bar[0 "'
+$ json <<< '"$foo.bar[0\n"'
+json: error: <stdin>:1:12: meta error: invalid type path: invalid char
+json: error: <stdin>:1:12: "$foo.bar[0\\n"
+json: error: <stdin>:1:12:            ^
+command failed: json <<< '"$foo.bar[0\n"'
+$ json <<< '"$foo.bar[0$"'
+json: error: <stdin>:1:12: meta error: invalid type path: unexpected char
+json: error: <stdin>:1:12: "$foo.bar[0$"
+json: error: <stdin>:1:12:            ^
+command failed: json <<< '"$foo.bar[0$"'
+$ json <<< '"$foo.bar[0."'
+json: error: <stdin>:1:12: meta error: invalid type path: unexpected char
+json: error: <stdin>:1:12: "$foo.bar[0."
+json: error: <stdin>:1:12:            ^
+command failed: json <<< '"$foo.bar[0."'
+$ json <<< '"$foo.bar[0["'
+json: error: <stdin>:1:12: meta error: invalid type path: unexpected char
+json: error: <stdin>:1:12: "$foo.bar[0["
+json: error: <stdin>:1:12:            ^
+command failed: json <<< '"$foo.bar[0["'
+$ json <<< '"$foo.bar[0-"'
+json: error: <stdin>:1:12: meta error: invalid type path: invalid char
+json: error: <stdin>:1:12: "$foo.bar[0-"
+json: error: <stdin>:1:12:            ^
+command failed: json <<< '"$foo.bar[0-"'
+$ json <<< '"$foo.bar[1234567890123456789012345678901234567890]"'
+json: error: <stdin>:1:11: meta error: invalid type path: invalid number
+json: error: <stdin>:1:11: "$foo.bar[1234567890123456789012345678901234567890]"
+json: error: <stdin>:1:11:           ^
+command failed: json <<< '"$foo.bar[1234567890123456789012345678901234567890]"'
+$
+
+--[ basic ]---------------------------------------------------------------------
+
+$ json <<< '"this"'
+{
+    "type": "this",
+    "args": "this",
+    "attr": "this"
+}
+$ json <<< '"this.foo"'
+json: error: <stdin>:1:6: type path error: the type at 1:1 is neither an "object" nor a type def
+json: error: <stdin>:1:6: "this.foo"
+json: error: <stdin>:1:6:      ^
+command failed: json <<< '"this.foo"'
+$ json <<< '"this[0]"'
+json: error: <stdin>:1:6: type path error: the type at 1:1 is neither an "array" nor a "list" nor a type def
+json: error: <stdin>:1:6: "this[0]"
+json: error: <stdin>:1:6:      ^
+command failed: json <<< '"this[0]"'
+$ json <<< '"$foo"'
+json: error: <stdin>:1:2: type path error: the type at 1:1 is neither an "object" nor a type def
+json: error: <stdin>:1:2: "$foo"
+json: error: <stdin>:1:2:  ^
+command failed: json <<< '"$foo"'
+$
+
+--[ object ]--------------------------------------------------------------------
+
+$ json <<< '{"type":"object","args":[{"name":"foo","type":"this"}]}'
+{
+    "type": "object",
+    "args": [
+        {
+            "name": "foo",
+            "type": {
+                "type": "this",
+                "args": "this",
+                "attr": {
+                    "type": "object",
+                    "args": [
+                        {
+                            "name": "foo",
+                            "type": "this"
+                        }
+                    ]
+                }
+            }
+        }
+    ]
+}
+$ json <<< '{"type":"object","args":[{"name":"foo","type":"this.foo"}]}'
+{
+    "type": "object",
+    "args": [
+        {
+            "name": "foo",
+            "type": {
+                "type": "this",
+                "args": "this.foo",
+                "attr": "this.foo"
+            }
+        }
+    ]
+}
+$ json <<< '{"type":"object","args":[{"name":"foo","type":"this.bar"}]}'
+json: error: <stdin>:1:52: type path error: key not found in the "object" at 1:1
+json: error: <stdin>:1:52: {"type":"object","args":[{"name":"foo","type":"this.bar"}]}
+json: error: <stdin>:1:52:                                                    ^
+command failed: json <<< '{"type":"object","args":[{"name":"foo","type":"this.bar"}]}'
+$ json <<< '{"type":"object","args":[{"name":"foo","type":"this[0]"}]}'
+json: error: <stdin>:1:52: type path error: the type at 1:1 is neither an "array" nor a "list" nor a type def
+json: error: <stdin>:1:52: {"type":"object","args":[{"name":"foo","type":"this[0]"}]}
+json: error: <stdin>:1:52:                                                    ^
+command failed: json <<< '{"type":"object","args":[{"name":"foo","type":"this[0]"}]}'
+$ json <<< '{"type":"object","args":[{"name":"foo","type":"this.foo[0]"}]}'
+json: error: <stdin>:1:56: type path error: the type at 1:47 is neither an "array" nor a "list" nor a type def
+json: error: <stdin>:1:56: {"type":"object","args":[{"name":"foo","type":"this.foo[0]"}]}
+json: error: <stdin>:1:56:                                                        ^
+command failed: json <<< '{"type":"object","args":[{"name":"foo","type":"this.foo[0]"}]}'
+$ json <<< '{"type":"object","args":[{"name":"foo","type":"$foo"}]}'
+{
+    "type": "object",
+    "args": [
+        {
+            "name": "foo",
+            "type": {
+                "type": "this",
+                "args": "$foo",
+                "attr": "$foo"
+            }
+        }
+    ]
+}
+$ json <<< '{"type":"object","args":[{"name":"foo","type":"$bar"}]}'
+json: error: <stdin>:1:48: type path error: key not found in the "object" at 1:1
+json: error: <stdin>:1:48: {"type":"object","args":[{"name":"foo","type":"$bar"}]}
+json: error: <stdin>:1:48:                                                ^
+command failed: json <<< '{"type":"object","args":[{"name":"foo","type":"$bar"}]}'
+$ json <<< '{"type":"object","args":[{"name":"foo","type":"$foo[0]"}]}'
+json: error: <stdin>:1:52: type path error: the type at 1:47 is neither an "array" nor a "list" nor a type def
+json: error: <stdin>:1:52: {"type":"object","args":[{"name":"foo","type":"$foo[0]"}]}
+json: error: <stdin>:1:52:                                                    ^
+command failed: json <<< '{"type":"object","args":[{"name":"foo","type":"$foo[0]"}]}'
+$ json <<< '{"type":"object","args":[{"name":"foo","type":"$foo.bar"}]}'
+json: error: <stdin>:1:52: type path error: the type at 1:47 is neither an "object" nor a type def
+json: error: <stdin>:1:52: {"type":"object","args":[{"name":"foo","type":"$foo.bar"}]}
+json: error: <stdin>:1:52:                                                    ^
+command failed: json <<< '{"type":"object","args":[{"name":"foo","type":"$foo.bar"}]}'
+$
+
+--[ open-array ]----------------------------------------------------------------
+
+$ json <<< '{"type":"array","args":"this"}'
+{
+    "type": "array",
+    "args": {
+        "type": "this",
+        "args": "this",
+        "attr": {
+            "type": "array",
+            "args": "this"
+        }
+    }
+}
+$ json <<< '{"type":"array","args":"this.foo"}'
+json: error: <stdin>:1:29: type path error: the type at 1:1 is neither an "object" nor a type def
+json: error: <stdin>:1:29: {"type":"array","args":"this.foo"}
+json: error: <stdin>:1:29:                             ^
+command failed: json <<< '{"type":"array","args":"this.foo"}'
+$ json <<< '{"type":"array","args":"this[0]"}'
+{
+    "type": "array",
+    "args": {
+        "type": "this",
+        "args": "this[0]",
+        "attr": "this[0]"
+    }
+}
+$ json <<< '{"type":"array","args":"this[1]"}'
+json: error: <stdin>:1:29: type path error: non-null index in the open "array" at 1:1
+json: error: <stdin>:1:29: {"type":"array","args":"this[1]"}
+json: error: <stdin>:1:29:                             ^
+command failed: json <<< '{"type":"array","args":"this[1]"}'
+$ json <<< '{"type":"array","args":"this.foo[0]"}'
+json: error: <stdin>:1:29: type path error: the type at 1:1 is neither an "object" nor a type def
+json: error: <stdin>:1:29: {"type":"array","args":"this.foo[0]"}
+json: error: <stdin>:1:29:                             ^
+command failed: json <<< '{"type":"array","args":"this.foo[0]"}'
+$ json <<< '{"type":"array","args":"$foo"}'
+json: error: <stdin>:1:25: type path error: the type at 1:1 is neither an "object" nor a type def
+json: error: <stdin>:1:25: {"type":"array","args":"$foo"}
+json: error: <stdin>:1:25:                         ^
+command failed: json <<< '{"type":"array","args":"$foo"}'
+$ json <<< '{"type":"array","args":"$foo[0]"}'
+json: error: <stdin>:1:25: type path error: the type at 1:1 is neither an "object" nor a type def
+json: error: <stdin>:1:25: {"type":"array","args":"$foo[0]"}
+json: error: <stdin>:1:25:                         ^
+command failed: json <<< '{"type":"array","args":"$foo[0]"}'
+$ json <<< '{"type":"array","args":"$foo.bar"}'
+json: error: <stdin>:1:25: type path error: the type at 1:1 is neither an "object" nor a type def
+json: error: <stdin>:1:25: {"type":"array","args":"$foo.bar"}
+json: error: <stdin>:1:25:                         ^
+command failed: json <<< '{"type":"array","args":"$foo.bar"}'
+$
+
+--[ closed-array ]--------------------------------------------------------------
+
+$ json <<< '{"type":"array","args":["this"]}'
+{
+    "type": "array",
+    "args": [
+        {
+            "type": "this",
+            "args": "this",
+            "attr": {
+                "type": "array",
+                "args": [
+                    "this"
+                ]
+            }
+        }
+    ]
+}
+$ json <<< '{"type":"array","args":["this.foo"]}'
+json: error: <stdin>:1:30: type path error: the type at 1:1 is neither an "object" nor a type def
+json: error: <stdin>:1:30: {"type":"array","args":["this.foo"]}
+json: error: <stdin>:1:30:                              ^
+command failed: json <<< '{"type":"array","args":["this.foo"]}'
+$ json <<< '{"type":"array","args":["this[0]"]}'
+{
+    "type": "array",
+    "args": [
+        {
+            "type": "this",
+            "args": "this[0]",
+            "attr": "this[0]"
+        }
+    ]
+}
+$ json <<< '{"type":"array","args":["this[1]"]}'
+json: error: <stdin>:1:30: type path error: index out of range in the closed "array" at 1:1
+json: error: <stdin>:1:30: {"type":"array","args":["this[1]"]}
+json: error: <stdin>:1:30:                              ^
+command failed: json <<< '{"type":"array","args":["this[1]"]}'
+$ json <<< '{"type":"array","args":["this.foo[0]"]}'
+json: error: <stdin>:1:30: type path error: the type at 1:1 is neither an "object" nor a type def
+json: error: <stdin>:1:30: {"type":"array","args":["this.foo[0]"]}
+json: error: <stdin>:1:30:                              ^
+command failed: json <<< '{"type":"array","args":["this.foo[0]"]}'
+$ json <<< '{"type":"array","args":["$foo"]}'
+json: error: <stdin>:1:26: type path error: the type at 1:1 is neither an "object" nor a type def
+json: error: <stdin>:1:26: {"type":"array","args":["$foo"]}
+json: error: <stdin>:1:26:                          ^
+command failed: json <<< '{"type":"array","args":["$foo"]}'
+$ json <<< '{"type":"array","args":["$foo[0]"]}'
+json: error: <stdin>:1:26: type path error: the type at 1:1 is neither an "object" nor a type def
+json: error: <stdin>:1:26: {"type":"array","args":["$foo[0]"]}
+json: error: <stdin>:1:26:                          ^
+command failed: json <<< '{"type":"array","args":["$foo[0]"]}'
+$ json <<< '{"type":"array","args":["$foo.bar"]}'
+json: error: <stdin>:1:26: type path error: the type at 1:1 is neither an "object" nor a type def
+json: error: <stdin>:1:26: {"type":"array","args":["$foo.bar"]}
+json: error: <stdin>:1:26:                          ^
+command failed: json <<< '{"type":"array","args":["$foo.bar"]}'
+$
+
+--[ list ]----------------------------------------------------------------------
+
+$ json <<< '{"type":"list","args":["this"]}'
+{
+    "type": "list",
+    "args": [
+        {
+            "type": "this",
+            "args": "this",
+            "attr": {
+                "type": "list",
+                "args": [
+                    "this"
+                ]
+            }
+        }
+    ],
+    "attr": {
+        "any": null,
+        "plain": null,
+        "object": null,
+        "array": {
+            "open": null,
+            "closed": null
+        }
+    }
+}
+$ json <<< '{"type":"list","args":["this.foo"]}'
+json: error: <stdin>:1:29: type path error: the type at 1:1 is neither an "object" nor a type def
+json: error: <stdin>:1:29: {"type":"list","args":["this.foo"]}
+json: error: <stdin>:1:29:                             ^
+command failed: json <<< '{"type":"list","args":["this.foo"]}'
+$ json <<< '{"type":"list","args":["this[0]"]}'
+{
+    "type": "list",
+    "args": [
+        {
+            "type": "this",
+            "args": "this[0]",
+            "attr": "this[0]"
+        }
+    ],
+    "attr": {
+        "any": null,
+        "plain": null,
+        "object": null,
+        "array": {
+            "open": null,
+            "closed": null
+        }
+    }
+}
+$ json <<< '{"type":"list","args":["this[1]"]}'
+json: error: <stdin>:1:29: type path error: index out of range in the "list" at 1:1
+json: error: <stdin>:1:29: {"type":"list","args":["this[1]"]}
+json: error: <stdin>:1:29:                             ^
+command failed: json <<< '{"type":"list","args":["this[1]"]}'
+$ json <<< '{"type":"list","args":["this.foo[0]"]}'
+json: error: <stdin>:1:29: type path error: the type at 1:1 is neither an "object" nor a type def
+json: error: <stdin>:1:29: {"type":"list","args":["this.foo[0]"]}
+json: error: <stdin>:1:29:                             ^
+command failed: json <<< '{"type":"list","args":["this.foo[0]"]}'
+$ json <<< '{"type":"list","args":["$foo"]}'
+json: error: <stdin>:1:25: type path error: the type at 1:1 is neither an "object" nor a type def
+json: error: <stdin>:1:25: {"type":"list","args":["$foo"]}
+json: error: <stdin>:1:25:                         ^
+command failed: json <<< '{"type":"list","args":["$foo"]}'
+$ json <<< '{"type":"list","args":["$foo[0]"]}'
+json: error: <stdin>:1:25: type path error: the type at 1:1 is neither an "object" nor a type def
+json: error: <stdin>:1:25: {"type":"list","args":["$foo[0]"]}
+json: error: <stdin>:1:25:                         ^
+command failed: json <<< '{"type":"list","args":["$foo[0]"]}'
+$ json <<< '{"type":"list","args":["$foo.bar"]}'
+json: error: <stdin>:1:25: type path error: the type at 1:1 is neither an "object" nor a type def
+json: error: <stdin>:1:25: {"type":"list","args":["$foo.bar"]}
+json: error: <stdin>:1:25:                         ^
+command failed: json <<< '{"type":"list","args":["$foo.bar"]}'
+$
+
+--[ type-def ]------------------------------------------------------------------
+
+$ json <<< '[{"name":"foo","type":"this"}]'
+json: error: <stdin>:1:23: type path error: the value at 1:1 is not a type
+json: error: <stdin>:1:23: [{"name":"foo","type":"this"}]
+json: error: <stdin>:1:23:                       ^
+command failed: json <<< '[{"name":"foo","type":"this"}]'
+$ json <<< '[{"name":"foo","type":"this.foo"}]'
+[
+    {
+        "name": "foo",
+        "type": {
+            "type": "this",
+            "args": "this.foo",
+            "attr": "this.foo"
+        }
+    }
+]
+$ json <<< '[{"name":"foo","type":"this.bar"}]'
+json: error: <stdin>:1:28: type path error: key not found in the type def at 1:1
+json: error: <stdin>:1:28: [{"name":"foo","type":"this.bar"}]
+json: error: <stdin>:1:28:                            ^
+command failed: json <<< '[{"name":"foo","type":"this.bar"}]'
+$ json <<< '[{"name":"foo","type":"this[0]"}]'
+[
+    {
+        "name": "foo",
+        "type": {
+            "type": "this",
+            "args": "this[0]",
+            "attr": "this[0]"
+        }
+    }
+]
+$ json <<< '[{"name":"foo","type":"this.foo[0]"}]'
+json: error: <stdin>:1:32: type path error: the type at 1:23 is neither an "array" nor a "list" nor a type def
+json: error: <stdin>:1:32: [{"name":"foo","type":"this.foo[0]"}]
+json: error: <stdin>:1:32:                                ^
+command failed: json <<< '[{"name":"foo","type":"this.foo[0]"}]'
+$ json <<< '[{"name":"foo","type":"$foo"}]'
+[
+    {
+        "name": "foo",
+        "type": {
+            "type": "this",
+            "args": "$foo",
+            "attr": "$foo"
+        }
+    }
+]
+$ json <<< '[{"name":"foo","type":"$bar"}]'
+json: error: <stdin>:1:24: type path error: key not found in the type def at 1:1
+json: error: <stdin>:1:24: [{"name":"foo","type":"$bar"}]
+json: error: <stdin>:1:24:                        ^
+command failed: json <<< '[{"name":"foo","type":"$bar"}]'
+$ json <<< '[{"name":"foo","type":"$foo[0]"}]'
+json: error: <stdin>:1:28: type path error: the type at 1:23 is neither an "array" nor a "list" nor a type def
+json: error: <stdin>:1:28: [{"name":"foo","type":"$foo[0]"}]
+json: error: <stdin>:1:28:                            ^
+command failed: json <<< '[{"name":"foo","type":"$foo[0]"}]'
+$ json <<< '[{"name":"foo","type":"$foo.bar"}]'
+json: error: <stdin>:1:28: type path error: the type at 1:23 is neither an "object" nor a type def
+json: error: <stdin>:1:28: [{"name":"foo","type":"$foo.bar"}]
+json: error: <stdin>:1:28:                            ^
+command failed: json <<< '[{"name":"foo","type":"$foo.bar"}]'
+$ 
+
+--[ infinite ]------------------------------------------------------------------
+
+$ json <<< '{"type":"list","args":["this",{"type":"array","args":"this"}]}'
+{
+    "type": "list",
+    "args": [
+        {
+            "type": "this",
+            "args": "this",
+            "attr": {
+                "type": "list",
+                "args": [
+                    "this",
+                    {
+                        "type": "array",
+                        "args": "this"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "array",
+            "args": {
+                "type": "this",
+                "args": "this",
+                "attr": {
+                    "type": "list",
+                    "args": [
+                        "this",
+                        {
+                            "type": "array",
+                            "args": "this"
+                        }
+                    ]
+                }
+            }
+        }
+    ],
+    "attr": {
+        "any": null,
+        "plain": null,
+        "object": null,
+        "array": {
+            "open": {
+                "sym": "this",
+                "lo": null,
+                "eq": {
+                    "val": {
+                        "type": "array",
+                        "args": "this"
+                    },
+                    "lo": null,
+                    "hi": null
+                },
+                "hi": null
+            },
+            "closed": null
+        }
+    }
+}
+$ json <<< '{"type":"list","args":["this",{"type":"array","args":"this[0]"}]}'
+{
+    "type": "list",
+    "args": [
+        {
+            "type": "this",
+            "args": "this",
+            "attr": {
+                "type": "list",
+                "args": [
+                    "this",
+                    {
+                        "type": "array",
+                        "args": "this[0]"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "array",
+            "args": {
+                "type": "this",
+                "args": "this[0]",
+                "attr": "this"
+            }
+        }
+    ],
+    "attr": {
+        "any": null,
+        "plain": null,
+        "object": null,
+        "array": {
+            "open": {
+                "sym": "this[0]",
+                "lo": null,
+                "eq": {
+                    "val": {
+                        "type": "array",
+                        "args": "this[0]"
+                    },
+                    "lo": null,
+                    "hi": null
+                },
+                "hi": null
+            },
+            "closed": null
+        }
+    }
+}
+$ json <<< '{"type":"list","args":["this",{"type":"array","args":"this[1]"}]}'
+{
+    "type": "list",
+    "args": [
+        {
+            "type": "this",
+            "args": "this",
+            "attr": {
+                "type": "list",
+                "args": [
+                    "this",
+                    {
+                        "type": "array",
+                        "args": "this[1]"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "array",
+            "args": {
+                "type": "this",
+                "args": "this[1]",
+                "attr": {
+                    "type": "array",
+                    "args": "this[1]"
+                }
+            }
+        }
+    ],
+    "attr": {
+        "any": null,
+        "plain": null,
+        "object": null,
+        "array": {
+            "open": {
+                "sym": "this[1]",
+                "lo": null,
+                "eq": {
+                    "val": {
+                        "type": "array",
+                        "args": "this[1]"
+                    },
+                    "lo": null,
+                    "hi": null
+                },
+                "hi": null
+            },
+            "closed": null
+        }
+    }
+}
+$ json <<< '{"type":"list","args":["this",{"type":"array","args":"this[1][0]"}]}'
+{
+    "type": "list",
+    "args": [
+        {
+            "type": "this",
+            "args": "this",
+            "attr": {
+                "type": "list",
+                "args": [
+                    "this",
+                    {
+                        "type": "array",
+                        "args": "this[1][0]"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "array",
+            "args": {
+                "type": "this",
+                "args": "this[1][0]",
+                "attr": "this[1][0]"
+            }
+        }
+    ],
+    "attr": {
+        "any": null,
+        "plain": null,
+        "object": null,
+        "array": {
+            "open": {
+                "sym": "this[1][0]",
+                "lo": null,
+                "eq": {
+                    "val": {
+                        "type": "array",
+                        "args": "this[1][0]"
+                    },
+                    "lo": null,
+                    "hi": null
+                },
+                "hi": null
+            },
+            "closed": null
+        }
+    }
+}
+$
+
+

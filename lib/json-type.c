@@ -85,6 +85,12 @@
         (strlen(s) == l) &&            \
         (memcmp(s, b, l) == 0)         \
     )
+#define strutoul(p, e, b)                           \
+    (                                               \
+        STATIC(TYPEOF_IS_CHAR_UCHAR_PTR(p)),        \
+        STATIC(TYPEOF_IS_CHAR_UCHAR_PTR(*e)),       \
+        strtoul((const char*) (p), (char**) (e), b) \
+    )
 
 enum json_type_ruler_basic_type_t
 {
@@ -111,6 +117,12 @@ typedef void (*json_type_ruler_string_rule_t)(void*,
 typedef void (*json_type_ruler_size_rule_t)(void*,
     const struct json_text_pos_t*,
     size_t);
+typedef void (*json_type_ruler_size2_rule_t)(void*,
+    const struct json_text_pos_t*,
+    size_t, bool);
+typedef void (*json_type_ruler_range_rule_t)(void*,
+    const struct json_text_pos_t*,
+    const uchar_t*, size_t);
 
 struct json_type_ruler_rules_t
 {
@@ -124,6 +136,9 @@ struct json_type_ruler_rules_t
     json_type_ruler_empty_rule_t   mono_array_rule;
     json_type_ruler_size_rule_t    args_array_rule;
     json_type_ruler_size_rule_t    args_list_rule;
+    json_type_ruler_range_rule_t   path_key_rule;
+    json_type_ruler_size_rule_t    path_num_rule;
+    json_type_ruler_size2_rule_t   args_path_rule;
     json_type_ruler_size_rule_t    args_top_rule;
 };
 
@@ -406,7 +421,7 @@ static bool json_type_ruler_lookup_obj_type(
     ({                                               \
         ASSERT(JSON_TYPE_RULER_RESULT_IS_VAL(r));    \
         r.val >= JSON_TYPE_RULER_VAL_TYPE(basic) &&  \
-        r.val <= JSON_TYPE_RULER_VAL_TYPE(list_obj); \
+        r.val <= JSON_TYPE_RULER_VAL_TYPE(this_str); \
     })
 
 #define JSON_TYPE_RULER_RESULT_VAL_IS(r, n)  \
@@ -435,6 +450,7 @@ enum json_type_ruler_val_type_t
     json_type_ruler_val_object_obj_type,
     json_type_ruler_val_array_obj_type,
     json_type_ruler_val_list_obj_type,
+    json_type_ruler_val_this_str_type,
     json_type_ruler_val_name_obj_type,
     json_type_ruler_val_array_of_types_type,
     json_type_ruler_val_array_of_name_objs_type,
@@ -568,6 +584,12 @@ static const char* json_type_ruler_error_type_get_name(
     CASE(invalid_array_obj_args_neither_type_nor_array_of_types);
     CASE(invalid_array_elem_is_neither_type_nor_name_obj);
     CASE(invalid_array_elem_is_either_type_xor_name_obj);
+    CASE(invalid_type_path_unexpected_end);
+    CASE(invalid_type_path_invalid_char);
+    CASE(invalid_type_path_unexpected_char);
+    CASE(invalid_type_path_expected_key);
+    CASE(invalid_type_path_expected_num);
+    CASE(invalid_type_path_invalid_num);
     default:
         UNEXPECT_VAR("%d", type);
     }
@@ -587,6 +609,7 @@ static const char* json_type_ruler_val_type_get_name(
     CASE(object_obj);
     CASE(array_obj);
     CASE(list_obj);
+    CASE(this_str);
     CASE(name_obj);
     CASE(array_of_types);
     CASE(array_of_name_objs);
@@ -648,6 +671,167 @@ static void json_type_ruler_result_print_debug(
     do {} while (0)
 #endif
 
+static bool json_type_ruler_parse_num(
+    const uchar_t* str,
+    const uchar_t** end,
+    size_t* res)
+{
+    size_t r;
+
+    STATIC(SIZE_MAX == ULONG_MAX);
+
+    *end = str;
+    if (!isdigit(*str))
+        return true;
+
+    errno = 0;
+    r = strutoul(str, end, 10);
+    ASSERT(*end >= str);
+
+    switch (errno) {
+    case 0:
+        *res = r;
+        return true;
+    case ERANGE:
+        return false;
+    default:
+        UNEXPECT_VAR("%d", errno);
+    }
+}
+
+#define JSON_TYPE_RULER_PATH_VAL(s)    \
+    (                                  \
+        *res = JSON_TYPE_RULER_RESULT( \
+            val, s->pos,               \
+            json_type_ruler_val_ ##    \
+            this_str ## _type),        \
+        true                           \
+    )
+#define JSON_TYPE_RULER_PATH_ERROR(s, p, e)          \
+    ({                                               \
+        struct json_error_pos_t __p = s->pos;        \
+        size_t __n = PTR_DIFF(p + 1, node->buf.ptr); \
+        SIZE_ADD_EQ(__p.col, __n);                   \
+        *res = JSON_TYPE_RULER_ERROR_POS(__p,        \
+            invalid_type_path_ ## e);                \
+        true;                                        \
+    })
+#define JSON_TYPE_RULER_PATH_CALL_RULE(s, n, p, ...) \
+    do {                                             \
+        struct json_error_pos_t __p = s->pos;        \
+        size_t __n = PTR_DIFF(p, node->buf.ptr);     \
+        SIZE_ADD_EQ(__p.col, __n);                   \
+        JSON_TYPE_RULER_CALL_RULE_POS(               \
+            n, __p, ## __VA_ARGS__);                 \
+    } while (0)
+
+static bool json_type_ruler_is_type_path(
+    const struct json_type_ruler_t* ruler,
+    const struct json_ast_string_node_t* node,
+    struct json_type_ruler_result_t* res)
+{
+    const struct json_ast_node_t* a;
+    const uchar_t* p;
+    bool d = false;
+    size_t n = 0;
+
+    ASSERT(node != NULL);
+
+    a = JSON_AST_TO_NODE_CONST(node, string);
+
+    p = node->buf.ptr;
+    if (*p ++ == '$') {
+        d = true;
+        goto key;
+    }
+
+    p = node->buf.ptr;
+    if (*p ++ != 't' ||
+        *p ++ != 'h' ||
+        *p ++ != 'i' ||
+        *p ++ != 's')
+        return false;
+
+    while (*p) {
+        const uchar_t* q;
+        size_t l;
+
+        switch (*p ++) {
+
+        key:
+        case '.': {
+            q = p;
+            while (*p &&
+                   *p != '$' &&
+                   *p != '.' &&
+                   *p != '[' &&
+                   *p != ']')
+                p ++;
+
+            l = INT_AS_SIZE(p - q);
+
+            if (l == 0)
+                return JSON_TYPE_RULER_PATH_ERROR(
+                    a, p, expected_key);
+            if (*p == '$' || *p == ']')
+                return JSON_TYPE_RULER_PATH_ERROR(
+                    a, p, unexpected_char);
+
+            JSON_TYPE_RULER_PATH_CALL_RULE(
+                a, path_key, q, q, l);
+            break;
+        }
+
+        case '[': {
+            size_t n;
+            bool r;
+
+            r = json_type_ruler_parse_num(
+                    q = p, &p, &n);
+            l = INT_AS_SIZE(p - q);
+
+            if (l == 0)
+                return JSON_TYPE_RULER_PATH_ERROR(
+                    a, p, expected_num);
+            if (!r)
+                return JSON_TYPE_RULER_PATH_ERROR(
+                    a, q, invalid_num);
+            if (*p == '\0')
+                return JSON_TYPE_RULER_PATH_ERROR(
+                    a, p, unexpected_end);
+            if (*p == '$' || *p == '.' || *p == '[')
+                return JSON_TYPE_RULER_PATH_ERROR(
+                    a, p, unexpected_char);
+            if (*p != ']')
+                return JSON_TYPE_RULER_PATH_ERROR(
+                    a, p, invalid_char);
+
+            JSON_TYPE_RULER_PATH_CALL_RULE(
+                a, path_num, q, n);
+
+            p ++;
+            break;
+        }
+
+        case '$':
+        case ']':
+            return JSON_TYPE_RULER_PATH_ERROR(
+                a, p - 1, unexpected_char);
+
+        default:
+            return JSON_TYPE_RULER_PATH_ERROR(
+                a, p - 1, invalid_char);
+        }
+
+        n ++;
+    }
+
+    JSON_TYPE_RULER_PATH_CALL_RULE(
+        a, args_path, node->buf.ptr, n, d); 
+
+    return JSON_TYPE_RULER_PATH_VAL(a);
+}
+
 // stev: meta-rules: 
 // 
 // (1)  key      type of attached value
@@ -702,6 +886,17 @@ static void json_type_ruler_result_print_debug(
 //           where $any is any type
 //       (c) the objects of form `{ "plain": $value }' where $value is allowed
 //           to be only `null' or of type boolean, number or string
+//       (d) `"$path"', where $path obeys the following rules:
+//              (i) syntax rules:
+//                    path : ( "this" | "$" KEY ) arg*
+//                    arg  : "." KEY | "[" NUM "]"
+//             (ii) lexical rules:
+//                    KEY : [^$.[]]+
+//                    NUM : [0-9]+
+//            KEY must also obey the lexical rules of making valid JSON strings;
+//            note that -- similarly to the case (9.a) -- the string values of
+//            this kind are exempted from being types when occurring as values
+//            associated to the key `"plain"' of objects of form `{ "plain": ... }'
 
 static struct json_type_ruler_result_t
     json_type_ruler_visit(
@@ -741,7 +936,13 @@ static struct json_type_ruler_result_t
         const struct json_ast_string_node_t* node)
 {
     enum json_type_ruler_basic_type_t t;
+    struct json_type_ruler_result_t r;
 
+    if (json_type_ruler_is_type_path(
+            ruler, node, &r))
+        // meta-rule (9.d)
+        return r;
+    else
     if (json_type_ruler_lookup_basic_type(
             node->buf.ptr, &t))
         // meta-rule (9.a)
@@ -1108,6 +1309,30 @@ static void json_type_ruler_print_error_desc(
             "\"name\" objects", file);
         break;
 
+    CASE(invalid_type_path_unexpected_end):
+        fputs("invalid type path: unexpected end of path", file);
+        break;
+
+    CASE(invalid_type_path_invalid_char):
+        fputs("invalid type path: invalid char", file);
+        break;
+
+    CASE(invalid_type_path_unexpected_char):
+        fputs("invalid type path: unexpected char", file);
+        break;
+
+    CASE(invalid_type_path_expected_key):
+        fputs("invalid type path: expected key name", file);
+        break;
+
+    CASE(invalid_type_path_expected_num):
+        fputs("invalid type path: expected number", file);
+        break;
+
+    CASE(invalid_type_path_invalid_num):
+        fputs("invalid type path: invalid number", file);
+        break;
+
     default:
         UNEXPECT_VAR("%d", type);
     }
@@ -1132,6 +1357,8 @@ static struct json_error_pos_t json_type_lib_error_info_get_pos(
         return info->meta.pos;
     case json_type_lib_error_attr:
         return info->attr.pos[0];
+    case json_type_lib_error_path:
+        return info->path.pos[0];
     default:
         UNEXPECT_VAR("%d", info->type);
     }
@@ -1149,6 +1376,7 @@ static const struct json_file_info_t* json_type_lib_error_info_get_file(
     case json_type_lib_error_ast:
     case json_type_lib_error_meta:
     case json_type_lib_error_attr:
+    case json_type_lib_error_path:
         return &info->file_info;
     default:
         UNEXPECT_VAR("%d", info->type);
@@ -1717,6 +1945,7 @@ union json_type_node_pack_t
     const struct json_type_object_node_t* object;
     const struct json_type_array_node_t*  array;
     const struct json_type_list_node_t*   list;
+    const struct json_type_this_node_t*   this;
 };
 
 union json_type_array_node_pack_t
@@ -1835,6 +2064,59 @@ static void json_type_print(const struct json_type_node_t* node,
             json_type_list_attr_print(node->attr.list, file);
         }
         fputc('}', file);
+    }
+    else
+    if ((n.this = JSON_TYPE_NODE_AS_IF_CONST(node, this))) {
+        const struct json_type_path_arg_t *p, *b, *e;
+        const bool d = n.this->path.dollar;
+
+        if (n.this->path.size == 0)
+            ASSERT(!d);
+
+        if (attr)
+            fputs("{\"type\":\"", file);
+        else
+            fputc('"', file);
+        if (attr || !d)
+            fputs("this", file);
+        if (attr)
+            fputs("\",\"args\":\"", file);
+        if (attr && !d)
+            fputs("this", file);
+
+        for (b = n.this->path.args,
+             e = b + n.this->path.size,
+             p = b;
+             p < e;
+             p ++) {
+            switch (p->type) {
+
+            case json_type_path_arg_key_type:
+                fputc(p == b && d ? '$' : '.', file);
+                json_type_print_repr(p->val.key, false, file);
+                break;
+
+            case json_type_path_arg_num_type:
+                ASSERT(p > b || !d);
+                fprintf(file, "[%zu]", p->val.num);
+                break;
+
+            default:
+                UNEXPECT_VAR("%d", p->type);
+            }
+        }
+        fputc('"', file);
+
+        if (attr) {
+            const struct json_type_node_t* n;
+
+            fputs(",\"attr\":", file);
+            if ((n = node->attr.this->node))
+                json_type_print(n, file, false);
+            else
+                fputs("null", file);
+            fputc('}', file);
+        }
     }
     else
         UNEXPECT_VAR("%d", node->type);
@@ -4110,7 +4392,8 @@ enum json_type_lib_obj_type_t
 {
     json_type_lib_obj_arg_type,
     json_type_lib_obj_node_type,
-    json_type_lib_obj_dict_type
+    json_type_lib_obj_dict_type,
+    json_type_lib_obj_path_type,
 };
 
 struct json_type_lib_obj_t
@@ -4120,6 +4403,7 @@ struct json_type_lib_obj_t
         struct json_type_object_node_arg_t arg;
         const struct json_type_node_t*     node;
         const struct json_type_dict_t*     dict;
+        struct json_type_path_arg_t        path;
     };
 };
 
@@ -4152,6 +4436,7 @@ struct json_type_lib_obj_t
 
 #define JSON_TYPE_LIB_STACK_PUSH_NODE(n) JSON_TYPE_LIB_STACK_PUSH(node, n)
 #define JSON_TYPE_LIB_STACK_PUSH_DICT(d) JSON_TYPE_LIB_STACK_PUSH(dict, d)
+#define JSON_TYPE_LIB_STACK_PUSH_PATH(d) JSON_TYPE_LIB_STACK_PUSH(path, d)
 #define JSON_TYPE_LIB_STACK_PUSH_ARG(a)  JSON_TYPE_LIB_STACK_PUSH(arg, a)
 
 #define JSON_TYPE_LIB_STACK_SIZE()       JSON_TYPE_LIB_STACK_OP(STACK_SIZE)
@@ -4195,6 +4480,7 @@ struct json_type_lib_obj_t
 
 #define JSON_TYPE_LIB_OBJ_AS_ARG(o)  JSON_TYPE_LIB_OBJ_AS(o, arg)
 #define JSON_TYPE_LIB_OBJ_AS_NODE(o) JSON_TYPE_LIB_OBJ_AS(o, node)
+#define JSON_TYPE_LIB_OBJ_AS_PATH(o) JSON_TYPE_LIB_OBJ_AS(o, path)
 
 #define JSON_TYPE_LIB_OBJ_AS_IF_NODE(o) JSON_TYPE_LIB_OBJ_AS_IF(o, node)
 #define JSON_TYPE_LIB_OBJ_AS_IF_DICT(o) JSON_TYPE_LIB_OBJ_AS_IF(o, dict)
@@ -4756,6 +5042,12 @@ static struct json_type_list_attr_t* json_type_lib_new_list_attr(
     return JSON_TYPE_LIB_ALLOCATE_STRUCT(json_type_list_attr_t);
 }
 
+static struct json_type_this_attr_t* json_type_lib_new_this_attr(
+    struct json_type_lib_t* lib)
+{
+    return JSON_TYPE_LIB_ALLOCATE_STRUCT(json_type_this_attr_t);
+}
+
 #define JSON_TYPE_LIB_ALLOCATE_ARRAY(t, n)           \
     ({                                               \
         STATIC(TYPEOF_IS_SIZET(n));                  \
@@ -4776,6 +5068,21 @@ static const uchar_t* json_type_lib_new_str(
 
     p = JSON_TYPE_LIB_ALLOCATE_ARRAY(uchar_t, n);
     memcpy(p, str, n);
+
+    return p;
+}
+
+static const uchar_t* json_type_lib_new_path_key(
+    struct json_type_lib_t* lib, const uchar_t* str,
+    size_t len)
+{
+    uchar_t* p;
+
+    ASSERT_SIZE_INC_NO_OVERFLOW(len);
+    p = JSON_TYPE_LIB_ALLOCATE_ARRAY(uchar_t, len + 1);
+
+    memcpy(p, str, len);
+    p[len] = '\0';
 
     return p;
 }
@@ -4931,6 +5238,30 @@ static struct json_type_node_t* json_type_lib_new_list_node(
     n->node.list.size = size;
     n->node.list.args = a;
     // stev: 'n->node.list.args' to be setup immediately
+
+    return n;
+}
+
+static struct json_type_node_t* json_type_lib_new_this_node(
+    struct json_type_lib_t* lib, const struct json_text_pos_t* pos,
+    size_t size, bool dollar)
+{
+    struct json_type_path_arg_t* a;
+    struct json_type_node_t* n;
+
+    a = JSON_TYPE_LIB_ALLOCATE_ARRAY(
+            struct json_type_path_arg_t,
+            size);
+
+    n = json_type_lib_new_node(lib, pos);
+    ASSERT(n != NULL);
+
+    n->type = json_type_this_node_type;
+    n->node.this.path.pos = *pos;
+    n->node.this.path.dollar = dollar;
+    n->node.this.path.size = size;
+    n->node.this.path.args = a;
+    // stev: 'n->node.this.path.args' to be setup immediately
 
     return n;
 }
@@ -5169,6 +5500,67 @@ static void json_type_lib_rules_args_list(
     JSON_TYPE_LIB_STACK_PUSH_NODE(n);
 }
 
+static void json_type_lib_rules_path_key(
+    struct json_type_lib_t* lib,
+    const struct json_text_pos_t* pos,
+    const uchar_t* str, size_t len)
+{
+    struct json_type_path_arg_t a;
+
+    a.type = json_type_path_arg_key_type;
+    a.val.key = json_type_lib_new_path_key(lib, str, len);
+    a.pos = *pos;
+
+    JSON_TYPE_LIB_STACK_PUSH_PATH(a);
+}
+
+static void json_type_lib_rules_path_num(
+    struct json_type_lib_t* lib,
+    const struct json_text_pos_t* pos,
+    size_t num)
+{
+    struct json_type_path_arg_t a;
+
+    a.type = json_type_path_arg_num_type;
+    a.val.num = num;
+    a.pos = *pos;
+
+    JSON_TYPE_LIB_STACK_PUSH_PATH(a);
+}
+
+static void json_type_lib_rules_args_path(
+    struct json_type_lib_t* lib,
+    const struct json_text_pos_t* pos,
+    size_t size, bool dollar)
+{
+    struct json_type_node_t* n;
+
+    n = json_type_lib_new_this_node(lib, pos, size, dollar);
+    if (size > 0) {
+        struct json_type_lib_obj_t *b, *p;
+        struct json_type_this_node_t* t;
+        struct json_type_path_arg_t* q;
+
+        t = JSON_TYPE_NODE_AS(n, this);
+
+        ASSERT(t->path.size == size);
+
+        ASSERT(JSON_TYPE_LIB_STACK_SIZE() >= size);
+        for (b = JSON_TYPE_LIB_STACK_TOP_REF(),
+             p = b - SIZE_AS_INT(size - 1),
+             q = CONST_CAST(t->path.args,
+                struct json_type_path_arg_t);
+             p <= b;
+             p ++,
+             q ++) {
+             *q = JSON_TYPE_LIB_OBJ_AS_PATH(p);
+        }
+        JSON_TYPE_LIB_STACK_POP_N(size - 1);
+    }
+
+    JSON_TYPE_LIB_STACK_PUSH_NODE(n);
+}
+
 static void json_type_lib_rules_args_top(
     struct json_type_lib_t* lib,
     const struct json_text_pos_t* pos,
@@ -5228,6 +5620,15 @@ static const struct json_type_ruler_rules_t json_type_lib_rules = {
 
     .args_list_rule   = (json_type_ruler_size_rule_t)
                          json_type_lib_rules_args_list,
+
+    .path_key_rule    = (json_type_ruler_range_rule_t)
+                         json_type_lib_rules_path_key,
+
+    .path_num_rule    = (json_type_ruler_size_rule_t)
+                         json_type_lib_rules_path_num,
+
+    .args_path_rule   = (json_type_ruler_size2_rule_t)
+                         json_type_lib_rules_args_path,
 
     .args_top_rule    = (json_type_ruler_size_rule_t)
                          json_type_lib_rules_args_top,
@@ -5335,6 +5736,75 @@ static void json_type_lib_attr_print_error_desc(
     }
 }
 
+#undef  CASE
+#define CASE(E) case json_type_lib_error_path_ ## E
+
+static void json_type_lib_path_print_error_desc(
+    const struct json_type_lib_error_path_t* path, FILE* file)
+{
+    static const char* const aggrs[] = {
+        [0] = "\"array\" nor a \"list\" nor a type def",
+        [1] = "\"object\" nor a type def",
+    };
+    static const char* const keys[] = {
+        [0] = "type def", [1] = "\"object\"",
+    };
+    static const char* const indexes[] = {
+        [0] = "type def", [1] = "\"list\"",
+        [2] = "closed \"array\""
+    };
+    const char* p;
+    size_t k = 0;
+
+    switch (path->type) {
+    CASE(val_not_type):
+        fprintf(file, "the value at %zu:%zu is not a type",
+            path->pos[1].line,
+            path->pos[1].col);
+        break;
+    CASE(node_neither_object_nor_def):
+        k ++;
+    CASE(node_neither_array_nor_list_nor_def):
+        p = ARRAY_NULL_ELEM(aggrs, k);
+        ASSERT(p != NULL);
+
+        fprintf(file, "the type at %zu:%zu is neither an %s",
+            path->pos[1].line,
+            path->pos[1].col,
+            p);
+        break;
+    CASE(object_key_not_found):
+        k++;
+    CASE(def_key_not_found):
+        p = ARRAY_NULL_ELEM(keys, k);
+        ASSERT(p != NULL);
+
+        fprintf(file, "key not found in the %s at %zu:%zu",
+            p, path->pos[1].line,
+            path->pos[1].col);
+        break;
+    CASE(open_array_index_non_null):
+        fprintf(file, "non-null index in the open \"array\" at %zu:%zu",
+            path->pos[1].line,
+            path->pos[1].col);
+        break;
+    CASE(closed_array_index_out_of_range):
+        k ++;
+    CASE(list_index_out_of_range):
+        k ++;
+    CASE(def_index_out_of_range):
+        p = ARRAY_NULL_ELEM(indexes, k);
+        ASSERT(p != NULL);
+
+        fprintf(file, "index out of range in the %s at %zu:%zu",
+            p, path->pos[1].line,
+            path->pos[1].col);
+        break;
+    default:
+        UNEXPECT_VAR("%d", path->type);
+    }
+}
+
 static void json_type_lib_error_info_print_error_desc(
     const struct json_type_lib_error_info_t* info, FILE* file)
 {
@@ -5386,6 +5856,11 @@ static void json_type_lib_error_info_print_error_desc(
         fputs("attribute error: ", file);
         json_type_lib_attr_print_error_desc(
             &info->attr, file);
+        break;
+    case json_type_lib_error_path:
+        fputs("type path error: ", file);
+        json_type_lib_path_print_error_desc(
+            &info->path, file);
         break;
     default:
         UNEXPECT_VAR("%d", info->type);
@@ -5455,6 +5930,27 @@ static const char* json_type_lib_attr_error_type_get_name(
     }
 }
 
+#undef  CASE
+#define CASE(E) case json_type_lib_error_path_ ## E: return #E
+
+static const char* json_type_lib_path_error_type_get_name(
+    enum json_type_lib_error_path_type_t type)
+{
+    switch (type) {
+    CASE(val_not_type);
+    CASE(node_neither_object_nor_def);
+    CASE(node_neither_array_nor_list_nor_def);
+    CASE(object_key_not_found);
+    CASE(open_array_index_non_null);
+    CASE(closed_array_index_out_of_range);
+    CASE(list_index_out_of_range);
+    CASE(def_key_not_found);
+    CASE(def_index_out_of_range);
+    default:
+        UNEXPECT_VAR("%d", type);
+    }
+}
+
 static void json_type_lib_error_info_print_error_debug(
     const struct json_type_lib_error_info_t* info, FILE* file)
 {
@@ -5496,6 +5992,13 @@ static void json_type_lib_error_info_print_error_debug(
             json_type_lib_attr_error_type_get_name(info->attr.type),
             info->attr.pos[0].line, info->attr.pos[0].col,
             info->attr.pos[1].line, info->attr.pos[1].col);
+        break;
+    case json_type_lib_error_path:
+        fprintf(file,
+            "# path {.type=%s .pos=[{.line=%zu .col=%zu} {.line=%zu .col=%zu}]}",
+            json_type_lib_path_error_type_get_name(info->path.type),
+            info->path.pos[0].line, info->path.pos[0].col,
+            info->path.pos[1].line, info->path.pos[1].col);
         break;
     default:
         UNEXPECT_VAR("%d", info->type);
@@ -6185,6 +6688,9 @@ static bool json_type_lib_gen_list_attrs(
                 n->pos, m->pos);
         }
         else
+        if (n->type == json_type_this_node_type)
+            ; // stev: not yet implemented
+        else
             UNEXPECT_VAR("%d", n->type);
     }
 
@@ -6288,7 +6794,8 @@ static bool json_type_lib_gen_list_attrs(
                 UNEXPECT_VAR("%d", q.array->type);
         }
         else
-        if (n->type != json_type_list_node_type)
+        if (n->type != json_type_list_node_type &&
+            n->type != json_type_this_node_type)
             UNEXPECT_VAR("%d", n->type);
     }
 
@@ -6305,6 +6812,278 @@ static bool json_type_lib_gen_list_attrs(
 
     *result = r;
     return true;
+}
+
+#define JSON_TYPE_LIB_PATH_ERROR(n, p0, p1)  \
+    ({                                       \
+        lib->error.type =                    \
+            json_type_lib_error_path;        \
+        lib->error.attr.type =               \
+            json_type_lib_error_path_ ## n;  \
+        lib->error.attr.pos[0] = p0;         \
+        lib->error.attr.pos[1] = p1;         \
+        lib->error.file_info.name = NULL;    \
+        lib->error.file_info.buf = NULL;     \
+        lib->error.file_info.size = 0;       \
+        lib->stat = json_parse_status_error; \
+        NULL;                                \
+    })
+
+static const struct json_type_node_t*
+    json_type_lib_node_get_path_node(
+        struct json_type_lib_t* lib,
+        const struct json_type_node_t* node,
+        const struct json_type_path_arg_t* arg)
+{
+    union json_type_node_pack_t n;
+
+    if (JSON_TYPE_NODE_IS_CONST(node, any) ||
+        JSON_TYPE_NODE_IS_CONST(node, plain) ||
+        JSON_TYPE_NODE_IS_CONST(node, this)) {
+        switch (arg->type) {
+
+        case json_type_path_arg_key_type:
+            return JSON_TYPE_LIB_PATH_ERROR(
+                node_neither_object_nor_def,
+                arg->pos, node->pos);
+
+        case json_type_path_arg_num_type:
+            return JSON_TYPE_LIB_PATH_ERROR(
+                node_neither_array_nor_list_nor_def,
+                arg->pos, node->pos);
+
+        default:
+            UNEXPECT_VAR("%d", arg->type);
+        }
+    }
+    else
+    if ((n.object = JSON_TYPE_NODE_AS_IF_CONST(node, object))) {
+        switch (arg->type) {
+
+        case json_type_path_arg_key_type: {
+            const struct json_type_object_node_arg_t *p, *e;
+
+            for (p = n.object->args,
+                 e = p + n.object->size;
+                 p < e;
+                 p ++) {
+                if (!strucmp(p->name, arg->val.key))
+                    break;
+            }
+            if (p >= e)
+                return JSON_TYPE_LIB_PATH_ERROR(
+                    object_key_not_found,
+                    arg->pos, node->pos);
+
+            return p->type;
+        }
+
+        case json_type_path_arg_num_type:
+            return JSON_TYPE_LIB_PATH_ERROR(
+                node_neither_array_nor_list_nor_def,
+                arg->pos, node->pos);
+
+        default:
+            UNEXPECT_VAR("%d", arg->type);
+        }
+    }
+    else
+    if ((n.array = JSON_TYPE_NODE_AS_IF_CONST(node, array))) {
+        switch (arg->type) {
+
+        case json_type_path_arg_key_type:
+            return JSON_TYPE_LIB_PATH_ERROR(
+                node_neither_object_nor_def,
+                arg->pos, node->pos);
+
+        case json_type_path_arg_num_type: {
+            union json_type_array_node_pack_t a;
+
+            if ((a.open = JSON_TYPE_ARRAY_NODE_AS_IF_CONST(
+                    n.array, open))) {
+                if (arg->val.num > 0)
+                    return JSON_TYPE_LIB_PATH_ERROR(
+                        open_array_index_non_null,
+                        arg->pos, node->pos);
+
+                return a.open->arg;
+            }
+            else
+            if ((a.closed = JSON_TYPE_ARRAY_NODE_AS_IF_CONST(
+                    n.array, closed))) {
+                if (arg->val.num >= a.closed->size)
+                    return JSON_TYPE_LIB_PATH_ERROR(
+                        closed_array_index_out_of_range,
+                        arg->pos, node->pos);
+
+                return a.closed->args[arg->val.num];
+            }
+            else
+                UNEXPECT_VAR("%d", n.array->type);
+        }
+
+        default:
+            UNEXPECT_VAR("%d", arg->type);
+        }
+    }
+    else
+    if ((n.list = JSON_TYPE_NODE_AS_IF_CONST(node, list))) {
+        switch (arg->type) {
+
+        case json_type_path_arg_key_type:
+            return JSON_TYPE_LIB_PATH_ERROR(
+                node_neither_object_nor_def,
+                arg->pos, node->pos);
+
+        case json_type_path_arg_num_type:
+            if (arg->val.num >= n.list->size)
+                return JSON_TYPE_LIB_PATH_ERROR(
+                    list_index_out_of_range,
+                    arg->pos, node->pos);
+
+            return n.list->args[arg->val.num];
+
+        default:
+            UNEXPECT_VAR("%d", arg->type);
+        }
+    }
+    else
+        UNEXPECT_VAR("%d", node->type);
+}
+
+static const struct json_type_node_t*
+    json_type_lib_dict_get_path_node(
+        struct json_type_lib_t* lib,
+        const struct json_type_dict_t* dict,
+        const struct json_type_path_arg_t* arg)
+{
+    switch (arg->type) {
+
+    case json_type_path_arg_key_type: {
+        const struct json_type_dict_arg_t *p, *e;
+
+        for (p = dict->args,
+             e = p + dict->size;
+             p < e;
+             p ++) {
+            if (!strucmp(p->name, arg->val.key))
+                break;
+        }
+        if (p >= e)
+            return JSON_TYPE_LIB_PATH_ERROR(
+                def_key_not_found,
+                arg->pos, dict->pos);
+
+        return p->type;
+    }
+
+    case json_type_path_arg_num_type: {
+        if (arg->val.num >= dict->size)
+            return JSON_TYPE_LIB_PATH_ERROR(
+                def_index_out_of_range,
+                arg->pos, dict->pos);
+
+        return dict->args[arg->val.num].type;
+    }
+
+    default:
+        UNEXPECT_VAR("%d", arg->type);
+    }
+}
+
+static const struct json_type_node_t*
+    json_type_lib_def_get_path_node(
+        struct json_type_lib_t* lib,
+        const struct json_type_def_t* def,
+        const struct json_type_path_arg_t* arg)
+{
+    if (def->type == json_type_def_node_type)
+        return json_type_lib_node_get_path_node(
+            lib, def->val.node, arg);
+    else
+    if (def->type == json_type_def_dict_type)
+        return json_type_lib_dict_get_path_node(
+            lib, def->val.dict, arg);
+    else
+        UNEXPECT_VAR("%d", def->type);
+}
+
+static const struct json_type_node_t*
+    json_type_lib_def_get_root_node(
+        struct json_type_lib_t* lib,
+        const struct json_type_def_t* def,
+        const struct json_text_pos_t* pos)
+{
+    if (def->type == json_type_def_node_type) {
+        ASSERT(def->val.node != NULL);
+        return def->val.node;
+    }
+    else
+    if (def->type == json_type_def_dict_type)
+        return JSON_TYPE_LIB_PATH_ERROR(
+            val_not_type, *pos,
+            def->val.dict->pos);
+    else
+        UNEXPECT_VAR("%d", def->type);
+}
+
+static const struct json_type_node_t*
+    json_type_lib_get_path_node(
+        struct json_type_lib_t* lib,
+        struct json_type_lib_text_impl_t* impl,
+        const struct json_type_path_t* path)
+{
+    const struct json_type_path_arg_t *p, *e;
+    const struct json_type_node_t* r;
+
+    if (path->size == 0) {
+        if (!(r = json_type_lib_def_get_root_node(
+                lib, &impl->def, &path->pos)))
+            return NULL;
+    }
+    else {
+        if (!(r = json_type_lib_def_get_path_node(
+                lib, &impl->def, path->args)))
+            return NULL;
+    }
+
+    p = path->args;
+    e = p + path->size;
+
+    while (++ p < e) {
+        if (!(r = json_type_lib_node_get_path_node(
+                lib, r, p)))
+            return NULL;
+    }
+
+    return r;
+}
+
+static bool json_type_lib_check_this_attrs(
+    struct json_type_lib_t* lib UNUSED,
+    const struct json_type_this_attr_t* attr UNUSED)
+{
+    NOT_YET_IMPL();
+}
+
+static bool json_type_lib_gen_this_attrs(
+    struct json_type_lib_t* lib,
+    const struct json_type_this_node_t* this,
+    const struct json_type_this_attr_t** result)
+{
+    struct json_type_this_attr_t* r;
+
+    r = json_type_lib_new_this_attr(lib);
+
+    r->node = json_type_lib_get_path_node(
+        lib, JSON_TYPE_LIB_IMPL_AS(text),
+        &this->path);
+
+    if (r->node != NULL) {
+        *result = r;
+        return true;
+    }
+    return false;
 }
 
 static bool json_type_lib_check_node_attrs(
@@ -6366,6 +7145,11 @@ static bool json_type_lib_check_node_attrs(
             if (!json_type_lib_check_node_attrs(lib, *p))
                 return false;
         }
+    }
+    else
+    if ((n.this = JSON_TYPE_NODE_AS_IF_CONST(node, this))) {
+        if (!json_type_lib_check_this_attrs(lib, node->attr.this))
+            return false;
     }
     else
         UNEXPECT_VAR("%d", node->type);
@@ -6434,6 +7218,14 @@ static bool json_type_lib_gen_node_attrs(
             if (!json_type_lib_gen_node_attrs(lib, *p))
                 return false;
         }
+    }
+    else
+    if ((n.this = JSON_TYPE_NODE_AS_IF_CONST(node, this))) {
+        const struct json_type_this_attr_t** a;
+
+        a = &JSON_TYPE_NODE_CONST_CAST(node)->attr.this;
+        if (!json_type_lib_gen_this_attrs(lib, n.this, a))
+            return false;
     }
     else
         UNEXPECT_VAR("%d", node->type);

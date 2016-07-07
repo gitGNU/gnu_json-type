@@ -61,7 +61,8 @@ enum json_type_lib_error_t
     json_type_lib_error_lib,
     json_type_lib_error_ast,
     json_type_lib_error_meta,
-    json_type_lib_error_attr
+    json_type_lib_error_attr,
+    json_type_lib_error_path
 };
 
 enum json_type_lib_error_oper_type_t
@@ -150,7 +151,13 @@ enum json_type_ruler_error_type_t
     json_type_ruler_error_invalid_list_obj_args_not_of_type_array_of_types,
     json_type_ruler_error_invalid_array_obj_args_neither_type_nor_array_of_types,
     json_type_ruler_error_invalid_array_elem_is_neither_type_nor_name_obj,
-    json_type_ruler_error_invalid_array_elem_is_either_type_xor_name_obj
+    json_type_ruler_error_invalid_array_elem_is_either_type_xor_name_obj,
+    json_type_ruler_error_invalid_type_path_unexpected_end,
+    json_type_ruler_error_invalid_type_path_invalid_char,
+    json_type_ruler_error_invalid_type_path_unexpected_char,
+    json_type_ruler_error_invalid_type_path_expected_key,
+    json_type_ruler_error_invalid_type_path_expected_num,
+    json_type_ruler_error_invalid_type_path_invalid_num
 };
 
 struct json_type_lib_error_meta_t
@@ -185,6 +192,25 @@ struct json_type_lib_error_attr_t
     struct json_error_pos_t              pos[2];
 };
 
+enum json_type_lib_error_path_type_t
+{
+    json_type_lib_error_path_val_not_type,
+    json_type_lib_error_path_node_neither_object_nor_def,
+    json_type_lib_error_path_node_neither_array_nor_list_nor_def,
+    json_type_lib_error_path_object_key_not_found,
+    json_type_lib_error_path_open_array_index_non_null,
+    json_type_lib_error_path_closed_array_index_out_of_range,
+    json_type_lib_error_path_list_index_out_of_range,
+    json_type_lib_error_path_def_key_not_found,
+    json_type_lib_error_path_def_index_out_of_range,
+};
+
+struct json_type_lib_error_path_t
+{
+    enum json_type_lib_error_path_type_t type;
+    struct json_error_pos_t              pos[2];
+};
+
 struct json_type_lib_error_info_t
 {
     enum json_type_lib_error_t type;
@@ -195,6 +221,7 @@ struct json_type_lib_error_info_t
         struct json_type_lib_error_ast_t  ast;
         struct json_type_lib_error_meta_t meta;
         struct json_type_lib_error_attr_t attr;
+        struct json_type_lib_error_path_t path;
     };
     struct json_file_info_t file_info;
 };
