@@ -61,7 +61,7 @@ The most important are those to be seen in the function 'TRIE_LOOKUP_SYM' and,
 respectively, the functions 'TRIE_INSERT_SYM' and 'TRIE_INSERT_KEY'.
 
 'TRIE_LOOKUP_SYM' is an iterative variant of the recursive 'get' of Algorithm
-5.5 and 'TRIE_LOOKUP_{SYM,KEY}' are iterative variants of the recursive 'get'
+5.5 and 'TRIE_INSERT_{SYM,KEY}' are iterative variants of the recursive 'put'
 of Algorithm 5.5 in Sedgewick and Wayne [2].
 
 Note that professor Sedgewick made available C implementations for the iterative
