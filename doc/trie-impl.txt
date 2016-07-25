@@ -1,0 +1,147 @@
+Copyright (C) 2016  Stefan Vargyas
+
+This file is part of Json-Type.
+
+Json-Type is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Json-Type is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Json-Type.  If not, see <http://www.gnu.org/licenses/>.
+
+--------------------------------------------------------------------------------
+
+The Trie Data Structure and Its Algorithms in 'trie-impl.h'
+===========================================================
+
+This document describes to a certain extent the trie data structure and its
+algorithms implemented in the header file 'trie-impl.h'. This implementation
+is the base for the most important parts of source files 'json-type.{h,c}',
+the parts accounting for the core feature of the Json-Type library: the type
+checking of JSON texts.
+
+Generally speaking, the trie data structures are widely known in the literature
+(for example: Knuth [1] and Sedgewick and Wayne [2]) as array tries and ternary
+tries (or ternary search tries, TSTs) respectively.
+
+The array tries are described to some extend in the classical book of Knuth [1].
+More details about a whole bouquet of array tries related algorithms are to be
+found in Sedgewick and Wayne [2].
+
+The ternary tries are a beautiful and very useful data structure which appear as
+such for the first time in the paper of Bentley and Sedgewick [4]. Subsequently,
+the authors disseminated widely their work by publishing an article dedicated to
+the subject in the popular Dr. Dobbs Journal [5]. Notable is that ternary tries
+are presented with considerable account by professor Sedgewick in his well-known
+series of textbooks on algorithms (for which [2] is the most recent instance).
+
+Not only that ternary tries are beautiful since they are simple, but they are
+quite effective for practical applications because are very efficient. The paper
+of Bentley and Sedgewick [4] backs up its claims with significant experimental
+data. Using sophisticated mathematical apparatus of analysis of algorithms, the
+papers of Clément, Flajolet and Vallée [6, 7] put on a firm base the empirical
+data obtained through the experiments conducted by Bentley and Sedgewick [4]. A
+consistent account about the meaning and purpose of the concept of Analysis of
+Algorithms (AofA -- a term introduced by Donald Knuth) is given in first chapter
+of the book of Sedgewick and Flajolet [3]. Amongst other data structures, tries
+receive an in-depth coverage from the perspective of AofA in a dedicated chapter
+of the book (see the notes attached to reference entry [3]).
+
+The trie to be found in 'trie-impl.h' is precisely of this latter kind: ternary
+search trie.
+
+The file 'trie-impl.h' implements quite a few algorithms which apply to TSTs.
+The most important are those to be seen in the function 'TRIE_LOOKUP_SYM' and,
+respectively, the functions 'TRIE_INSERT_SYM' and 'TRIE_INSERT_KEY'.
+
+'TRIE_LOOKUP_SYM' is an iterative variant of the recursive 'get' of Algorithm
+5.5 and 'TRIE_LOOKUP_{SYM,KEY}' are iterative variants of the recursive 'get'
+of Algorithm 5.5 in Sedgewick and Wayne [2].
+
+Note that professor Sedgewick made available C implementations for the iterative
+variants of these two algorithms of ternary tries on his own site (see the links
+attached to reference entry [4], specifically the two C source files, 'tstdemo.c'
+and 'demo.c'). I used his C code as spring of inspiration for my implementation.
+
+The rest of algorithms in 'trie-impl.h' are all of my own making. However, bare
+in mind that these algorithms were quite obviously influenced by those presented
+either in the paper [4] or in the book [2]. There are a few exceptions though:
+the algorithms of functions 'TRIE_ITERATOR_INC', 'TRIE_SIB_ITERATOR_INC' and
+'TRIE_LVL_ITERATOR_INC', for which I'm not aware of something similar in the
+literature of TSTs.
+
+
+References
+----------
+
+Trie-related Books:
+
+[1] Donald E. Knuth
+    The Art of Computer Programming,
+    Vol. 3, Sorting and Searching, 2nd ed.
+    Addison Wesley Longman, 1998, 780 pages
+    ISBN 978-0-201-89685-0
+
+    Chapter 6.3: Digital Searching, pp. 492-512
+
+[2] Robert Sedgewick and Kevin Wayne
+    Algorithms, 4th edition
+    Addison Wesley, 2011, 976 pages
+    ISBN 978-0321-57351-3
+
+    Chapter 5, Strings; 5.2 Tries, pp. 732-758
+      Tries: pp. 732-745
+      Ternary Search Tries (TSTs): pp. 746-751
+
+[3] Robert Sedgewick and Philippe Flajolet
+    An Introduction to the Analysis of Algorithms, 2nd ed.
+    Addison-Wesley, 2013, 592 pages
+    ISBN 978-0-321-90575-8
+
+    Chapter 6: Trees:
+    Ternary trees: pp. 313-314
+
+    Chapter 8: Strings and Tries:
+    8.6 Tries: pp. 448-453
+    8.7 Trie Algorithms: pp. 453-458
+    8.8 Combinatorial Properties of Tries: pp. 459-464
+    8.9 Larger Alphabets: pp. 465-472
+      Multiway Tries: p. 465
+      Ternary Tries: pp. 465-466
+
+Trie-related Papers:
+
+[4] Jon L. Bentley, Robert Sedgewick:
+    Fast Algorithms for Sorting and Searching Strings
+    8th Symposium on Discrete Algorithms, 1997, 360–369.
+
+    http://www.cs.princeton.edu/~rs/strings/
+    http://www.cs.princeton.edu/~rs/strings/paper.pdf
+    http://www.cs.princeton.edu/~rs/strings/tstdemo.c
+    http://www.cs.princeton.edu/~rs/strings/demo.c
+
+[5] Jon L. Bentley and Robert Sedgewick: Ternary Search Trees
+    Dr. Dobbs Journal April, 1998
+
+    http://www.drdobbs.com/database/ternary-search-trees/184410528
+
+[6] Julien Clément, Phillipe Flajolet and Brigitte Vallée:
+    The analysis of hybrid trie structures
+    9th Symposium on Discrete Algorithms, 1998, 531–539
+
+    http://algo.inria.fr/flajolet/Publications/ClFlVa98.pdf
+
+[7] Julien Clément, Phillipe Flajolet and Brigitte Vallée:
+    Dynamical sources in information theory: A general
+      analysis of trie structures
+    Algorithmica 29, 2001, 307–369.
+
+    http://algo.inria.fr/flajolet/Publications/RR-3645.pdf
+
+
