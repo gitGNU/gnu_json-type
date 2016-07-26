@@ -1,0 +1,100 @@
+Copyright (C) 2016  Stefan Vargyas
+
+This file is part of Json-Type.
+
+Json-Type is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Json-Type is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Json-Type.  If not, see <http://www.gnu.org/licenses/>.
+
+--------------------------------------------------------------------------------
+
+The Shell Function Meta-Tool 'gen-func'
+=======================================
+
+This document gives an account about the way the the shell function 'gen-func'
+is used within Json-Type.
+
+Simply put, the shell function 'gen-func' generates the text of trie lookup C++
+function associated to given set of keywords. The output of the 'grep' command
+below shows that for now two of Json-Type's source files were using 'gen-func':
+
+  $ format() { ssed -R 's/^/\n# /;s/(:\d+:)/\1\n/;s|(?<=\n)//\s*||;s/(?<!ssed -R)\s+(?=\x27)/ \\\n/g;s/(?<=\|)\s*/ \\\n/g'; }
+
+  $ grep src lib -R --include='*.[hc]' -Pne '\|\s*gen-func\b' --color=none|format
+
+  # src/common.c:883:
+  $ print \
+  'v validate =options_validate_typelib_func' \
+  'p print =options_print_typelib_func' \
+  'a attr =options_attr_typelib_func' \
+  'c check check-attr =options_check_typelib_func' \
+  'A print-check print-check-attr =options_print_check_typelib_func' \
+  'd gen-def =options_def_typelib_func'| \
+  gen-func -f lookup_typelib_func_name| \
+  ssed -R '1s/^/static /;1s/\s*result_t\&/\n\tenum options_typelib_func_t*/;s/(?=t =)/*/;s/result_t:://'
+  
+  # lib/json-type.c:160:
+  $ print type name plain| \
+  gen-func -f json_type_ruler_lookup_obj_first_key -r json_type_ruler_obj_first_key_t| \
+  adjust-func
+  
+  # lib/json-type.c:205:
+  $ print object array list| \
+  gen-func -f json_type_ruler_lookup_obj_type -r json_type_ruler_obj_type_t| \
+  adjust-func
+  
+  # lib/json-type.c:427:
+  $ print null type boolean number string object array| \
+  gen-func -f json_type_ruler_is_basic_type -r json_type_ruler_basic_type_t| \
+  adjust-func
+
+For example, the first entry in the list above shows that 'gen-func' produced
+the complete code of function 'lookup_typelib_func_name' in 'src/common.c',
+whereas the shell function is used three more times for providing 'trie lookup'
+function in the source file 'lib/json-type.c'.
+
+Comments embedding meta-commands suggest that 'gen-func' is obtained by sourcing
+in at the command line prompt the file 'lookup-gen/commands.sh':
+
+  $ grep src lib -R --include='*.[hc]' -ne lookup-gen
+  src/common.c:881:// $ . ~/lookup-gen/commands.sh
+  lib/json-type.c:156:// $ . ~/lookup-gen/commands.sh
+
+As a matter of fact, this is not completely true in the following sense. The time
+Json-Type was developed, 'gen-func' was part of a private project of mine, named
+Lookup Gen. However, after Json-Type became software libre, I made Lookup Gen
+publicly available too, but with its name changed to Trie-Gen.
+
+The home page of Trie-Gen is http://www.nongnu.org/trie-gen/. Its source code is
+obtainable easily by the command:
+
+  $ git clone git://git.sv.nongnu.org/trie-gen
+
+Instructions are given in '$TRIE_GEN_BASE/trie-gen/README' for configuring,
+building and testing Trie-Gen. $TRIE_GEN_BASE is the path to the directory
+from were the 'git clone' command was initiated. The primary documentation
+about Trie-Gen is to be found in '$TRIE_GEN_BASE/trie-gen/doc/trie-gen.txt'.
+
+Now, back to Json-Type, when needing to use 'gen-func', one has to source in
+the bash shell script 'commands.sh' not from the 'lookup-gen' directory but
+from where it is found in Trie-Gen:
+
+  $ . $TRIE_GEN_BASE/trie-gen/commands.sh
+
+Note that if '$TRIE_GEN_BASE' is not '$HOME', then each call to 'gen-func' must
+specify the home directory of Trie-Gen via the command line options `-h|--home'.
+Instead of having to pass in these options each time calling the shell function,
+one could simply define the following alias:
+
+  $ alias gen-func="gen-func -h $TRIE_GEN_BASE/trie-gen"
+
+
