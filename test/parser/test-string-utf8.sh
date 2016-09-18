@@ -515,9 +515,9 @@ json: error: <stdin>:1:3: "\xf4\x7f"
 json: error: <stdin>:1:3:      ^
 command failed: echo -e '\''"\xf4\x7f"'\''|json
 $ echo -e '\''"\xf4\x90"'\''|json
-json: error: <stdin>:1:4: lex error: invalid utf-8 encoding
-json: error: <stdin>:1:4: "\xf4\x90"
-json: error: <stdin>:1:4:          ^
+json: error: <stdin>:1:3: lex error: invalid utf-8 encoding
+json: error: <stdin>:1:3: "\xf4\x90"
+json: error: <stdin>:1:3:      ^
 command failed: echo -e '\''"\xf4\x90"'\''|json
 $ echo -e '\''"\xf4\x80"'\''|json
 json: error: <stdin>:1:4: lex error: invalid utf-8 encoding

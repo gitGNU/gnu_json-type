@@ -129,6 +129,7 @@ static bool json_validate_utf8(const uchar_t* buf, size_t len, size_t* err)
         if (ch < 0xf5) {
             if (((*INC(ptr) ^ 0x80) >= 0x40) ||
                 (ch < 0xf1 && *ptr < 0x90) ||
+                (ch > 0xf3 && *ptr >= 0x90) ||
                 ((*INC(ptr) ^ 0x80) >= 0x40) ||
                 ((*INC(ptr) ^ 0x80) >= 0x40))
                 return ERR();
@@ -451,7 +452,6 @@ struct json_token_t
         ASSERT(TOKEN_TYPE_IS(n)); \
         &(tok->val.n);            \
     })
-
 
 static void json_token_boolean_val_print_debug(
     const struct json_token_t* tok)

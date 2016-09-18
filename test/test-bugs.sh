@@ -71,7 +71,10 @@ for t in \
     26 \
     27 \
     28 \
-    29
+    29 \
+    30 \
+    31 \
+    32
 do
     test -z "$q" &&
     printf >&2 "%-$((w + 6))s " "test: bugs:$t"
