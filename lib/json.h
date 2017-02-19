@@ -28,7 +28,7 @@
 
 #define JSON_VERSION_MAJOR 0
 #define JSON_VERSION_MINOR 7
-#define JSON_VERSION_PATCH 1
+#define JSON_VERSION_PATCH 2
 
 #define JSON_VERSION                 \
     (                                \
