@@ -297,7 +297,7 @@ static bool json_type_ruler_lookup_obj_type(
     JSON_TYPE_RULER_VAL(t, const)
 
 #define JSON_TYPE_RULER_CALL_RULE(t, n, ...)     \
-    ({                                           \
+    do {                                         \
         if (ruler->rules != NULL &&              \
             ruler->rules->n ## _rule != NULL) {  \
             const struct json_ast_node_t* __n =  \
@@ -306,17 +306,17 @@ static bool json_type_ruler_lookup_obj_type(
                 ruler->rules_obj, &__n->pos,     \
                 ## __VA_ARGS__);                 \
         }                                        \
-    })
+    } while (0)
 
 #define JSON_TYPE_RULER_CALL_RULE_POS(n, p, ...) \
-    ({                                           \
+    do {                                         \
         if (ruler->rules != NULL &&              \
             ruler->rules->n ## _rule != NULL) {  \
             ruler->rules->n ## _rule(            \
                 ruler->rules_obj, &p,            \
                 ## __VA_ARGS__);                 \
         }                                        \
-    })
+    } while (0)
 
 #define JSON_TYPE_RULER_VAL_BASIC(v)                      \
     ({                                                    \
