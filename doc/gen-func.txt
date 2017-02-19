@@ -20,8 +20,8 @@ along with Json-Type.  If not, see <http://www.gnu.org/licenses/>.
 The Shell Function Meta-Tool 'gen-func'
 =======================================
 
-This document gives an account about the way the the shell function 'gen-func'
-is used within Json-Type.
+This document gives an account about the way the shell function 'gen-func' is
+used within Json-Type.
 
 Simply put, the shell function 'gen-func' generates the text of trie lookup C++
 function associated to given set of keywords. The output of the 'grep' command
