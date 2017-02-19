@@ -90,12 +90,12 @@ The meaning of each of the constructs above is defined as follows:
 
        (b) A JSON value matches a given type of form (F3.b) if and only if:
 
-         * is is an JSON array with zero or more number of arguments, and
+         * it is an JSON array with zero or more number of arguments, and
          * each argument value matches the type specified.
 
        (c) A JSON value matches a given type of form (F3.c) if and only if:
 
-         * is is an JSON array, and
+         * it is an JSON array, and
          * has the number of arguments specified by the type, and
          * in the order specified by the type, each argument value matches the
            corresponding argument type specified by the type.
