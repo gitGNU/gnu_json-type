@@ -203,7 +203,7 @@ static struct json_ast_node_t* json_ast_new_string_node(
 }
 
 static struct json_ast_node_t* json_ast_new_object_node(
-    struct json_ast_t* ast, const struct json_ast_object_arg_t* args,
+    struct json_ast_t* ast, struct json_ast_object_arg_t* args,
     size_t size, const struct json_text_pos_t* pos)
 {
     struct json_ast_node_t* n;
@@ -212,7 +212,7 @@ static struct json_ast_node_t* json_ast_new_object_node(
     ASSERT(n != NULL);
 
     n->type = json_ast_object_node_type;
-    n->object.args = (struct json_ast_object_arg_t*) args;
+    n->object.args = args;
     n->object.size = size;
     n->pos = *pos;
 
