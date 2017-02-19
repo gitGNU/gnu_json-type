@@ -24,6 +24,23 @@
 --------------------------------------------------------------------------------
 
 $ date
+Sun Feb 19 10:54:05 EET 2017
+
+# stev: yet again a bug in lib/json.c:json_validate_utf8: the macro INC issues a
+# 'break' when input buffer was exceeded instead of 'return false'!!!
+
+# stev: input correctly rejected, but for the wrong reason (this is very tricky!):
+$ echo -e '"\xe2"'|json -luV -O
+json: error: <stdin>:1:3: lex error: invalid utf-8 encoding
+json: error: <stdin>:1:3: "\xe2"
+json: error: <stdin>:1:3:      ^
+# stev: BUG: input cannot be accepted, since "\xe2" is invalid UTF8:
+$ echo -e '"\xe1\x80\x80""\xe2"'|json -luV -mO
+$
+
+--------------------------------------------------------------------------------
+
+$ date
 Sun Sep 18 10:08:59 EEST 2016
 
 # stev: BUG: 'json' should indicate the error position at 1:3 not 1:4:
