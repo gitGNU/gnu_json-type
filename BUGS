@@ -24,6 +24,24 @@
 --------------------------------------------------------------------------------
 
 $ date
+Mon Feb 20 11:13:22 EET 2017
+
+# stev: lib/json.c:json_validate_utf8 is *not* getting a NUL-terminated buffer:
+# therefore the macro INC must preincrement the pointer arg before checking for
+# it being in range!!!
+
+# stev: input correctly rejected:
+$ echo -e '"\xe1\x80"'|json -luV -O
+json: error: <stdin>:1:4: lex error: invalid utf-8 encoding
+json: error: <stdin>:1:4: "\xe1\x80"
+json: error: <stdin>:1:4:          ^
+# stev: BUG: input cannot be accepted, since "\xe1\x80" is invalid UTF8:
+$ echo -e '"\xf1\x80\x80\x80""a\xe1\x80"'|json -luV -mO
+$
+
+--------------------------------------------------------------------------------
+
+$ date
 Sun Feb 19 10:54:05 EET 2017
 
 # stev: yet again a bug in lib/json.c:json_validate_utf8: the macro INC issues a
