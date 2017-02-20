@@ -102,7 +102,7 @@ static bool json_validate_utf8(const uchar_t* buf, size_t len, size_t* err)
     // The Unicode Standard Version 8.0 - Core Specification, Chapter 3, p. 125
     // http://www.unicode.org/versions/Unicode8.0.0/ch03.pdf
 
-#define INC(p) ({ if ((p) >= end) { *err = len; return false; } ++ (p); })
+#define INC(p) ({ if (++ (p) >= end) { *err = len; return false; } (p); })
 #define ERR()  (*err = PTR_DIFF(ptr, buf), false)
 
     for (ptr = buf, end = buf + len; ptr < end; ptr ++) {
