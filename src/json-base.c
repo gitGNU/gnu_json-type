@@ -777,7 +777,7 @@ int obj_json_base_run(struct obj_json_base_t* this)
         this->buf->len + a.buf.beg ==
         a.input.beg && !c) {
         ssize_t r;
-        char* b;
+        char b;
 
         r = read(this->descr, &b, 1);
         if (r < 0)
