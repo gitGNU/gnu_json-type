@@ -37,7 +37,7 @@ array
    : "[" [ value ("," value)* ] "]"
    ;
 string
-   : '"' ( <any UNICODE character except " or \ or control character> | '\' ( ["\/bfnrt] | "\\u" hex hex hex hex ) )* '"'
+   : '"' ( <any UNICODE character except " or \ or control character> | '\' ["\/bfnrt] | "\\u" hex hex hex hex )* '"'
    ;
 number
    : integer [ fractional ] [ exponent ]
