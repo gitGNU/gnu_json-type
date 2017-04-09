@@ -46,6 +46,14 @@
     }                         \
     while (0)
 
+// stev: important requirement: ENSURE_ evaluates E only once!
+
+#define ENSURE_(C, E, M, ...)                      \
+    do {                                           \
+        if (!(E))                                  \
+            fatal_error(C ": " M, ## __VA_ARGS__); \
+    } while (0)
+
 #define UNEXPECT_ERR(M, ...)               \
     do {                                   \
         unexpect_error(__FILE__, __LINE__, \

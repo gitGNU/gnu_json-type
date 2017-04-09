@@ -40,131 +40,44 @@
 // to contain '/', '=' and '@' chars and only to contain alphanumeric
 // chars (that are chars in the set 'isalnum')
 
-struct obj_json2_string_t
-{
-    size_t size;
-    struct obj_json2_string_t* prev;
-    struct obj_json2_string_t* next;
-    uchar_t ptr[0];
-};
+#define ENSURE(e, m, ...) ENSURE_( \
+    "obj_json2_string_stack_t", e, m, ## __VA_ARGS__)
 
-struct obj_json2_string_stack_t
-{
-    struct obj_json2_string_t* top;
-    char* end;
-    char* ptr;
-    char buf[0];
-};
+#ifdef DEBUG
+#define VSTACK_DEBUG
+#endif
 
-#define ASSERT_STRING_STACK_INVARIANTS(stack) \
-    do {                                      \
-        ASSERT(stack->end > stack->buf);      \
-        ASSERT(stack->ptr >= stack->buf);     \
-        ASSERT(stack->ptr <= stack->end);     \
-    } while (0)
+#define VSTACK_NAME      obj_json2_string
+#define VSTACK_NODE_NAME obj_json2_string
 
-static struct obj_json2_string_stack_t* create_string_stack(
-    size_t size)
-{
-    struct obj_json2_string_stack_t* stack;
-    const size_t n = sizeof(struct obj_json2_string_stack_t);
-    size_t s;
+#define VSTACK_NEED_CREATE_DESTROY
+#define VSTACK_NEED_CIRCULAR_LINKS
+#include "lib/vstack-impl.h"
+#undef  VSTACK_NEED_CIRCULAR_LINKS
+#undef  VSTACK_NEED_CREATE_DESTROY
 
-    ASSERT(size > 0);
-
-    VERIFY_SIZE_ADD_NO_OVERFLOW(n, size);
-    s = n + size;
-
-    if (!(stack = malloc(s)))
-        OOM_ERROR("malloc failed creating obj_json2_string_stack_t");
-
-    memset(stack, 0, s);
-
-    stack->end = stack->buf + size;
-    stack->ptr = stack->buf;
-
-    return stack;
-}
-
-static void destroy_string_stack(
-    struct obj_json2_string_stack_t* stack)
-{
-    free(stack);
-}
+#undef ENSURE
 
 static void push_string(
     struct obj_json2_string_stack_t* stack,
     const uchar_t* str,
     size_t len)
 {
-    const size_t n =
-        sizeof(struct obj_json2_string_t);
-    const size_t m =
-        MEM_ALIGNOF(struct obj_json2_string_t);
-    struct obj_json2_string_t* r;
-    size_t s = len, u, a;
+    struct obj_json2_string_t* s;
 
-    ASSERT_STRING_STACK_INVARIANTS(stack);
+    ASSERT_SIZE_INC_NO_OVERFLOW(len);
+    s = obj_json2_string_stack_push(stack, len + 1);
+    ASSERT(s != NULL);
 
-    u = PTR_DIFF(stack->end, stack->ptr);
-    a = PTR_ALIGN_SIZE(stack->ptr, m);
-
-    ASSERT_SIZE_INC_NO_OVERFLOW(s);
-    s ++;
-
-    ASSERT_SIZE_ADD_NO_OVERFLOW(s, n);
-    s += n;
-
-    ASSERT_SIZE_ADD_NO_OVERFLOW(s, a);
-    s += a;
-
-    if (s > u)
-        fatal_error("string stack overflow (by %zu bytes)",
-            SIZE_SUB(s, u));
-
-    r = (struct obj_json2_string_t*) (stack->ptr + a);
-    r->prev = stack->top;
-    if (r->prev != NULL) {
-        r->next = r->prev->next;
-        r->next->prev = r;
-        r->prev->next = r;
-    }
-    else {
-        r->next = r;
-        r->prev = r;
-    }
-    r->size = s;
-
-    memcpy(r->ptr, str, len);
-    r->ptr[len] = 0;
-
-    stack->ptr += s;
-    stack->top = r;
+    memcpy(s->ptr, str, len);
+    s->ptr[len] = 0;
 }
 
 static void pop_string(
     struct obj_json2_string_stack_t* stack)
 {
-    const struct obj_json2_string_t* r;
-    size_t u;
-
-    ASSERT_STRING_STACK_INVARIANTS(stack);
-
-    r = stack->top;
-    if (r == NULL)
-        return;
-
-    u = PTR_DIFF(stack->ptr, stack->buf);
-    ASSERT(u >= r->size);
-
-    stack->ptr -= r->size;
-    if (r->next != r) {
-        r->prev->next = r->next;
-        r->next->prev = r->prev;
-        stack->top = r->prev;
-    }
-    else
-        stack->top = NULL;
+    if (stack->top != NULL)
+        obj_json2_string_stack_pop(stack);
 }
 
 static void set_last(
@@ -333,15 +246,16 @@ static void obj_json2_init(
         : obj_json_base_init_obj)(
             JSON_BASE(this), opts, &handler, this);
 
-    this->stack = create_string_stack(VERIFY_SIZE_NOT_NULL(
-        opts->sizes_json2_stack_size));
+    this->stack = obj_json2_string_stack_create(
+        VERIFY_SIZE_NOT_NULL(opts->sizes_json2_stack_max),
+        VERIFY_SIZE_NOT_NULL(opts->sizes_json2_stack_init));
 
     this->last = true;
 }
 
 static void obj_json2_done(struct obj_json2_t* this)
 {
-    destroy_string_stack(this->stack);
+    obj_json2_string_stack_destroy(this->stack);
 
     obj_json_base_done(JSON_BASE(this));
 

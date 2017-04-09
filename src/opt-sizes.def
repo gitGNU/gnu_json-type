@@ -37,9 +37,15 @@ CASE(BUF,                                                                      \
 1, MB(2), KB(40)                                                               \
 )
 CASE(STACK,                                                                    \
- json2_stack_size,                                                             \
-"json2-stack-size",                                                            \
-                  "       ", , "json2 stack size", ,                           \
+ json2_stack_max,                                                              \
+"json2-stack-max",                                                             \
+                 "        ", , "json2 stack maximum size", ,                   \
+1, KB(128), KB(10)                                                             \
+)
+CASE(STACK,                                                                    \
+ json2_stack_init,                                                             \
+"json2-stack-init",                                                            \
+                  "       ", , "json2 stack initial size", ,                   \
 1, KB(128), KB(10)                                                             \
 )
 CASE(WIDTH,                                                                    \
