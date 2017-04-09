@@ -6077,55 +6077,6 @@ static bool json_type_lib_check_array_not_supported(
     return true;
 }
 
-static bool json_type_lib_check_list_attrs(
-    struct json_type_lib_t* lib,
-    const struct json_type_list_attr_t* attr)
-{
-    if (attr->open_array != NULL &&
-        attr->closed_array != NULL &&
-        !json_type_lib_check_arrays_ambiguities(
-            lib, attr->open_array, attr->closed_array))
-        return false;
-
-    if (attr->object != NULL &&
-        !json_type_lib_check_object_ambiguities(
-            lib, attr->object))
-        return false;
-
-    if (attr->open_array != NULL &&
-        !json_type_lib_check_array_ambiguities(
-            lib, attr->open_array))
-        return false;
-
-    if (attr->closed_array != NULL &&
-        !json_type_lib_check_array_ambiguities(
-            lib, attr->closed_array))
-        return false;
-
-    if (attr->open_array != NULL &&
-        attr->closed_array != NULL &&
-        !json_type_lib_check_arrays_not_supported(
-            lib, attr->open_array, attr->closed_array))
-        return false;
-
-    if (attr->object != NULL &&
-        !json_type_lib_check_object_not_supported(
-            lib, attr->object))
-        return false;
-
-    if (attr->open_array != NULL &&
-        !json_type_lib_check_array_not_supported(
-            lib, attr->open_array))
-        return false;
-
-    if (attr->closed_array != NULL &&
-        !json_type_lib_check_array_not_supported(
-            lib, attr->closed_array))
-        return false;
-
-    return true;
-}
-
 #define JSON_TYPE_TRIE_CONST_CAST(p) \
     CONST_CAST(p, struct json_type_trie_t)
 #define JSON_TYPE_OBJECT_TRIE_CONST_CAST(p) \
@@ -6307,68 +6258,51 @@ static bool json_type_lib_gen_list_attrs(
     return true;
 }
 
-static bool json_type_lib_check_node_attrs(
-    struct json_type_lib_t* lib, const struct json_type_node_t* node)
+static bool json_type_lib_check_list_attrs(
+    struct json_type_lib_t* lib,
+    const struct json_type_list_attr_t* attr)
 {
-    union json_type_node_pack_t n;
+    if (attr->open_array != NULL &&
+        attr->closed_array != NULL &&
+        !json_type_lib_check_arrays_ambiguities(
+            lib, attr->open_array, attr->closed_array))
+        return false;
 
-    if (JSON_TYPE_NODE_IS_CONST(node, any) ||
-        JSON_TYPE_NODE_IS_CONST(node, plain)) 
-        ; // stev: nop
-    else
-    if ((n.object = JSON_TYPE_NODE_AS_IF_CONST(node, object))) {
-        const struct json_type_object_node_arg_t *p, *e;
+    if (attr->object != NULL &&
+        !json_type_lib_check_object_ambiguities(
+            lib, attr->object))
+        return false;
 
-        for (p = n.object->args,
-             e = p + n.object->size;
-             p < e;
-             p ++) {
-            if (!json_type_lib_check_node_attrs(lib, p->type))
-                return false;
-        }
-    }
-    else
-    if ((n.array = JSON_TYPE_NODE_AS_IF_CONST(node, array))) {
-        union json_type_array_node_pack_t a;
+    if (attr->open_array != NULL &&
+        !json_type_lib_check_array_ambiguities(
+            lib, attr->open_array))
+        return false;
 
-        if ((a.open =
-                JSON_TYPE_ARRAY_NODE_AS_IF_CONST(n.array, open))) {
-            if (!json_type_lib_check_node_attrs(lib, a.open->arg))
-                return false;
-        }
-        else
-        if ((a.closed =
-                JSON_TYPE_ARRAY_NODE_AS_IF_CONST(n.array, closed))) {
-            const struct json_type_node_t **p, **e;
+    if (attr->closed_array != NULL &&
+        !json_type_lib_check_array_ambiguities(
+            lib, attr->closed_array))
+        return false;
 
-            for (p = a.closed->args,
-                 e = p + a.closed->size;
-                 p < e;
-                 p ++) {
-                if (!json_type_lib_check_node_attrs(lib, *p))
-                    return false;
-            }
-        }
-        else
-            UNEXPECT_VAR("%d", n.array->type);
-    }
-    else
-    if ((n.list = JSON_TYPE_NODE_AS_IF_CONST(node, list))) {
-        const struct json_type_node_t **p, **e;
+    if (attr->open_array != NULL &&
+        attr->closed_array != NULL &&
+        !json_type_lib_check_arrays_not_supported(
+            lib, attr->open_array, attr->closed_array))
+        return false;
 
-        if (!json_type_lib_check_list_attrs(lib, node->attr.list))
-            return false;
+    if (attr->object != NULL &&
+        !json_type_lib_check_object_not_supported(
+            lib, attr->object))
+        return false;
 
-        for (p = n.list->args,
-             e = p + n.list->size;
-             p < e;
-             p ++) {
-            if (!json_type_lib_check_node_attrs(lib, *p))
-                return false;
-        }
-    }
-    else
-        UNEXPECT_VAR("%d", node->type);
+    if (attr->open_array != NULL &&
+        !json_type_lib_check_array_not_supported(
+            lib, attr->open_array))
+        return false;
+
+    if (attr->closed_array != NULL &&
+        !json_type_lib_check_array_not_supported(
+            lib, attr->closed_array))
+        return false;
 
     return true;
 }
@@ -6441,6 +6375,88 @@ static bool json_type_lib_gen_node_attrs(
     return true;
 }
 
+static bool json_type_lib_check_node_attrs(
+    struct json_type_lib_t* lib, const struct json_type_node_t* node)
+{
+    union json_type_node_pack_t n;
+
+    if (JSON_TYPE_NODE_IS_CONST(node, any) ||
+        JSON_TYPE_NODE_IS_CONST(node, plain)) 
+        ; // stev: nop
+    else
+    if ((n.object = JSON_TYPE_NODE_AS_IF_CONST(node, object))) {
+        const struct json_type_object_node_arg_t *p, *e;
+
+        for (p = n.object->args,
+             e = p + n.object->size;
+             p < e;
+             p ++) {
+            if (!json_type_lib_check_node_attrs(lib, p->type))
+                return false;
+        }
+    }
+    else
+    if ((n.array = JSON_TYPE_NODE_AS_IF_CONST(node, array))) {
+        union json_type_array_node_pack_t a;
+
+        if ((a.open =
+                JSON_TYPE_ARRAY_NODE_AS_IF_CONST(n.array, open))) {
+            if (!json_type_lib_check_node_attrs(lib, a.open->arg))
+                return false;
+        }
+        else
+        if ((a.closed =
+                JSON_TYPE_ARRAY_NODE_AS_IF_CONST(n.array, closed))) {
+            const struct json_type_node_t **p, **e;
+
+            for (p = a.closed->args,
+                 e = p + a.closed->size;
+                 p < e;
+                 p ++) {
+                if (!json_type_lib_check_node_attrs(lib, *p))
+                    return false;
+            }
+        }
+        else
+            UNEXPECT_VAR("%d", n.array->type);
+    }
+    else
+    if ((n.list = JSON_TYPE_NODE_AS_IF_CONST(node, list))) {
+        const struct json_type_node_t **p, **e;
+
+        if (!json_type_lib_check_list_attrs(lib, node->attr.list))
+            return false;
+
+        for (p = n.list->args,
+             e = p + n.list->size;
+             p < e;
+             p ++) {
+            if (!json_type_lib_check_node_attrs(lib, *p))
+                return false;
+        }
+    }
+    else
+        UNEXPECT_VAR("%d", node->type);
+
+    return true;
+}
+
+static bool json_type_lib_gen_defs_attrs(
+    struct json_type_lib_t* lib, const struct json_type_defs_t* defs)
+{
+    const struct json_type_defs_arg_t *p, *e;
+
+    for (p = defs->args,
+         e = p + defs->size;
+         p < e;
+         p ++) {
+        if (!json_type_lib_gen_node_attrs(lib, p->type))
+            return false;
+    }
+
+    return true;
+}
+
 static bool json_type_lib_check_defs_attrs(
     struct json_type_lib_t* lib, const struct json_type_defs_t* defs)
 {
@@ -6457,22 +6473,6 @@ static bool json_type_lib_check_defs_attrs(
          p < e;
          p ++) {
         if (!json_type_lib_check_node_attrs(lib, p->type))
-            return false;
-    }
-
-    return true;
-}
-
-static bool json_type_lib_gen_defs_attrs(
-    struct json_type_lib_t* lib, const struct json_type_defs_t* defs)
-{
-    const struct json_type_defs_arg_t *p, *e;
-
-    for (p = defs->args,
-         e = p + defs->size;
-         p < e;
-         p ++) {
-        if (!json_type_lib_gen_node_attrs(lib, p->type))
             return false;
     }
 
