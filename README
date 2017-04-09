@@ -127,7 +127,7 @@ installation.  The 'test' directory contains also the source files from which
 the test bash scripts were generated: the files 'test/test-*.txt'.
 
 Upon running 'test/test.sh', the output obtained from the shell script would
-be long series of lines of the kind:
+be a long series of lines of the kind:
 
   test: GROUP:CASE RESULT
 
