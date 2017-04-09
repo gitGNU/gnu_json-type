@@ -117,7 +117,6 @@
 
 #define ARRAY_NULL_ELEM(a, i)             \
     (                                     \
-        STATIC(TYPEOF_IS_INTEGER(i)),     \
         ARRAY_INDEX(a, i) ? (a)[i] : NULL \
     )
 
@@ -129,13 +128,11 @@
 
 #define ARRAY_NULL_ELEM_REF(a, i)            \
     (                                        \
-        STATIC(TYPEOF_IS_INTEGER(i)),        \
         ARRAY_INDEX(a, i) ? (a) + (i) : NULL \
     )
 
 #define ARRAY_NON_NULL_ELEM(a, i)           \
     (                                       \
-        STATIC(TYPEOF_IS_INTEGER(i)),       \
         STATIC(TYPEOF_IS_CHAR_PTR((a)[0])), \
         ARRAY_INDEX(a, i) && (a)[i]         \
             ? (a)[i] : "???"                \
