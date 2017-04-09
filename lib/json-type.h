@@ -230,15 +230,15 @@ struct json_type_list_attr_t
 enum json_type_def_type_t
 {
     json_type_def_node_type,
-    json_type_def_dict_type
+    json_type_def_defs_type
 };
 
-#define json_type_dict_arg_t json_type_object_node_arg_t
+#define json_type_defs_arg_t json_type_object_node_arg_t
 
-struct json_type_dict_t
+struct json_type_defs_t
 {
     struct json_text_pos_t pos;
-    const struct json_type_dict_arg_t* args;
+    const struct json_type_defs_arg_t* args;
     size_t size;
 };
 
@@ -247,7 +247,7 @@ struct json_type_def_t
     enum json_type_def_type_t type;
     union {
         const struct json_type_node_t* node;
-        const struct json_type_dict_t* dict;
+        const struct json_type_defs_t* defs;
     } val;
 };
 

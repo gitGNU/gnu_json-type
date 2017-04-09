@@ -88,7 +88,7 @@ for t in \
     node-open-array-list-any2 \
     node-closed-array-list-any \
     node-closed-array-list-any2 \
-    dict \
+    defs \
     json-type
 do
     test -z "$q" &&

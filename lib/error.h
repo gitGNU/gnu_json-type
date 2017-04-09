@@ -176,7 +176,7 @@ enum json_type_lib_error_attr_type_t
     json_type_lib_error_attr_invalid_list_sort_of_array_of_array_not_supported,
     json_type_lib_error_attr_invalid_list_sort_of_array_of_list_not_supported,
     json_type_lib_error_attr_invalid_list_elem_is_list,
-    json_type_lib_error_attr_invalid_dict_dup_name,
+    json_type_lib_error_attr_invalid_defs_dup_name,
 };
 
 struct json_type_lib_error_attr_t

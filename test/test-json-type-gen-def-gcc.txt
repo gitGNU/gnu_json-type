@@ -49422,7 +49422,7 @@ static const struct json_type_def_t MODULE_TYPE_DEF = {
 };
 $
 
---[ dict ]----------------------------------------------------------------------
+--[ defs ]----------------------------------------------------------------------
 
 $ json <<< '[{"name":"type","type":"type"},{"name":"null","type":"null"},{"name":"boolean","type":"boolean"},{"name":"number","type":"number"},{"name":"string","type":"string"},{"name":"object","type":"object"},{"name":"array","type":"array"}]'
 \#include "json-type.h"
@@ -49468,7 +49468,7 @@ static const struct json_type_node_t __6 = {
         .type = json_type_any_array_type
     }
 };
-static const struct json_type_dict_arg_t __7[] = {
+static const struct json_type_defs_arg_t __7[] = {
     {
         .name = (const uchar_t*) "type",
         .type = &__0
@@ -49498,13 +49498,13 @@ static const struct json_type_dict_arg_t __7[] = {
         .type = &__6
     }
 };
-static const struct json_type_dict_t __8 = {
+static const struct json_type_defs_t __8 = {
     .args = __7,
     .size = 7
 };
 static const struct json_type_def_t MODULE_TYPE_DEF = {
-    .type = json_type_def_dict_type,
-    .val.dict = &__8
+    .type = json_type_def_defs_type,
+    .val.defs = &__8
 };
 $ json <<< '[{"name":"null","type":{"plain":null}},{"name":"false","type":{"plain":false}},{"name":"true","type":{"plain":true}},{"name":"123","type":{"plain":123}},{"name":"\"foo\"","type":{"plain":"foo"}}]'
 \#include "json-type.h"
@@ -49542,7 +49542,7 @@ static const struct json_type_node_t __4 = {
         .val.string = (const uchar_t*) "foo"
     }
 };
-static const struct json_type_dict_arg_t __5[] = {
+static const struct json_type_defs_arg_t __5[] = {
     {
         .name = (const uchar_t*) "null",
         .type = &__0
@@ -49564,13 +49564,13 @@ static const struct json_type_dict_arg_t __5[] = {
         .type = &__4
     }
 };
-static const struct json_type_dict_t __6 = {
+static const struct json_type_defs_t __6 = {
     .args = __5,
     .size = 5
 };
 static const struct json_type_def_t MODULE_TYPE_DEF = {
-    .type = json_type_def_dict_type,
-    .val.dict = &__6
+    .type = json_type_def_defs_type,
+    .val.defs = &__6
 };
 $ json <<< '[{"name":"object","type":{"type":"object","args":[]}},{"name":"object2","type":{"type":"object","args":[{"name":"arg","type":{"type":"object","args":[]}}]}},{"name":"object3","type":{"type":"object","args":[{"name":"name","type":{"type":"object","args":[{"name":"name","type":{"type":"object","args":[]}}]}}]}}]'
 \#include "json-type.h"
@@ -49640,7 +49640,7 @@ static const struct json_type_node_t __11 = {
         .size = 1
     }
 };
-static const struct json_type_dict_arg_t __12[] = {
+static const struct json_type_defs_arg_t __12[] = {
     {
         .name = (const uchar_t*) "object",
         .type = &__1
@@ -49654,13 +49654,13 @@ static const struct json_type_dict_arg_t __12[] = {
         .type = &__11
     }
 };
-static const struct json_type_dict_t __13 = {
+static const struct json_type_defs_t __13 = {
     .args = __12,
     .size = 3
 };
 static const struct json_type_def_t MODULE_TYPE_DEF = {
-    .type = json_type_def_dict_type,
-    .val.dict = &__13
+    .type = json_type_def_defs_type,
+    .val.defs = &__13
 };
 $ json <<< '[{"name":"open-array","type":{"type":"array","args":"type"}},{"name":"open-array2","type":{"type":"array","args":{"type":"array","args":"type"}}},{"name":"open-array3","type":{"type":"array","args":{"type":"array","args":{"type":"array","args":"type"}}}}]'
 \#include "json-type.h"
@@ -49724,7 +49724,7 @@ static const struct json_type_node_t __8 = {
         .val.open.arg = &__7
     }
 };
-static const struct json_type_dict_arg_t __9[] = {
+static const struct json_type_defs_arg_t __9[] = {
     {
         .name = (const uchar_t*) "open-array",
         .type = &__1
@@ -49738,13 +49738,13 @@ static const struct json_type_dict_arg_t __9[] = {
         .type = &__8
     }
 };
-static const struct json_type_dict_t __10 = {
+static const struct json_type_defs_t __10 = {
     .args = __9,
     .size = 3
 };
 static const struct json_type_def_t MODULE_TYPE_DEF = {
-    .type = json_type_def_dict_type,
-    .val.dict = &__10
+    .type = json_type_def_defs_type,
+    .val.defs = &__10
 };
 $ json <<< '[{"name":"closed-array","type":{"type":"array","args":[]}},{"name":"closed-array2","type":{"type":"array","args":[{"type":"array","args":[]}]}},{"name":"closed-array3","type":{"type":"array","args":[{"type":"array","args":[{"type":"array","args":[]}]}]}}]'
 \#include "json-type.h"
@@ -49829,7 +49829,7 @@ static const struct json_type_node_t __11 = {
         }
     }
 };
-static const struct json_type_dict_arg_t __12[] = {
+static const struct json_type_defs_arg_t __12[] = {
     {
         .name = (const uchar_t*) "closed-array",
         .type = &__1
@@ -49843,13 +49843,13 @@ static const struct json_type_dict_arg_t __12[] = {
         .type = &__11
     }
 };
-static const struct json_type_dict_t __13 = {
+static const struct json_type_defs_t __13 = {
     .args = __12,
     .size = 3
 };
 static const struct json_type_def_t MODULE_TYPE_DEF = {
-    .type = json_type_def_dict_type,
-    .val.dict = &__13
+    .type = json_type_def_defs_type,
+    .val.defs = &__13
 };
 $ json <<< '[{"name":"list","type":{"type":"list","args":[]}},{"name":"list2","type":{"type":"list","args":["type","null","boolean","number","string","object","array",{"plain":null},{"plain":false},{"plain":true},{"plain":123},{"plain":"foo"},{"type":"object","args":[]},{"type":"object","args":[{"name":"bar","type":"object"}]},{"type":"array","args":"array"}]}}]'
 \#include "json-type.h"
@@ -50169,7 +50169,7 @@ static const struct json_type_node_t __58 = {
         .size = 15
     }
 };
-static const struct json_type_dict_arg_t __59[] = {
+static const struct json_type_defs_arg_t __59[] = {
     {
         .name = (const uchar_t*) "list",
         .type = &__2
@@ -50179,13 +50179,13 @@ static const struct json_type_dict_arg_t __59[] = {
         .type = &__58
     }
 };
-static const struct json_type_dict_t __60 = {
+static const struct json_type_defs_t __60 = {
     .args = __59,
     .size = 2
 };
 static const struct json_type_def_t MODULE_TYPE_DEF = {
-    .type = json_type_def_dict_type,
-    .val.dict = &__60
+    .type = json_type_def_defs_type,
+    .val.defs = &__60
 };
 $
 
