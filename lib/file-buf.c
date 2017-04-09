@@ -112,7 +112,11 @@ static bool file_buf_read_incremental(struct file_buf_t* buf,
 
         r = INT_AS_SIZE(n);
         ASSERT_SIZE_ADD_NO_OVERFLOW(s, r);
+#ifdef FILE_BUF_PTR_NON_STD_OPS
         if (s + r > buf->max_size) {
+#else
+        if (d + r > buf->max_size) {
+#endif
             FILE_BUF_SYS_ERROR(read, EFBIG);
             return false;
         }
