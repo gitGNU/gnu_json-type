@@ -652,7 +652,7 @@ static void json_type_ruler_result_print_debug(
 // 
 // (1)  key      type of attached value
 //      -------  -------------------------------
-//      "type"   $any, where $any is any type
+//      "type"   see points (2) and (9.b) 
 //      "args"   $any or by case `[ $any* ]' (see below)
 //      "name"   string
 //      "plain"  null, boolean, number or string
