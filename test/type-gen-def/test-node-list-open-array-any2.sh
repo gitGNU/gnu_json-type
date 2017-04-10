@@ -84,17 +84,17 @@ static const struct json_type_trie_node_t __4 = {
     .VAL = &__1
 };
 static const struct json_type_trie_node_t __5 = {
+    .sym = &__0,
+    .EQ = &__4
+};
+static const struct json_type_trie_node_t __6 = {
     .sym = NULL,
     .VAL = &__3
 };
-static const struct json_type_trie_node_t __6 = {
-    .sym = &__2,
-    .EQ = &__5
-};
 static const struct json_type_trie_node_t __7 = {
-    .sym = &__0,
-    .EQ = &__4,
-    .hi = &__6
+    .sym = &__2,
+    .lo = &__5,
+    .EQ = &__6
 };
 static const struct json_type_trie_t __8 = {
     .root = &__7
@@ -153,17 +153,17 @@ static const struct json_type_trie_node_t __4 = {
     .VAL = &__1
 };
 static const struct json_type_trie_node_t __5 = {
+    .sym = &__0,
+    .EQ = &__4
+};
+static const struct json_type_trie_node_t __6 = {
     .sym = NULL,
     .VAL = &__3
 };
-static const struct json_type_trie_node_t __6 = {
-    .sym = &__2,
-    .EQ = &__5
-};
 static const struct json_type_trie_node_t __7 = {
-    .sym = &__0,
-    .EQ = &__4,
-    .hi = &__6
+    .sym = &__2,
+    .lo = &__5,
+    .EQ = &__6
 };
 static const struct json_type_trie_t __8 = {
     .root = &__7
@@ -222,17 +222,17 @@ static const struct json_type_trie_node_t __4 = {
     .VAL = &__1
 };
 static const struct json_type_trie_node_t __5 = {
+    .sym = &__0,
+    .EQ = &__4
+};
+static const struct json_type_trie_node_t __6 = {
     .sym = NULL,
     .VAL = &__3
 };
-static const struct json_type_trie_node_t __6 = {
-    .sym = &__2,
-    .EQ = &__5
-};
 static const struct json_type_trie_node_t __7 = {
-    .sym = &__0,
-    .EQ = &__4,
-    .hi = &__6
+    .sym = &__2,
+    .lo = &__5,
+    .EQ = &__6
 };
 static const struct json_type_trie_t __8 = {
     .root = &__7
@@ -291,17 +291,17 @@ static const struct json_type_trie_node_t __4 = {
     .VAL = &__1
 };
 static const struct json_type_trie_node_t __5 = {
+    .sym = &__0,
+    .EQ = &__4
+};
+static const struct json_type_trie_node_t __6 = {
     .sym = NULL,
     .VAL = &__3
 };
-static const struct json_type_trie_node_t __6 = {
-    .sym = &__2,
-    .EQ = &__5
-};
 static const struct json_type_trie_node_t __7 = {
-    .sym = &__0,
-    .EQ = &__4,
-    .hi = &__6
+    .sym = &__2,
+    .lo = &__5,
+    .EQ = &__6
 };
 static const struct json_type_trie_t __8 = {
     .root = &__7
@@ -360,17 +360,17 @@ static const struct json_type_trie_node_t __4 = {
     .VAL = &__1
 };
 static const struct json_type_trie_node_t __5 = {
+    .sym = &__0,
+    .EQ = &__4
+};
+static const struct json_type_trie_node_t __6 = {
     .sym = NULL,
     .VAL = &__3
 };
-static const struct json_type_trie_node_t __6 = {
-    .sym = &__2,
-    .EQ = &__5
-};
 static const struct json_type_trie_node_t __7 = {
-    .sym = &__0,
-    .EQ = &__4,
-    .hi = &__6
+    .sym = &__2,
+    .lo = &__5,
+    .EQ = &__6
 };
 static const struct json_type_trie_t __8 = {
     .root = &__7
@@ -501,17 +501,17 @@ static const struct json_type_trie_node_t __4 = {
     .VAL = &__1
 };
 static const struct json_type_trie_node_t __5 = {
+    .sym = &__0,
+    .EQ = &__4
+};
+static const struct json_type_trie_node_t __6 = {
     .sym = NULL,
     .VAL = &__3
 };
-static const struct json_type_trie_node_t __6 = {
-    .sym = &__2,
-    .EQ = &__5
-};
 static const struct json_type_trie_node_t __7 = {
-    .sym = &__0,
-    .EQ = &__4,
-    .hi = &__6
+    .sym = &__2,
+    .lo = &__5,
+    .EQ = &__6
 };
 static const struct json_type_trie_t __8 = {
     .root = &__7
@@ -570,17 +570,17 @@ static const struct json_type_trie_node_t __4 = {
     .VAL = &__1
 };
 static const struct json_type_trie_node_t __5 = {
+    .sym = &__0,
+    .EQ = &__4
+};
+static const struct json_type_trie_node_t __6 = {
     .sym = NULL,
     .VAL = &__3
 };
-static const struct json_type_trie_node_t __6 = {
-    .sym = &__2,
-    .EQ = &__5
-};
 static const struct json_type_trie_node_t __7 = {
-    .sym = &__0,
-    .EQ = &__4,
-    .hi = &__6
+    .sym = &__2,
+    .lo = &__5,
+    .EQ = &__6
 };
 static const struct json_type_trie_t __8 = {
     .root = &__7
@@ -639,17 +639,17 @@ static const struct json_type_trie_node_t __4 = {
     .VAL = &__1
 };
 static const struct json_type_trie_node_t __5 = {
+    .sym = &__0,
+    .EQ = &__4
+};
+static const struct json_type_trie_node_t __6 = {
     .sym = NULL,
     .VAL = &__3
 };
-static const struct json_type_trie_node_t __6 = {
-    .sym = &__2,
-    .EQ = &__5
-};
 static const struct json_type_trie_node_t __7 = {
-    .sym = &__0,
-    .EQ = &__4,
-    .hi = &__6
+    .sym = &__2,
+    .lo = &__5,
+    .EQ = &__6
 };
 static const struct json_type_trie_t __8 = {
     .root = &__7
@@ -708,17 +708,17 @@ static const struct json_type_trie_node_t __4 = {
     .VAL = &__1
 };
 static const struct json_type_trie_node_t __5 = {
+    .sym = &__0,
+    .EQ = &__4
+};
+static const struct json_type_trie_node_t __6 = {
     .sym = NULL,
     .VAL = &__3
 };
-static const struct json_type_trie_node_t __6 = {
-    .sym = &__2,
-    .EQ = &__5
-};
 static const struct json_type_trie_node_t __7 = {
-    .sym = &__0,
-    .EQ = &__4,
-    .hi = &__6
+    .sym = &__2,
+    .lo = &__5,
+    .EQ = &__6
 };
 static const struct json_type_trie_t __8 = {
     .root = &__7
@@ -918,17 +918,17 @@ static const struct json_type_trie_node_t __4 = {
     .VAL = &__1
 };
 static const struct json_type_trie_node_t __5 = {
+    .sym = &__0,
+    .EQ = &__4
+};
+static const struct json_type_trie_node_t __6 = {
     .sym = NULL,
     .VAL = &__3
 };
-static const struct json_type_trie_node_t __6 = {
-    .sym = &__2,
-    .EQ = &__5
-};
 static const struct json_type_trie_node_t __7 = {
-    .sym = &__0,
-    .EQ = &__4,
-    .hi = &__6
+    .sym = &__2,
+    .lo = &__5,
+    .EQ = &__6
 };
 static const struct json_type_trie_t __8 = {
     .root = &__7
@@ -987,17 +987,17 @@ static const struct json_type_trie_node_t __4 = {
     .VAL = &__1
 };
 static const struct json_type_trie_node_t __5 = {
+    .sym = &__0,
+    .EQ = &__4
+};
+static const struct json_type_trie_node_t __6 = {
     .sym = NULL,
     .VAL = &__3
 };
-static const struct json_type_trie_node_t __6 = {
-    .sym = &__2,
-    .EQ = &__5
-};
 static const struct json_type_trie_node_t __7 = {
-    .sym = &__0,
-    .EQ = &__4,
-    .hi = &__6
+    .sym = &__2,
+    .lo = &__5,
+    .EQ = &__6
 };
 static const struct json_type_trie_t __8 = {
     .root = &__7
@@ -1056,17 +1056,17 @@ static const struct json_type_trie_node_t __4 = {
     .VAL = &__1
 };
 static const struct json_type_trie_node_t __5 = {
+    .sym = &__0,
+    .EQ = &__4
+};
+static const struct json_type_trie_node_t __6 = {
     .sym = NULL,
     .VAL = &__3
 };
-static const struct json_type_trie_node_t __6 = {
-    .sym = &__2,
-    .EQ = &__5
-};
 static const struct json_type_trie_node_t __7 = {
-    .sym = &__0,
-    .EQ = &__4,
-    .hi = &__6
+    .sym = &__2,
+    .lo = &__5,
+    .EQ = &__6
 };
 static const struct json_type_trie_t __8 = {
     .root = &__7
@@ -1335,17 +1335,17 @@ static const struct json_type_trie_node_t __4 = {
     .VAL = &__1
 };
 static const struct json_type_trie_node_t __5 = {
+    .sym = &__0,
+    .EQ = &__4
+};
+static const struct json_type_trie_node_t __6 = {
     .sym = NULL,
     .VAL = &__3
 };
-static const struct json_type_trie_node_t __6 = {
-    .sym = &__2,
-    .EQ = &__5
-};
 static const struct json_type_trie_node_t __7 = {
-    .sym = &__0,
-    .EQ = &__4,
-    .hi = &__6
+    .sym = &__2,
+    .lo = &__5,
+    .EQ = &__6
 };
 static const struct json_type_trie_t __8 = {
     .root = &__7
@@ -1404,17 +1404,17 @@ static const struct json_type_trie_node_t __4 = {
     .VAL = &__1
 };
 static const struct json_type_trie_node_t __5 = {
+    .sym = &__0,
+    .EQ = &__4
+};
+static const struct json_type_trie_node_t __6 = {
     .sym = NULL,
     .VAL = &__3
 };
-static const struct json_type_trie_node_t __6 = {
-    .sym = &__2,
-    .EQ = &__5
-};
 static const struct json_type_trie_node_t __7 = {
-    .sym = &__0,
-    .EQ = &__4,
-    .hi = &__6
+    .sym = &__2,
+    .lo = &__5,
+    .EQ = &__6
 };
 static const struct json_type_trie_t __8 = {
     .root = &__7
@@ -1752,17 +1752,17 @@ static const struct json_type_trie_node_t __4 = {
     .VAL = &__1
 };
 static const struct json_type_trie_node_t __5 = {
+    .sym = &__0,
+    .EQ = &__4
+};
+static const struct json_type_trie_node_t __6 = {
     .sym = NULL,
     .VAL = &__3
 };
-static const struct json_type_trie_node_t __6 = {
-    .sym = &__2,
-    .EQ = &__5
-};
 static const struct json_type_trie_node_t __7 = {
-    .sym = &__0,
-    .EQ = &__4,
-    .hi = &__6
+    .sym = &__2,
+    .lo = &__5,
+    .EQ = &__6
 };
 static const struct json_type_trie_t __8 = {
     .root = &__7

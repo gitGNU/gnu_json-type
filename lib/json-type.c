@@ -3097,6 +3097,7 @@ static void json_type_def_gen_def(
 #define TRIE_NEED_PRINT
 #define TRIE_NEED_GEN_DEF
 #define TRIE_NEED_VALIDATE
+#define TRIE_NEED_REBALANCE
 #define TRIE_NEED_SIB_ITERATOR
 #define TRIE_NEED_LVL_ITERATOR
 #define TRIE_NEED_LOOKUP_SYM
@@ -3126,6 +3127,7 @@ static void json_type_def_gen_def(
 #undef  TRIE_NEED_LOOKUP_SYM
 #undef  TRIE_NEED_LVL_ITERATOR
 #undef  TRIE_NEED_SIB_ITERATOR
+#undef  TRIE_NEED_REBALANCE
 #undef  TRIE_NEED_VALIDATE
 #undef  TRIE_NEED_GEN_DEF
 #undef  TRIE_NEED_PRINT
@@ -3151,6 +3153,9 @@ static void json_type_def_gen_def(
         CONST_CAST(__r,                            \
             const struct json_type_node_t*);       \
     })
+
+#define JSON_TYPE_TRIE_CONST_CAST(p) \
+    CONST_CAST(p, struct json_type_trie_t)
 
 static enum trie_sym_cmp_t json_type_node_cmp(
     const struct json_type_node_t* x,
@@ -3649,6 +3654,7 @@ static void json_type_object_sym_print(
 #define TRIE_NEED_PRINT
 #define TRIE_NEED_GEN_DEF
 #define TRIE_NEED_VALIDATE
+#define TRIE_NEED_REBALANCE
 #define TRIE_NEED_SIB_ITERATOR
 #define TRIE_NEED_LVL_ITERATOR
 #define TRIE_NEED_NODE_GET_LEAF
@@ -3670,6 +3676,7 @@ static void json_type_object_sym_print(
 #undef  TRIE_NEED_NODE_GET_LEAF
 #undef  TRIE_NEED_SIB_ITERATOR
 #undef  TRIE_NEED_LVL_ITERATOR
+#undef  TRIE_NEED_REBALANCE
 #undef  TRIE_NEED_VALIDATE
 #undef  TRIE_NEED_GEN_DEF
 #undef  TRIE_NEED_PRINT
@@ -6307,6 +6314,33 @@ static bool json_type_lib_check_list_attrs(
     return true;
 }
 
+static void json_type_lib_rebalance_list_attrs(
+    struct json_type_lib_t* lib UNUSED, // iff JSON_DEBUG is off
+    const struct json_type_list_attr_t* attr)
+{
+    ASSERT(JSON_TYPE_LIB_IMPL_IS(text));
+
+    if (attr->any != NULL)
+        json_type_trie_rebalance(
+            JSON_TYPE_TRIE_CONST_CAST(attr->any));
+
+    if (attr->plain != NULL)
+        json_type_trie_rebalance(
+            JSON_TYPE_TRIE_CONST_CAST(attr->plain));
+
+    if (attr->object != NULL)
+        json_type_object_trie_rebalance(
+            JSON_TYPE_OBJECT_TRIE_CONST_CAST(attr->object));
+
+    if (attr->open_array != NULL)
+        json_type_trie_rebalance(
+            JSON_TYPE_TRIE_CONST_CAST(attr->open_array));
+
+    if (attr->closed_array != NULL)
+        json_type_trie_rebalance(
+            JSON_TYPE_TRIE_CONST_CAST(attr->closed_array));
+}
+
 static bool json_type_lib_gen_node_attrs(
     struct json_type_lib_t* lib, const struct json_type_node_t* node)
 {
@@ -6441,6 +6475,61 @@ static bool json_type_lib_check_node_attrs(
     return true;
 }
 
+static void json_type_lib_rebalance_node_attrs(
+    struct json_type_lib_t* lib, const struct json_type_node_t* node)
+{
+    union json_type_node_pack_t n;
+
+    if (JSON_TYPE_NODE_IS_CONST(node, any) ||
+        JSON_TYPE_NODE_IS_CONST(node, plain)) 
+        ; // stev: nop
+    else
+    if ((n.object = JSON_TYPE_NODE_AS_IF_CONST(node, object))) {
+        const struct json_type_object_node_arg_t *p, *e;
+
+        for (p = n.object->args,
+             e = p + n.object->size;
+             p < e;
+             p ++)
+            json_type_lib_rebalance_node_attrs(lib, p->type);
+    }
+    else
+    if ((n.array = JSON_TYPE_NODE_AS_IF_CONST(node, array))) {
+        union json_type_array_node_pack_t a;
+
+        if ((a.open =
+                JSON_TYPE_ARRAY_NODE_AS_IF_CONST(n.array, open)))
+            json_type_lib_rebalance_node_attrs(lib, a.open->arg);
+        else
+        if ((a.closed =
+                JSON_TYPE_ARRAY_NODE_AS_IF_CONST(n.array, closed))) {
+            const struct json_type_node_t **p, **e;
+
+            for (p = a.closed->args,
+                 e = p + a.closed->size;
+                 p < e;
+                 p ++)
+                json_type_lib_rebalance_node_attrs(lib, *p);
+        }
+        else
+            UNEXPECT_VAR("%d", n.array->type);
+    }
+    else
+    if ((n.list = JSON_TYPE_NODE_AS_IF_CONST(node, list))) {
+        const struct json_type_node_t **p, **e;
+
+        json_type_lib_rebalance_list_attrs(lib, node->attr.list);
+
+        for (p = n.list->args,
+             e = p + n.list->size;
+             p < e;
+             p ++)
+            json_type_lib_rebalance_node_attrs(lib, *p);
+    }
+    else
+        UNEXPECT_VAR("%d", node->type);
+}
+
 static bool json_type_lib_gen_defs_attrs(
     struct json_type_lib_t* lib, const struct json_type_defs_t* defs)
 {
@@ -6479,6 +6568,18 @@ static bool json_type_lib_check_defs_attrs(
     return true;
 }
 
+static void json_type_lib_rebalance_defs_attrs(
+    struct json_type_lib_t* lib, const struct json_type_defs_t* defs)
+{
+    const struct json_type_defs_arg_t *p, *e;
+
+    for (p = defs->args,
+         e = p + defs->size;
+         p < e;
+         p ++)
+        json_type_lib_rebalance_node_attrs(lib, p->type);
+}
+
 static bool json_type_lib_gen_def_attrs(
     struct json_type_lib_t* lib, const struct json_type_def_t* def)
 {
@@ -6497,6 +6598,18 @@ static bool json_type_lib_check_def_attrs(
         return json_type_lib_check_node_attrs(lib, def->val.node);
     if (def->type == json_type_def_defs_type)
         return json_type_lib_check_defs_attrs(lib, def->val.defs);
+    else
+        UNEXPECT_VAR("%d", def->type);
+}
+
+static void json_type_lib_rebalance_def_attrs(
+    struct json_type_lib_t* lib, const struct json_type_def_t* def)
+{
+    if (def->type == json_type_def_node_type)
+        json_type_lib_rebalance_node_attrs(lib, def->val.node);
+    else
+    if (def->type == json_type_def_defs_type)
+        json_type_lib_rebalance_defs_attrs(lib, def->val.defs);
     else
         UNEXPECT_VAR("%d", def->type);
 }
@@ -7004,9 +7117,11 @@ bool json_type_lib_gen_def(struct json_type_lib_t* lib)
     if (d == NULL)
         return false;
 
-    if (!JSON_TYPE_LIB_IMPL_IS(sobj) &&
-        !json_type_lib_check_def_attrs(lib, d))
-        return false;
+    if (JSON_TYPE_LIB_IMPL_IS(text)) {
+        if (!json_type_lib_check_def_attrs(lib, d))
+            return false;
+        json_type_lib_rebalance_def_attrs(lib, d);
+    }
 
     json_type_ptr_space_init(&s, lib->sizes.ptr_space_size);
     json_type_def_gen_def(d, &s, stdout);
