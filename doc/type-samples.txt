@@ -139,6 +139,52 @@ type definition above:
   json: error: <stdin>:1:25: {"foo":{},"bar":1,"baz":0}
   json: error: <stdin>:1:25:                         ^
 
+The type definition below specifies any object having at most three arguments,
+of which names are `"foo"', `"bar"' and `"baz"' and types are, respectively,
+`"boolean"', `"number"' and `"string"', objects of which arguments can be given
+in any order, but without repeated names:
+
+    {
+        "type": "dict",
+        "args": [
+            {
+                "name": "foo",
+                "type": "boolean"
+            },
+            {
+                "name": "bar",
+                "type": "number"
+            },
+            {
+                "name": "baz",
+                "type": "string"
+            }
+        ]
+    }
+
+With respect to this type definition, below are the answers obtained from 'json'
+upon feeding it with a couple of invalid JSON objects:
+
+  $ json -OV -d ... <<< '{"baz":"","zzz":false}'
+  json: error: <stdin>:1:11: type check error: invalid argument name: expected "foo" or "bar"
+  json: error: <stdin>:1:11: {"baz":"","zzz":false}
+  json: error: <stdin>:1:11:           ^
+
+  $ json -OV -d ... <<< '{"baz":"","baz":false}'
+  json: error: <stdin>:1:11: type check error: duplicate argument name: "baz"
+  json: error: <stdin>:1:11: {"baz":"","baz":false}
+  json: error: <stdin>:1:11:           ^
+
+  $ json -OV -d ... <<< '{"baz":"","foo":false,"bar":null}'
+  json: error: <stdin>:1:29: type check error: type mismatch: expected a value of type `"number"'
+  json: error: <stdin>:1:29: {"baz":"","foo":false,"bar":null}
+  json: error: <stdin>:1:29:                             ^
+
+  $ json -OV -d ... <<< '{"baz":"","foo":false,"bar":0,"zzz":null}'
+  json: error: <stdin>:1:30: type check error: too many arguments
+  json: error: <stdin>:1:30: {"baz":"","foo":false,"bar":0,"zzz":null}
+  json: error: <stdin>:1:30:                              ^
+
 
 2. Querying github API at the bash command line
 -----------------------------------------------
