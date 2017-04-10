@@ -30,7 +30,9 @@ LDFLAGS := -Wl,-L${LD_LIBRARY_PATH} \
 MKFLAGS := --no-print-directory SILENT=yes
 LIBS := -ldl
 
-EXCP := json-type-module.c test-trie.c
+EXCP := json-type-module.c \
+        test-common.c \
+        test-trie.c
 SRCS := $(filter-out ${EXCP}, $(wildcard *.c))
 OBJS := $(patsubst %.c, %.o, ${SRCS})
 BIN  := json.so

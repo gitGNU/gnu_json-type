@@ -15,60 +15,14 @@
 # You should have received a copy of the GNU General Public License
 # along with Json-Type.  If not, see <http://www.gnu.org/licenses/>.
 
-.PHONY: default clean allclean all depend silent
-
-default: all
-
-GCC := gcc
-GCC_STD := gnu99
-CFLAGS := -Wall -Wextra -std=${GCC_STD} \
-          -g -I. -I.. -fPIC -fvisibility=hidden \
-          -DPROGRAM=test-trie \
-          -DJSON_NO_LIB_MAIN \
-          -DJSON_DEBUG
+PROGRAM := test-trie
 
 SRCS := common.c \
+        test-common.c \
         pretty-print.c \
         pool-alloc.c \
         test-trie.c
-BIN  := test-trie
 
-ifeq (${32BIT},yes)
-CFLAGS += -m32
-LDFLAGS += -m32
-endif
-
-# dependency rules
-
-ifeq (.depend-test-trie, $(wildcard .depend-test-trie))
-include .depend-test-trie
-endif
-
-${BIN}: ${SRCS}
-
-# building rules
-
-ifeq (${SILENT},yes)
-${BIN}: silent
-endif
-
-${BIN}:
-	${GCC} ${CFLAGS} ${SRCS} -o $@ 
-
-# main targets
-
-silent:
-
-depend:
-	${GCC} ${CFLAGS} -c ${SRCS} -MM| \
-	sed -r 's/^[^ \t]+\.o:/test-trie:/' > .depend-test-trie
-
-all: ${BIN}
-
-clean:
-	rm -f *.o
-
-allclean: clean
-	rm -f *~ ${BIN}
+include test-common.mk
 
 

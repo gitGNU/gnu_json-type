@@ -17,51 +17,38 @@
 
 #include "config.h"
 
-#define _GNU_SOURCE
-#include <limits.h>
 #include <getopt.h>
 #include <stddef.h>
 #include <stdlib.h>
-#include <stdarg.h>
-#include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
-#include <errno.h>
 #include <stdio.h>
-#include <ctype.h>
 
 #include "common.h"
 #include "ptr-traits.h"
 #include "pool-alloc.h"
 #include "pretty-print.h"
 
-static const char program[] = STRINGIFY(PROGRAM);
-static const char verdate[] = "0.3 -- 2017-04-01 16:25"; // $ date +'%F %R'
+#include "test-common.h"
 
-static const char stdin_name[] = "<stdin>";
+const char program[] = STRINGIFY(PROGRAM);
+const char verdate[] = "0.4 -- 2017-04-05 16:12"; // $ date +'%F %R'
 
-static void error(const char* fmt, ...)
-    PRINTF(1)
-    NORETURN;
-
-static void error(const char* fmt, ...)
-{
-    va_list arg;
-
-    char b[256];
-
-    va_start(arg, fmt);
-    vsnprintf(b, sizeof b - 1, fmt, arg);
-    va_end(arg);
-
-    b[sizeof b - 1] = 0;
-
-    fprintf(
-        stderr, "%s: error: %s\n",
-        program, b);
-
-    exit(1);
-}
+const char help[] = 
+"usage: %s [ACTION|OPTION]...\n"
+"where actions are specified as:\n"
+"  -T|--[print-]trie        print out the built trie (default)\n"
+"  -D|--[print-]depths      print out iterator max depths of\n"
+"                             the root of the built trie\n"
+"  -R|--rebalance-trie      print out the built trie upon\n"
+"                             rebalancing it\n"
+"the options are:\n"
+"  -p|--pool-size NUM[KM]   trie memory pool size (default 128K)\n"
+"  -l|--lvl-iter-depth NUM  use NUM as lvl-iterator depth (default: 0)\n"
+"  -s|--sib-iter-depth NUM  use NUM as sib-iterator depth (default: 0)\n"
+"     --dump-options        print options and exit\n"
+"     --version             print version numbers and exit\n"
+"  -?|--help                display this help info and exit\n";
 
 enum options_action_t
 {
@@ -81,59 +68,14 @@ struct options_t
     char* const          *argv;
 };
 
-static void version()
+static void options_done(struct options_t* opts, size_t n_arg)
 {
-    fprintf(stdout, "%s: version %s\n", program, verdate);
+    ASSERT_SIZE_SUB_NO_OVERFLOW(opts->argc, n_arg);
+    opts->argc -= n_arg;
+    opts->argv += n_arg;
 }
 
-static void usage()
-{
-    fprintf(stdout,
-        "usage: %s [ACTION|OPTION]...\n"
-        "where actions are specified as:\n"
-        "  -T|--[print-]trie        print out the built trie (default)\n"
-        "  -D|--[print-]depths      print out iterator max depths of\n"
-        "                             the root of the built trie\n"
-        "  -R|--rebalance-trie      print out the built trie upon\n"
-        "                             rebalancing it\n"
-        "the options are:\n"
-        "  -p|--pool-size NUM[KM]   trie memory pool size (default 128K)\n"
-        "  -l|--lvl-iter-depth NUM  use NUM as lvl-iterator depth (default: 0)\n"
-        "  -s|--sib-iter-depth NUM  use NUM as sib-iterator depth (default: 0)\n"
-        "     --dump-options        print options and exit\n"
-        "     --version             print version numbers and exit\n"
-        "  -?|--help                display this help info and exit\n",
-        program);
-}
-
-#define KB(X) (SZ(X) * SZ(1024))
-#define MB(X) (KB(X) * SZ(1024))
-
-struct su_size_t
-{
-    size_t sz;
-    const char* su;
-};
-
-static struct su_size_t su_size(size_t sz)
-{
-    struct su_size_t r;
-
-    r.sz = sz;
-    r.su = "";
-    if (r.sz  % MB(1) == 0) {
-        r.sz /= MB(1);
-        r.su = "M";
-    }
-    else
-    if (r.sz  % KB(1) == 0) {
-        r.sz /= KB(1);
-        r.su = "K";
-    }
-    return r;
-}
-
-static void dump_options(const struct options_t* opts)
+static void options_dump(const struct options_t* opts)
 {
 #define CASE2(n0, n1) \
     [options_ ## n0 ## _ ## n1 ## _action] = #n0 "-" #n1
@@ -146,20 +88,14 @@ static void dump_options(const struct options_t* opts)
     char* const* p;
     size_t i;
 
+#define NAME(x) OPTIONS_NAME(x)
+
     fprintf(stdout,
         "action:         %s\n"
         "pool-size:      %zu%s\n"
         "lvl-iter-depth: %zu\n"
         "sib-iter-depth: %zu\n"
         "argc:           %zu\n",
-#define NAME0(X, T)                  \
-    ({                               \
-        size_t __v = opts->X;        \
-        ARRAY_NON_NULL_ELEM(T, __v); \
-    })
-#define NAME(X)  (NAME0(X, X ## s))
-#define NNUL(X)  (opts->X ? opts->X : "-")
-#define NOYES(X) (NAME0(X, noyes))
         NAME(action),
         pool_su.sz,
         pool_su.su,
@@ -171,111 +107,50 @@ static void dump_options(const struct options_t* opts)
         fprintf(stdout, "argv[%zu]:        %s\n", i, *p);
 }
 
-static void invalid_opt_arg(const char* opt_name, const char* opt_arg)
-{
-    error("invalid argument for '%s' option: '%s'", opt_name, opt_arg);
-}
+enum {
+    // stev: actions:
+    options_print_trie_act     = 'T',
+    options_print_depths_act   = 'D',
+    options_rebalance_trie_act = 'R',
 
-static void illegal_opt_arg(const char* opt_name, const char* opt_arg)
-{
-    error("illegal argument for '%s' option: '%s'", opt_name, opt_arg);
-}
+    // stev: options:
+    options_pool_size_opt      = 'p',
+    options_lvl_iter_depth_opt = 'l',
+    options_sib_iter_depth_opt = 's',
+};
 
-static void missing_opt_arg_str(const char* opt_name)
+static bool options_parse(struct options_t* opts,
+    int opt, const char* opt_arg)
 {
-    error("argument for option '%s' not found", opt_name);
-}
-
-static void missing_opt_arg_ch(char opt_name)
-{
-    error("argument for option '-%c' not found", opt_name);
-}
-
-static void not_allowed_opt_arg(const char* opt_name)
-{
-    error("option '%s' does not allow an argument", opt_name);
-}
-
-static void invalid_opt_str(const char* opt_name)
-{
-    error("invalid command line option '%s'", opt_name);
-}
-
-static void invalid_opt_ch(char opt_name)
-{
-    error("invalid command line option '-%c'", opt_name);
-}
-
-static size_t parse_num(
-    const char* p, const char** q, int b)
-{
-    if (!isdigit(*p)) {
-        *q = p;
-        errno = EINVAL;
-        return 0;
+    switch (opt) {
+    case options_print_trie_act:
+        opts->action = options_print_trie_action;
+        break;
+    case options_print_depths_act:
+        opts->action = options_print_depths_action;
+        break;
+    case options_rebalance_trie_act:
+        opts->action = options_rebalance_trie_action;
+        break;
+    case options_pool_size_opt:
+        opts->pool_size = 
+            options_parse_su_size_optarg("pool-size",
+                opt_arg, 1, MB(2));
+        break;
+    case options_lvl_iter_depth_opt:
+        opts->lvl_iter_depth = 
+            options_parse_size_optarg("lvl-iter-depth",
+                opt_arg, 0, 0);
+        break;
+    case options_sib_iter_depth_opt:
+        opts->sib_iter_depth = 
+            options_parse_size_optarg("sib-iter-depth",
+                opt_arg, 0, 0);
+        break;
+    default:
+        return false;
     }
-    errno = 0;
-    STATIC(SIZE_MAX == ULONG_MAX);
-    return strtoul(p, (char**) q, b);
-}
-
-static size_t parse_size_optarg(
-    const char* opt_name, const char* opt_arg)
-{
-    const char *p, *q = NULL;
-    size_t n, v, d;
-
-    if (!(n = strlen(opt_arg)))
-        invalid_opt_arg(opt_name, opt_arg);
-    v = parse_num(p = opt_arg, &q, 10);
-    d = PTR_OFFSET(q, p, n);
-    if (errno || (d != n))
-        invalid_opt_arg(opt_name, opt_arg);
-#if 0
-    if (v == 0)
-        illegal_opt_arg(opt_name, opt_arg);
-#endif
-    return v;
-}
-
-static size_t parse_su_size_optarg(
-    const char* opt_name, const char* opt_arg)
-{
-    const char *p, *q = NULL;
-    size_t n, v, d;
-
-    if (!(n = strlen(opt_arg)))
-        invalid_opt_arg(opt_name, opt_arg);
-    v = parse_num(p = opt_arg, &q, 10);
-    d = PTR_OFFSET(q, p, n);
-    if (errno ||
-        (d == 0) ||
-        (d < n - 1) ||
-        (d == n - 1 && *q != 'k' && *q != 'K' &&
-            *q != 'm' && *q != 'M'))
-        invalid_opt_arg(opt_name, opt_arg);
-    switch (*q) {
-    case '\0':
-        break;
-    case 'k':
-    case 'K':
-        STATIC(KB(1) <= SIZE_MAX);
-        if (v > SIZE_MAX / KB(1))
-            illegal_opt_arg(opt_name, opt_arg);
-        v *= KB(1);
-        break;
-    case 'm':
-    case 'M':
-        STATIC(MB(1) <= SIZE_MAX);
-        if (v > SIZE_MAX / MB(1))
-            illegal_opt_arg(opt_name, opt_arg);
-        v *= MB(1);
-        break;
-    }
-    STATIC(MB(2) < SIZE_MAX);
-    if (v == 0 || v > MB(2))
-        illegal_opt_arg(opt_name, opt_arg);
-    return v;
+    return true;
 }
 
 static const struct options_t* options(
@@ -286,152 +161,34 @@ static const struct options_t* options(
         .pool_size      = KB(128),
         .lvl_iter_depth = 0,
         .sib_iter_depth = 0,
-        .argc           = 0,
-        .argv           = NULL
     };
 
-    enum {
-        // stev: actions:
-        print_trie_act     = 'T',
-        print_depths_act   = 'D',
-        rebalance_trie_act = 'R',
+    static struct option longs[] = {
+        { "print-trie",     0, 0, options_print_trie_act },
+        { "trie",           0, 0, options_print_trie_act },
+        { "print-depths",   0, 0, options_print_depths_act },
+        { "rebalance-trie", 0, 0, options_rebalance_trie_act },
+        { "depths",         0, 0, options_print_depths_act },
+        { "pool-size",      1, 0, options_pool_size_opt },
+        { "lvl-iter-depth", 1, 0, options_lvl_iter_depth_opt },
+        { "sib-iter-depth", 1, 0, options_lvl_iter_depth_opt },
+    };
+    static const char shorts[] = "DRT" "l:p:s:";
 
-        // stev: options:
-        pool_size_opt      = 'p',
-        lvl_iter_depth_opt = 'l',
-        sib_iter_depth_opt = 's',
-        help_opt           = '?',
-
-        dump_opts_opt      = 128,
-        version_opt,
+    static struct options_funcs_t funcs = {
+        .done  = (options_done_func_t)  options_done,
+        .parse = (options_parse_func_t) options_parse,
+        .dump  = (options_dump_func_t)  options_dump,
     };
 
-    static struct option long_opts[] = {
-        { "print-trie",     0,       0, print_trie_act },
-        { "trie",           0,       0, print_trie_act },
-        { "print-depths",   0,       0, print_depths_act },
-        { "rebalance-trie", 0,       0, rebalance_trie_act },
-        { "depths",         0,       0, print_depths_act },
-        { "pool-size",      1,       0, pool_size_opt },
-        { "lvl-iter-depth", 1,       0, lvl_iter_depth_opt },
-        { "sib-iter-depth", 1,       0, lvl_iter_depth_opt },
-        { "dump-options",   0,       0, dump_opts_opt },
-        { "version",        0,       0, version_opt },
-        { "help",           0, &optopt, help_opt },
-        { 0,                0,       0, 0 }
-    };
-    static const char short_opts[] = ":" "DRT" "l:p:s:";
-
-    struct bits_opts_t {
-        bits_t dump: 1;
-        bits_t usage: 1;
-        bits_t version: 1;
-    };
-    struct bits_opts_t bits = {
-        .dump    = false,
-        .usage   = false,
-        .version = false
-    };
-
-    int opt;
-
-#define argv_optind()                      \
-    ({                                     \
-        size_t i = INT_AS_SIZE(optind);    \
-        ASSERT_SIZE_DEC_NO_OVERFLOW(i);    \
-        ASSERT(i - 1 < INT_AS_SIZE(argc)); \
-        argv[i - 1];                       \
-    })
-
-#define optopt_char()            \
-    ({                           \
-        ASSERT(isascii(optopt)); \
-        (char) optopt;           \
-    })
-
-    opterr = 0;
-    optind = 1;
-    while ((opt = getopt_long(argc, argv, short_opts,
-        long_opts, 0)) != EOF) {
-        switch (opt) {
-        case print_trie_act:
-            opts.action = options_print_trie_action;
-            break;
-        case print_depths_act:
-            opts.action = options_print_depths_action;
-            break;
-        case rebalance_trie_act:
-            opts.action = options_rebalance_trie_action;
-            break;
-        case pool_size_opt:
-            opts.pool_size = 
-                parse_su_size_optarg("pool-size", optarg);
-            break;
-        case lvl_iter_depth_opt:
-            opts.lvl_iter_depth = 
-                parse_size_optarg("lvl-iter-depth", optarg);
-            break;
-        case sib_iter_depth_opt:
-            opts.sib_iter_depth = 
-                parse_size_optarg("sib-iter-depth", optarg);
-            break;
-        case dump_opts_opt:
-            bits.dump = true;
-            break;
-        case version_opt:
-            bits.version = true;
-            break;
-        case 0:
-            bits.usage = true;
-            break;
-        case ':': {
-            const char* opt = argv_optind();
-            if (opt[0] == '-' && opt[1] == '-')
-                missing_opt_arg_str(opt);
-            else
-                missing_opt_arg_ch(optopt_char());
-            break;
-        }
-        case '?':
-        default:
-            if (optopt == 0)
-                invalid_opt_str(argv_optind());
-            else
-            if (optopt != '?') {
-                char* opt = argv_optind();
-                if (opt[0] == '-' && opt[1] == '-') {
-                    char* end = strchr(opt, '=');
-                    if (end) *end = '\0';
-                    not_allowed_opt_arg(opt);
-                }
-                else
-                    invalid_opt_ch(optopt_char());
-            }
-            else
-                bits.usage = true;
-            break;
-        }
-    }
-
-    ASSERT(argc >= optind);
-
-    argc -= optind;
-    argv += optind;
-
-    opts.argc = argc;
+    opts.argc = INT_AS_SIZE(argc);
     opts.argv = argv;
 
-    if (bits.version)
-        version();
-    if (bits.dump)
-        dump_options(&opts);
-    if (bits.usage)
-        usage();
-
-    if (bits.dump ||
-        bits.version ||
-        bits.usage)
-        exit(0);
+    options_parse_args(
+        &opts, &funcs,
+        shorts, ARRAY_SIZE(shorts) - 1,
+        longs, ARRAY_SIZE(longs),
+        argc, argv);
 
     return &opts;
 }
