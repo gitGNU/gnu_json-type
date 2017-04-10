@@ -32,7 +32,8 @@ LIBS := -ldl
 
 EXCP := json-type-module.c \
         test-common.c \
-        test-trie.c
+        test-trie.c \
+        test-gen.c
 SRCS := $(filter-out ${EXCP}, $(wildcard *.c))
 OBJS := $(patsubst %.c, %.o, ${SRCS})
 BIN  := json.so
@@ -59,13 +60,17 @@ ifeq (.depend-test-trie, $(wildcard .depend-test-trie))
 include .depend-test-trie
 endif
 
+ifeq (.depend-test-gen, $(wildcard .depend-test-gen))
+include .depend-test-gen
+endif
+
 ifeq (.depend-bit-set, $(wildcard .depend-bit-set))
 include .depend-bit-set
 endif
 
 ${BIN}: ${OBJS}
 
-default all:: test-trie
+default all:: test-trie test-gen
 
 # building rules
 
@@ -77,14 +82,15 @@ ${BIN}: %.so: %.o
 
 # main targets
 
-test-trie:
-	@${MAKE} ${MKFLAGS} -f test-trie.mk
+test-trie test-gen:
+	@${MAKE} ${MKFLAGS} -f $@.mk
 
 bit-set:
 	@${MAKE} ${MKFLAGS} -f bit-set.mk $@
 
 depend clean allclean::
 	@${MAKE} ${MKFLAGS} -f test-trie.mk $@
+	@${MAKE} ${MKFLAGS} -f test-gen.mk $@
 	@${MAKE} ${MKFLAGS} -f bit-set.mk $@
 
 depend::
