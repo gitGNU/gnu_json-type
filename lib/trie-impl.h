@@ -361,7 +361,7 @@ void TRIE_INIT(
 #ifdef TRIE_NEED_LOOKUP_SYM_ANY
 
 static bool TRIE_LOOKUP_SYM_ANY_NODE(
-    struct TRIE_NODE_TYPE* node, size_t count,
+    const struct TRIE_NODE_TYPE* node, size_t count,
     const struct TRIE_NODE_TYPE** result)
 {
     bool n;
@@ -413,7 +413,7 @@ static bool TRIE_LOOKUP_SYM_STAR(
     const struct TRIE_TYPE* trie, TRIE_SYM_TYPE sym,
     const struct TRIE_NODE_TYPE** result)
 {
-    struct TRIE_NODE_TYPE* node;
+    const struct TRIE_NODE_TYPE* node;
     enum trie_sym_cmp_t cmp;
 
     node = trie->root;
