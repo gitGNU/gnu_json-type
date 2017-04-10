@@ -57,6 +57,10 @@ ifeq (.depend-test-trie, $(wildcard .depend-test-trie))
 include .depend-test-trie
 endif
 
+ifeq (.depend-bit-set, $(wildcard .depend-bit-set))
+include .depend-bit-set
+endif
+
 ${BIN}: ${OBJS}
 
 default all:: test-trie
@@ -74,8 +78,12 @@ ${BIN}: %.so: %.o
 test-trie:
 	@${MAKE} ${MKFLAGS} -f test-trie.mk
 
+bit-set:
+	@${MAKE} ${MKFLAGS} -f bit-set.mk $@
+
 depend clean allclean::
 	@${MAKE} ${MKFLAGS} -f test-trie.mk $@
+	@${MAKE} ${MKFLAGS} -f bit-set.mk $@
 
 depend::
 	${GCC} ${CFLAGS} -c ${SRCS} -MM > .depend
