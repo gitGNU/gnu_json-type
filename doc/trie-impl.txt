@@ -57,8 +57,8 @@ The trie to be found in 'trie-impl.h' is precisely of this latter kind: ternary
 search trie.
 
 The file 'trie-impl.h' implements quite a few algorithms which apply to TSTs.
-The most important are those to be seen in the function 'TRIE_LOOKUP_SYM' and,
-respectively, the functions 'TRIE_INSERT_SYM' and 'TRIE_INSERT_KEY'.
+The most important are those to be seen in the functions 'TRIE_LOOKUP_SYM',
+'TRIE_LOOKUP_KEY', 'TRIE_INSERT_SYM' and 'TRIE_INSERT_KEY'.
 
 'TRIE_LOOKUP_SYM' is an iterative variant of the recursive 'get' of Algorithm
 5.5 and 'TRIE_INSERT_{SYM,KEY}' are iterative variants of the recursive 'put'
