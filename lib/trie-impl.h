@@ -165,6 +165,16 @@
 #define TRIE_INSERT_SYM      TRIE_MAKE_NAME(TRIE_NAME, insert_sym)
 #define TRIE_INSERT_KEY      TRIE_MAKE_NAME(TRIE_NAME, insert_key)
 
+#define TRIE_REBALANCE_COMPRESS \
+                             TRIE_MAKE_NAME(TRIE_NAME, rebalance_compress)
+#define TRIE_REBALANCE_VINE_TO_TREE \
+                             TRIE_MAKE_NAME(TRIE_NAME, rebalance_vine_to_tree)
+#define TRIE_REBALANCE_TREE_TO_VINE \
+                             TRIE_MAKE_NAME(TRIE_NAME, rebalance_tree_to_vine)
+#define TRIE_REBALANCE_NODE  TRIE_MAKE_NAME(TRIE_NAME, rebalance_node)
+#define TRIE_REBALANCE_TREE  TRIE_MAKE_NAME(TRIE_NAME, rebalance_tree)
+#define TRIE_REBALANCE       TRIE_MAKE_NAME(TRIE_NAME, rebalance)
+
 #define TRIE_NODE_GET_SHORTEST_KEY_LEN \
                              TRIE_MAKE_NAME(TRIE_NAME, node_get_shortest_key_len)
 #define TRIE_NODE_GET_LONGEST_KEY_LEN \
@@ -482,8 +492,8 @@ static bool TRIE_MATCH_SYM_STAR_NODE(
     const struct TRIE_NODE_TYPE* node, TRIE_SYM_TYPE sym,
     const struct TRIE_NODE_TYPE** result)
 {
-    bool a;
     enum trie_sym_cmp_t c;
+    bool a;
 
     if (TRIE_SYM_IS_NULL(node->sym)) {
         *result = node;
@@ -696,7 +706,7 @@ static bool TRIE_LOOKUP_SYM(
 
 #if defined(TRIE_NEED_INSERT_SYM) || \
     defined(TRIE_NEED_INSERT_KEY)
-#define TRIE_CONST_CAST(p) \
+#define TRIE_NODE_REF_CONST_CAST(p) \
     CONST_CAST(p, const struct TRIE_NODE_TYPE*)
 #endif
 
@@ -731,7 +741,7 @@ static bool TRIE_INSERT_SYM(
             UNEXPECT_VAR("%d", cmp);
     }
 
-    node = *TRIE_CONST_CAST(ptr) =
+    node = *TRIE_NODE_REF_CONST_CAST(ptr) =
         TRIE_NEW_NODE(sym);
 
     if (TRIE_SYM_IS_NULL(sym))
@@ -739,7 +749,7 @@ static bool TRIE_INSERT_SYM(
 
     ptr = &node->cell.eq;
 
-    node = *TRIE_CONST_CAST(ptr) =
+    node = *TRIE_NODE_REF_CONST_CAST(ptr) =
         TRIE_NEW_NODE(TRIE_NULL_SYM());
 
 done:
@@ -781,7 +791,7 @@ static bool TRIE_INSERT_KEY(
     }
 
     while (true) {
-        node = *TRIE_CONST_CAST(ptr) =
+        node = *TRIE_NODE_REF_CONST_CAST(ptr) =
             TRIE_NEW_NODE(TRIE_KEY_DEREF(key));
         if (TRIE_SYM_IS_NULL(node->sym))
             break;
@@ -792,6 +802,142 @@ static bool TRIE_INSERT_KEY(
     *result = node;
     return true;
 }
+
+#define TRIE_NODE_CONST_CAST(p) \
+    CONST_CAST(p, struct TRIE_NODE_TYPE)
+
+#ifdef TRIE_NEED_REBALANCE
+
+// stev: the trie rebalancing algorithm below is due
+// to the work of Stout & Warren:
+//
+// Quentin F. Stout & Belle L. Warren:
+// Tree Rebalancing in Optimal Time and Space,
+// CACM, Vol. 29, No. 9, Sep. 1986, pp. 902-908
+// http://web.eecs.umich.edu/~qstout/pap/CACM86.pdf
+
+static void TRIE_REBALANCE_COMPRESS(
+    struct TRIE_NODE_TYPE* node,
+    size_t n)
+{
+    struct TRIE_NODE_TYPE *p, *q;
+
+    ASSERT(node != NULL);
+
+    p = node;
+    while (n --) {
+        q = TRIE_NODE_CONST_CAST(p->hi);
+        ASSERT(q != NULL);
+        p->hi = q->hi;
+        p = TRIE_NODE_CONST_CAST(p->hi);
+        ASSERT(p != NULL);
+        q->hi = p->lo;
+        p->lo = q;
+    }
+}
+
+static void TRIE_REBALANCE_VINE_TO_TREE(
+    struct TRIE_NODE_TYPE* node,
+    size_t size)
+{
+    size_t n;
+
+    ASSERT_SIZE_INC_NO_OVERFLOW(size);
+    n = SIZE_LOG2(size + 1);
+
+    ASSERT(n < SIZE_BIT);
+    n = SZ(1) << n;
+
+    ASSERT_SIZE_DEC_NO_OVERFLOW(n);
+    n --;
+
+    ASSERT_SIZE_SUB_NO_OVERFLOW(size, n);
+    TRIE_REBALANCE_COMPRESS(node, size - n);
+
+    while (n > 1)
+        TRIE_REBALANCE_COMPRESS(node, n >>= 1);
+}
+
+static size_t TRIE_REBALANCE_TREE_TO_VINE(
+    struct TRIE_NODE_TYPE* node)
+{
+    struct TRIE_NODE_TYPE *p, *q, *t;
+    size_t r = 0;
+
+    ASSERT(node != NULL);
+
+    p = node;
+    q = TRIE_NODE_CONST_CAST(p->hi);
+
+    while (q != NULL) {
+        ASSERT(q == p->hi);
+
+        if (q->lo == NULL) {
+            p = q;
+            q = TRIE_NODE_CONST_CAST(q->hi);
+            r ++;
+        }
+        else {
+            t = TRIE_NODE_CONST_CAST(q->lo);
+            // p=[0]{.lo=x .hi=q=[1]{.lo=t=[2]{.lo=y .hi=z} .hi=w}}
+            q->lo = TRIE_NODE_CONST_CAST(t->hi);
+            t->hi = q;
+            p->hi = q = t;
+            // p=[0]{.lo=x .hi=q=t=[2]{.lo=y .hi=[1]{.lo=z .hi=w}}}
+        }
+    }
+
+    return r;
+}
+
+static struct TRIE_NODE_TYPE*
+    TRIE_REBALANCE_TREE(struct TRIE_NODE_TYPE*);
+
+static void TRIE_REBALANCE_NODE(struct TRIE_NODE_TYPE* node)
+{
+    ASSERT(node != NULL);
+
+    if (node->lo != NULL)
+        TRIE_REBALANCE_NODE(
+            TRIE_NODE_CONST_CAST(node->lo));
+
+    if (!TRIE_SYM_IS_NULL(node->sym) &&
+        node->cell.eq != NULL)
+        node->cell.eq = TRIE_REBALANCE_TREE(
+            TRIE_NODE_CONST_CAST(node->cell.eq));
+
+    if (node->hi != NULL)
+        TRIE_REBALANCE_NODE(
+            TRIE_NODE_CONST_CAST(node->hi));
+}
+
+static struct TRIE_NODE_TYPE*
+    TRIE_REBALANCE_TREE(struct TRIE_NODE_TYPE* node)
+{
+    struct TRIE_NODE_TYPE r;
+    size_t s;
+
+    ASSERT(node != NULL);
+
+    TRIE_REBALANCE_NODE(node);
+
+    memset(&r, 0, sizeof(r));
+    r.hi = node;
+
+    s = TRIE_REBALANCE_TREE_TO_VINE(&r);
+    TRIE_REBALANCE_VINE_TO_TREE(&r, s);
+
+    return TRIE_NODE_CONST_CAST(r.hi);
+}
+
+static void TRIE_REBALANCE(struct TRIE_TYPE* trie)
+{
+    if (trie->root != NULL)
+        trie->root = TRIE_REBALANCE_TREE(
+            TRIE_NODE_CONST_CAST(trie->root));
+}
+
+#endif // TRIE_NEED_REBALANCE
 
 #ifdef TRIE_NEED_NODE_GET_SHORTEST_KEY_LEN
 

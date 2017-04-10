@@ -36,7 +36,7 @@
 #include "pretty-print.h"
 
 static const char program[] = STRINGIFY(PROGRAM);
-static const char verdate[] = "0.2 -- 2016-05-02 09:20"; // $ date +'%F %R'
+static const char verdate[] = "0.3 -- 2017-04-01 16:25"; // $ date +'%F %R'
 
 static const char stdin_name[] = "<stdin>";
 
@@ -66,7 +66,8 @@ static void error(const char* fmt, ...)
 enum options_action_t
 {
     options_print_trie_action,
-    options_print_depths_action
+    options_print_depths_action,
+    options_rebalance_trie_action,
 };
 
 struct options_t
@@ -90,9 +91,11 @@ static void usage()
     fprintf(stdout,
         "usage: %s [ACTION|OPTION]...\n"
         "where actions are specified as:\n"
-        "  -T|--[print-]trie        print out the built trie\n"
+        "  -T|--[print-]trie        print out the built trie (default)\n"
         "  -D|--[print-]depths      print out iterator max depths of\n"
         "                             the root of the built trie\n"
+        "  -R|--rebalance-trie      print out the built trie upon\n"
+        "                             rebalancing it\n"
         "the options are:\n"
         "  -p|--pool-size NUM[KM]   trie memory pool size (default 128K)\n"
         "  -l|--lvl-iter-depth NUM  use NUM as lvl-iterator depth (default: 0)\n"
@@ -137,6 +140,7 @@ static void dump_options(const struct options_t* opts)
     static const char* const actions[] = {
         CASE2(print, trie),
         CASE2(print, depths),
+        CASE2(rebalance, trie),
     };
     struct su_size_t pool_su = su_size(opts->pool_size);
     char* const* p;
@@ -290,6 +294,7 @@ static const struct options_t* options(
         // stev: actions:
         print_trie_act     = 'T',
         print_depths_act   = 'D',
+        rebalance_trie_act = 'R',
 
         // stev: options:
         pool_size_opt      = 'p',
@@ -305,6 +310,7 @@ static const struct options_t* options(
         { "print-trie",     0,       0, print_trie_act },
         { "trie",           0,       0, print_trie_act },
         { "print-depths",   0,       0, print_depths_act },
+        { "rebalance-trie", 0,       0, rebalance_trie_act },
         { "depths",         0,       0, print_depths_act },
         { "pool-size",      1,       0, pool_size_opt },
         { "lvl-iter-depth", 1,       0, lvl_iter_depth_opt },
@@ -314,7 +320,7 @@ static const struct options_t* options(
         { "help",           0, &optopt, help_opt },
         { 0,                0,       0, 0 }
     };
-    static const char short_opts[] = ":" "DT" "l:p:s:";
+    static const char short_opts[] = ":" "DRT" "l:p:s:";
 
     struct bits_opts_t {
         bits_t dump: 1;
@@ -353,6 +359,9 @@ static const struct options_t* options(
             break;
         case print_depths_act:
             opts.action = options_print_depths_action;
+            break;
+        case rebalance_trie_act:
+            opts.action = options_rebalance_trie_action;
             break;
         case pool_size_opt:
             opts.pool_size = 
@@ -483,6 +492,7 @@ struct test_t;
 #define TRIE_DEBUG_FILE stdout
 
 #define TRIE_NEED_PRINT
+#define TRIE_NEED_REBALANCE
 #define TRIE_NEED_SIB_ITERATOR
 #define TRIE_NEED_LVL_ITERATOR
 #define TRIE_NEED_NODE_GET_ITER_MAX_DEPTH
@@ -496,6 +506,7 @@ struct test_t;
 #undef  TRIE_NEED_NODE_GET_ITER_MAX_DEPTH
 #undef  TRIE_NEED_LVL_ITERATOR
 #undef  TRIE_NEED_SIB_ITERATOR
+#undef  TRIE_NEED_REBALANCE
 #undef  TRIE_NEED_PRINT
 
 #define TEST_TRIE_NODE_AS_VAL(p) \
@@ -682,6 +693,20 @@ static void test_print_depths(
         test_trie_node_get_lvl_iter_max_depth(n));
 }
 
+static void test_rebalance_trie(
+    struct test_t* test,
+    const struct options_t* opt UNUSED,
+    FILE* file)
+{
+    test_trie_print(&test->trie, file);
+    fputc('\n', file);
+
+    test_trie_rebalance(&test->trie);
+
+    test_trie_print(&test->trie, file);
+    fputc('\n', file);
+}
+
 typedef void (*test_action_func_t)(
     const struct test_t*,
     const struct options_t* opt,
@@ -704,8 +729,10 @@ static void exec_test(
 int main(int argc, char* argv[])
 {
     static const test_action_func_t actions[] = {
-        [options_print_trie_action]   = test_print_trie,
-        [options_print_depths_action] = test_print_depths,
+        [options_print_trie_action]     = test_print_trie,
+        [options_print_depths_action]   = test_print_depths,
+        [options_rebalance_trie_action] = (test_action_func_t)
+            test_rebalance_trie,
     };
     const struct options_t* opt = options(argc, argv);
     test_action_func_t act = ARRAY_NULL_ELEM(

@@ -332,6 +332,37 @@ typedef unsigned int bits_t;
         (n) && !((n) & ((n) - 1))   \
     )
 
+// int __builtin_clz(unsigned int),
+// int __builtin_clzl(unsigned long):
+// Returns the number of leading 0-bits in x, starting at the most
+// significant bit position. If x is 0, the result is undefined.  
+// https://gcc.gnu.org/onlinedocs/gcc-4.3.4/gcc/Other-Builtins.html
+
+#if SIZE_MAX == UINT_MAX
+#define SIZE_CLZ(x)                  \
+    (                                \
+        STATIC(INT_MAX <= SIZE_MAX), \
+        (size_t) __builtin_clz(x)    \
+    )
+#elif SIZE_MAX == ULONG_MAX
+#define SIZE_CLZ(x)                  \
+    (                                \
+        STATIC(INT_MAX <= SIZE_MAX), \
+        (size_t) __builtin_clzl(x)   \
+    )
+#else
+#error size_t is neither unsigned int nor unsigned long
+#endif
+
+// stev: compute floor(log2(n)) for n > 0:
+
+#define SIZE_LOG2(n)                \
+    ({                              \
+        STATIC(TYPEOF_IS_SIZET(n)); \
+        ASSERT(n > 0);              \
+        SIZE_BIT - SIZE_CLZ(n) - 1; \
+    })
+
 #define TYPE_WIDTH(t) (sizeof(t) * CHAR_BIT)
 
 #endif/*__INT_TRAITS_H*/
