@@ -26,4 +26,14 @@ except that for "dict" the actual arguments can be given in any order and
 some (even all) of the arguments specified by the type may be omitted from
 the list of actual arguments.
 
+Update (Thu Apr  6 17:12:58 EEST 2017): As of today, the basic "dict" type
+object got implemented. Still remains for the next cycle of development to
+allow "dict" types as elements of "list" type objects:
+
+$ json -V -Tp <<< '{"type":"list","args":[{"type":"dict","args":[]}]}'
+json: error: <stdin>:1:24: attribute error: invalid "list" type object: element is a "dict" (the "list" begins at 1:1)
+json: error: <stdin>:1:24: {"type":"list","args":[{"type":"dict","args":[]}]}
+json: error: <stdin>:1:24:                        ^
+$
+
 
