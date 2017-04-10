@@ -117,10 +117,12 @@ static void obj_json_base_init_json(
         .ptr_space_size = opts->sizes_ ## n ## _ptr_space_size, \
         .text_max_size = opts->sizes_ ## n ## _text_max_size    \
     }
-#define OBJ_JSON_TYPE_SIZES(n)                    \
-    {                                             \
-        .obj = OBJ_JSON_OBJ_SIZES(n ## _obj),     \
-        .lib = OBJ_JSON_TYPE_LIB_SIZES(n ## _lib) \
+#define OBJ_JSON_TYPE_SIZES(n)                                 \
+    {                                                          \
+        .obj = OBJ_JSON_OBJ_SIZES(n ## _obj),                  \
+        .lib = OBJ_JSON_TYPE_LIB_SIZES(n ## _lib),             \
+        .var_stack_max = opts->sizes_ ## n ## _var_stack_max,  \
+        .var_stack_init = opts->sizes_ ## n ## _var_stack_init \
     }
 
 #define OBJ_JSON_BASE_INIT_OBJ(n, ...)                    \

@@ -140,7 +140,7 @@ enum json_type_ruler_error_type_t
     json_type_ruler_error_invalid_type_obj_size_not_two,
     json_type_ruler_error_invalid_name_obj_size_not_two,
     json_type_ruler_error_invalid_plain_obj_size_not_one,
-    json_type_ruler_error_invalid_type_obj_type_not_obj_arr_list,
+    json_type_ruler_error_invalid_type_obj_type_not_obj_arr_list_dict,
     json_type_ruler_error_invalid_type_obj_2nd_arg_not_args,
     json_type_ruler_error_invalid_name_obj_2nd_arg_not_type,
     json_type_ruler_error_invalid_plain_obj_type_not_null_bool_num_str,
@@ -148,6 +148,7 @@ enum json_type_ruler_error_type_t
     json_type_ruler_error_invalid_name_obj_type_arg_not_a_type,
     json_type_ruler_error_invalid_object_obj_args_not_array_of_name_objs,
     json_type_ruler_error_invalid_list_obj_args_not_of_type_array_of_types,
+    json_type_ruler_error_invalid_dict_obj_args_not_array_of_name_objs,
     json_type_ruler_error_invalid_array_obj_args_neither_type_nor_array_of_types,
     json_type_ruler_error_invalid_array_elem_is_neither_type_nor_name_obj,
     json_type_ruler_error_invalid_array_elem_is_either_type_xor_name_obj
@@ -176,6 +177,8 @@ enum json_type_lib_error_attr_type_t
     json_type_lib_error_attr_invalid_list_sort_of_array_of_array_not_supported,
     json_type_lib_error_attr_invalid_list_sort_of_array_of_list_not_supported,
     json_type_lib_error_attr_invalid_list_elem_is_list,
+    json_type_lib_error_attr_invalid_list_elem_is_dict,
+    json_type_lib_error_attr_invalid_dict_dup_key_name,
     json_type_lib_error_attr_invalid_defs_dup_name,
 };
 
@@ -213,20 +216,31 @@ enum json_type_check_error_type_t
     json_type_check_error_too_many_args,
     json_type_check_error_too_few_args,
     json_type_check_error_invalid_arg_name,
+    json_type_check_error_duplicate_arg_name,
 };
 
 enum json_type_check_error_key_arg_type_t
 {
     json_type_check_error_key_arg_name_type,
     json_type_check_error_key_arg_object_trie_type,
+    json_type_check_error_key_arg_dup_name_type,
+    json_type_check_error_key_arg_dict_type,
+};
+
+struct json_type_check_error_dict_key_arg_t
+{
+    const struct json_type_dict_node_t* node;
+    const struct bit_set_t*             args;
 };
 
 struct json_type_check_error_key_arg_t
 {
     enum json_type_check_error_key_arg_type_t type;
     union {
-        const uchar_t*                             name;
-        const struct json_type_object_trie_node_t* object_trie;
+        const uchar_t*                              name;
+        const struct json_type_object_trie_node_t*  object_trie;
+        const uchar_t*                              dup_name;
+        struct json_type_check_error_dict_key_arg_t dict;
     };
 };
 

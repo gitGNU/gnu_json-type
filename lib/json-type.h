@@ -29,12 +29,14 @@ enum json_type_node_type_t
     json_type_object_node_type,
     json_type_array_node_type,
     json_type_list_node_type,
+    json_type_dict_node_type,
 };
 
 // the simple types, i.e. all types below, except for:
 //   `{ "type": "object", "args": ... }',
-//   `{ "type": "array", "args": ... }' and
-//   `{ "type": "list", "args": ... }',
+//   `{ "type": "array", "args": ... }',
+//   `{ "type": "list", "args": ... }', and
+//   `{ "type": "dict", "args": ... }',
 
 enum json_type_any_node_type_t
 {
@@ -150,7 +152,21 @@ struct json_type_list_node_t
     size_t size;
 };
 
+// the object value:
+//   `{ "type": "dict", "args": [ $arg* ] }'
+// where $arg is the object value:
+//   `{ "name": $string, "type": $type }'
+// where:
+//   $string is any string value and
+//   $type is any type object
+
+#define json_type_dict_node_arg_t json_type_object_node_arg_t
+#define json_type_dict_node_t     json_type_object_node_t
+
 struct json_type_list_attr_t;
+struct json_type_dict_trie_t;
+
+#define json_type_dict_attr_t json_type_dict_trie_t
 
 struct json_type_node_t
 {
@@ -161,6 +177,7 @@ struct json_type_node_t
         struct json_type_object_node_t object;
         struct json_type_array_node_t  array;
         struct json_type_list_node_t   list;
+        struct json_type_dict_node_t   dict;
     } node;
     union {
         // const struct json_type_any_attr_t*    any;
@@ -168,6 +185,7 @@ struct json_type_node_t
         // const struct json_type_object_attr_t* object;
         // const struct json_type_array_attr_t*  array;
         const struct json_type_list_attr_t*      list;
+        const struct json_type_dict_attr_t*      dict;
     } attr;
     struct json_text_pos_t pos;
 };
@@ -226,6 +244,20 @@ struct json_type_list_attr_t
     const struct json_type_trie_t*        open_array;
     const struct json_type_trie_t*        closed_array;
 };
+
+// stev: definition of 'struct json_type_dict_trie_t'
+
+#define TRIE_NAME     json_type_dict
+#define TRIE_SYM_TYPE uchar_t
+#define TRIE_VAL_TYPE size_t
+
+#define TRIE_NEED_STRUCT_ONLY
+#include "trie-impl.h"
+#undef  TRIE_NEED_STRUCT_ONLY
+
+#undef  TRIE_VAL_TYPE
+#undef  TRIE_SYM_TYPE
+#undef  TRIE_NAME
 
 enum json_type_def_type_t
 {

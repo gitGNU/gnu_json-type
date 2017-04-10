@@ -182,6 +182,18 @@ CASE(BUF,                                                                      \
                         " ", , "type type-lib text file maximum size", ,       \
 1, MB(1), KB(512)                                                              \
 )
+CASE(STACK,                                                                    \
+ type_var_stack_max,                                                           \
+"type-var-stack-max",                                                          \
+                    "     ", , "type var stack maximum size", ,                \
+1, KB(10), KB(1)                                                               \
+)
+CASE(STACK,                                                                    \
+ type_var_stack_init,                                                          \
+"type-var-stack-init",                                                         \
+                     "    ", , "type var stack initial size", ,                \
+1, KB(10), KB(1)                                                               \
+)
 CASE(BUF,                                                                      \
  lib_buf_max,                                                                  \
 "lib-buf-max",                                                                 \

@@ -117,6 +117,10 @@
 #error  TRIE_SYM_GEN_DEF is not defined
 #endif
 
+#ifndef TRIE_VAL_GEN_DEF
+#error  TRIE_VAL_GEN_DEF is not defined
+#endif
+
 #endif // TRIE_NEED_GEN_DEF
 
 #ifndef TRIE_NEED_IMPL_ONLY 
@@ -1477,11 +1481,11 @@ static void TRIE_NODE_GEN_DEF(
     }
 
     if (n) {
-        t = TRIE_GEN_DEF_PTR_SPACE_LOOKUP(node->cell.val);
-        fprintf(file,
+        fputs(
             ",\n"
-            "    .VAL = &__%zu",
-            t->val);
+            "    .VAL = ",
+            file);
+        TRIE_VAL_GEN_DEF(node->cell.val);
     }
     if (!n && node->cell.eq != NULL) {
         t = TRIE_GEN_DEF_PTR_SPACE_LOOKUP(node->cell.eq);

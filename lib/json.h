@@ -307,6 +307,8 @@ struct json_type_sizes_t
 {
     struct json_obj_sizes_t obj;
     struct json_type_lib_sizes_t lib;
+    size_t var_stack_max;
+    size_t var_stack_init;
 };
 
 struct json_type_t;

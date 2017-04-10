@@ -38,6 +38,7 @@
 #include "pool-alloc.h"
 #include "pretty-print.h"
 #include "file-buf.h"
+#include "bit-set.h"
 #include "common.h"
 #include "error.h"
 
@@ -95,6 +96,7 @@ enum json_type_ruler_basic_type_t
     json_type_ruler_basic_string_type,
     json_type_ruler_basic_object_type,
     json_type_ruler_basic_array_type,
+    json_type_ruler_basic_dict_type,
 };
 
 typedef void (*json_type_ruler_empty_rule_t)(void*,
@@ -124,6 +126,7 @@ struct json_type_ruler_rules_t
     json_type_ruler_empty_rule_t   mono_array_rule;
     json_type_ruler_size_rule_t    args_array_rule;
     json_type_ruler_size_rule_t    args_list_rule;
+    json_type_ruler_size_rule_t    args_dict_rule;
     json_type_ruler_size_rule_t    args_top_rule;
 };
 
@@ -216,15 +219,16 @@ enum json_type_ruler_obj_type_t
 {
     json_type_ruler_obj_type_object,
     json_type_ruler_obj_type_array,
-    json_type_ruler_obj_type_list
+    json_type_ruler_obj_type_list,
+    json_type_ruler_obj_type_dict
 };
 
-// $ print object array list|gen-func -f json_type_ruler_lookup_obj_type -r json_type_ruler_obj_type_t|adjust-func
+// $ print object array list dict|gen-func -f json_type_ruler_lookup_obj_type -r json_type_ruler_obj_type_t|adjust-func
 
 static bool json_type_ruler_lookup_obj_type(
     const uchar_t* n, enum json_type_ruler_obj_type_t* t)
 {
-    // pattern: array|list|object
+    // pattern: array|dict|list|object
     switch (*n ++) {
     case 'a':
         if (*n ++ == 'r' &&
@@ -233,6 +237,15 @@ static bool json_type_ruler_lookup_obj_type(
             *n ++ == 'y' &&
             *n == 0) {
             *t = json_type_ruler_obj_type_array;
+            return true;
+        }
+        return false;
+    case 'd':
+        if (*n ++ == 'i' &&
+            *n ++ == 'c' &&
+            *n ++ == 't' &&
+            *n == 0) {
+            *t = json_type_ruler_obj_type_dict;
             return true;
         }
         return false;
@@ -372,6 +385,12 @@ static bool json_type_ruler_lookup_obj_type(
         JSON_TYPE_RULER_VAL(object, list_obj);           \
     })
 
+#define JSON_TYPE_RULER_VAL_DICT_OBJ(v)                  \
+    ({                                                   \
+        JSON_TYPE_RULER_CALL_RULE(object, args_dict, v); \
+        JSON_TYPE_RULER_VAL(object, dict_obj);           \
+    })
+
 #define JSON_TYPE_RULER_VAL_NAME_OBJ(p, v)             \
     ({                                                 \
         JSON_TYPE_RULER_CALL_RULE_POS(arg_name, p, v); \
@@ -406,7 +425,7 @@ static bool json_type_ruler_lookup_obj_type(
     ({                                               \
         ASSERT(JSON_TYPE_RULER_RESULT_IS_VAL(r));    \
         r.val >= JSON_TYPE_RULER_VAL_TYPE(basic) &&  \
-        r.val <= JSON_TYPE_RULER_VAL_TYPE(list_obj); \
+        r.val <= JSON_TYPE_RULER_VAL_TYPE(dict_obj); \
     })
 
 #define JSON_TYPE_RULER_RESULT_VAL_IS(r, n)  \
@@ -435,6 +454,7 @@ enum json_type_ruler_val_type_t
     json_type_ruler_val_object_obj_type,
     json_type_ruler_val_array_obj_type,
     json_type_ruler_val_list_obj_type,
+    json_type_ruler_val_dict_obj_type,
     json_type_ruler_val_name_obj_type,
     json_type_ruler_val_array_of_types_type,
     json_type_ruler_val_array_of_name_objs_type,
@@ -557,7 +577,7 @@ static const char* json_type_ruler_error_type_get_name(
     CASE(invalid_type_obj_size_not_two);
     CASE(invalid_name_obj_size_not_two);
     CASE(invalid_plain_obj_size_not_one);
-    CASE(invalid_type_obj_type_not_obj_arr_list);
+    CASE(invalid_type_obj_type_not_obj_arr_list_dict);
     CASE(invalid_type_obj_2nd_arg_not_args);
     CASE(invalid_name_obj_2nd_arg_not_type);
     CASE(invalid_plain_obj_type_not_null_bool_num_str);
@@ -565,6 +585,7 @@ static const char* json_type_ruler_error_type_get_name(
     CASE(invalid_name_obj_type_arg_not_a_type);
     CASE(invalid_object_obj_args_not_array_of_name_objs);
     CASE(invalid_list_obj_args_not_of_type_array_of_types);
+    CASE(invalid_dict_obj_args_not_array_of_name_objs);
     CASE(invalid_array_obj_args_neither_type_nor_array_of_types);
     CASE(invalid_array_elem_is_neither_type_nor_name_obj);
     CASE(invalid_array_elem_is_either_type_xor_name_obj);
@@ -587,6 +608,7 @@ static const char* json_type_ruler_val_type_get_name(
     CASE(object_obj);
     CASE(array_obj);
     CASE(list_obj);
+    CASE(dict_obj);
     CASE(name_obj);
     CASE(array_of_types);
     CASE(array_of_name_objs);
@@ -658,7 +680,7 @@ static void json_type_ruler_result_print_debug(
 //      "plain"  null, boolean, number or string
 //
 // (2) when "type" is the first key of an object then its associated value must
-//     be either `"object"', `"array"' or `"list"'
+//     be either `"object"', `"array"', `"list"' or `"dict"'
 //
 // (3) the first key of an object must be either `"type"', `"name"' or `"plain"';
 //
@@ -693,10 +715,10 @@ static void json_type_ruler_result_print_debug(
 //           `{ "name": ..., "type": ... }'; in such cases they are interpreted
 //           as proper values
 //       (b) the objects of form `{ "type": $type, "args": $args }' described
-//           above; $type is allowed to be only `"object"', `"array"' or `"list"',
-//           as stated by point (2); $args must be as follows:
+//           above; $type is allowed to be only `"object"', `"array"', `"list"',
+//           or `"dict"' as stated by point (2); $args must be as follows:
 //               (i) `[ { "name": $string, "type": $any }* ]', when
-//                   $type is `"object"'
+//                   $type is `"object"' or `"dict"'
 //              (ii) `[ $any* ]' or $any, when $type is `"array"'
 //             (iii) `[ $any* ]', when $type is `"list"'
 //           where $any is any type
@@ -784,7 +806,7 @@ static struct json_type_ruler_result_t
         if ((s = JSON_AST_NODE_AS_IF_CONST(v, string)) == NULL ||
             !json_type_ruler_lookup_obj_type(s->buf.ptr, &t))
             return JSON_TYPE_RULER_ERROR_POS(
-                v->pos, invalid_type_obj_type_not_obj_arr_list);
+                v->pos, invalid_type_obj_type_not_obj_arr_list_dict);
 
         // meta-rule (4.a)
         if (node->size != 2)
@@ -841,6 +863,17 @@ static struct json_type_ruler_result_t
             else
                 return JSON_TYPE_RULER_ERROR_POS(v->pos,
                     invalid_list_obj_args_not_of_type_array_of_types);
+
+        case json_type_ruler_obj_type_dict:
+            // meta-rule (9.b.i)
+            if (JSON_TYPE_RULER_RESULT_VAL_IS_ARRAY_OF(r, name_objs) ||
+                JSON_TYPE_RULER_RESULT_VAL_IS_ARRAY_OF(r, size_zero)) {
+                a = JSON_AST_NODE_AS_CONST(v, array);
+                return JSON_TYPE_RULER_VAL_DICT_OBJ(a->size);
+            }
+            else
+                return JSON_TYPE_RULER_ERROR_POS(v->pos,
+                    invalid_dict_obj_args_not_array_of_name_objs);
 
         default:
             UNEXPECT_VAR("%d", t);
@@ -1041,9 +1074,9 @@ static void json_type_ruler_print_error_desc(
             "\"type\", \"name\" or \"plain\"", file);
         break;
 
-    CASE(invalid_type_obj_type_not_obj_arr_list):
+    CASE(invalid_type_obj_type_not_obj_arr_list_dict):
         fputs("invalid \"type\" object: type not \"object\", "
-            "\"array\" or \"list\"", file);
+            "\"array\", \"list\" or \"dict\"", file);
         break;
 
     CASE(invalid_type_obj_size_not_two):
@@ -1091,6 +1124,11 @@ static void json_type_ruler_print_error_desc(
     CASE(invalid_list_obj_args_not_of_type_array_of_types):
         fputs("invalid \"list\" object: value of \"args\" must be an array "
             "of types", file);
+        break;
+
+    CASE(invalid_dict_obj_args_not_array_of_name_objs):
+        fputs("invalid \"dict\" object: value of \"args\" must be an array"
+            " of \"name\" objects", file);
         break;
 
     CASE(invalid_array_obj_args_neither_type_nor_array_of_types):
@@ -1446,6 +1484,7 @@ static const char* const json_type_node_type_names[] = {
     CASE(object),
     CASE(array),
     CASE(list),
+    CASE(dict),
 };
 
 static void json_type_node_print_debug(
@@ -1622,6 +1661,11 @@ static void json_type_list_node_print_debug(
     json_type_args_print_debug(node->args, node->size, file);
 }
 
+#define json_type_dict_node_null_print_debug \
+    json_type_object_node_null_print_debug
+#define json_type_dict_node_print_debug \
+    json_type_object_node_print_debug
+
 static void json_type_list_attr_null_print_debug(
     const struct json_type_list_attr_t*, FILE*);
 
@@ -1647,6 +1691,7 @@ static void json_type_node_print_debug(
     CASE(object);
     CASE(array);
     CASE(list);
+    CASE(dict);
     default:
         UNEXPECT_VAR(
             "%d", node->type);
@@ -1717,6 +1762,7 @@ union json_type_node_pack_t
     const struct json_type_object_node_t* object;
     const struct json_type_array_node_t*  array;
     const struct json_type_list_node_t*   list;
+    const struct json_type_dict_node_t*   dict;
 };
 
 union json_type_array_node_pack_t
@@ -1727,6 +1773,9 @@ union json_type_array_node_pack_t
 
 static void json_type_list_attr_print(
     const struct json_type_list_attr_t*, FILE*);
+
+static void json_type_dict_attr_print(
+    const struct json_type_dict_attr_t*, FILE*);
 
 static void json_type_print(const struct json_type_node_t* node,
     FILE* file, bool attr)
@@ -1766,10 +1815,13 @@ static void json_type_print(const struct json_type_node_t* node,
         fputc('}', file);
     }
     else
-    if ((n.object = JSON_TYPE_NODE_AS_IF_CONST(node, object))) {
+    if ((n.object = JSON_TYPE_NODE_AS_IF_CONST(node, object)) ||
+        (n.object = JSON_TYPE_NODE_AS_IF_CONST(node, dict))) {
         const struct json_type_object_node_arg_t *p, *e;
 
-        fputs("{\"type\":\"object\",\"args\":[", file);
+        fprintf(file, "{\"type\":\"%s\",\"args\":[",
+            JSON_TYPE_NODE_IS_CONST(node, object)
+            ? "object" : "dict");
         for (p = n.object->args,
              e = p + n.object->size;
              p < e;
@@ -1782,7 +1834,15 @@ static void json_type_print(const struct json_type_node_t* node,
             if (p < e - 1)
                 fputc(',', file);
         }
-        fputs("]}", file);
+        fputc(']', file);
+
+        if (attr &&
+            JSON_TYPE_NODE_IS_CONST(node, dict)) {
+            fputs(",\"attr\":", file);
+            json_type_dict_attr_print(node->attr.dict, file);
+        }
+
+        fputc('}', file);
     }
     else
     if ((n.array = JSON_TYPE_NODE_AS_IF_CONST(node, array))) {
@@ -1870,8 +1930,11 @@ static void json_type_node_print_base(
         JSON_TYPE_NODE_IS_CONST(node, plain))
         json_type_node_print_complete(node, file);
     else
-    if ((p.object = JSON_TYPE_NODE_AS_IF_CONST(node, object))) {
-        fputs("`{\"type\":\"object\",\"args\":[", file);
+    if ((p.object = JSON_TYPE_NODE_AS_IF_CONST(node, object)) ||
+        (p.object = JSON_TYPE_NODE_AS_IF_CONST(node, dict))) {
+        fprintf(file, "`{\"type\":\"%s\",\"args\":[",
+            JSON_TYPE_NODE_IS_CONST(node, object)
+            ? "object" : "dict");
         if (p.object->size) fputs("...", file);
         fputs("]}'", file);
     }
@@ -1946,6 +2009,9 @@ struct json_type_attrs_t
 
 static size_t json_type_list_attr_get_ptr_count(
     const struct json_type_list_attr_t* list);
+
+static size_t json_type_dict_attr_get_ptr_count(
+    const struct json_type_dict_attr_t* dict);
 
 static struct json_type_attrs_t json_type_node_get_attrs(
     const struct json_type_node_t* node)
@@ -2033,6 +2099,28 @@ static struct json_type_attrs_t json_type_node_get_attrs(
         }
         r.ptr_count += c = json_type_list_attr_get_ptr_count(
             node->attr.list);
+
+        r.has_cells |= c > 1;
+        r.ptr_count ++;
+    }
+    else
+    if ((n.dict = JSON_TYPE_NODE_AS_IF_CONST(node, dict))) {
+        const struct json_type_dict_node_arg_t *p, *e;
+        size_t c;
+
+        for (p = n.dict->args,
+             e = p + n.dict->size;
+             p < e;
+             p ++) {
+            struct json_type_attrs_t a;
+
+            a = json_type_node_get_attrs(p->type);
+
+            r.ptr_count += a.ptr_count;
+            r.has_cells |= a.has_cells;
+        }
+        r.ptr_count += c = json_type_dict_attr_get_ptr_count(
+            node->attr.dict);
 
         r.has_cells |= c > 1;
         r.ptr_count ++;
@@ -2204,6 +2292,11 @@ static bool json_type_list_attr_validate(
     struct json_type_ptr_space_t*,
     const void** result);
 
+static bool json_type_dict_attr_validate(
+    const struct json_type_dict_attr_t*,
+    struct json_type_ptr_space_t*,
+    const void** result);
+
 static bool json_type_node_validate(
     const struct json_type_node_t* node,
     struct json_type_ptr_space_t* space,
@@ -2313,6 +2406,34 @@ static bool json_type_node_validate(
             return false;
     }
     else
+    if ((n.dict = JSON_TYPE_NODE_AS_IF_CONST(node, dict))) {
+        const struct json_type_dict_node_arg_t *p, *e;
+
+        if (n.dict->args == NULL) {
+            *result = &n.dict->args;
+            return false;
+        }
+        JSON_TYPE_PTR_SPACE_INSERT(n.dict->args);
+
+        for (p = n.dict->args,
+             e = p + n.dict->size;
+             p < e;
+             p ++) {
+            if (p->type == NULL) {
+                *result = &p->type;
+                return false;
+            }
+            if (!json_type_node_validate(
+                    p->type, space, result))
+                return false;
+        }
+
+        if (!json_type_dict_attr_validate(
+                node->attr.dict,
+                space, result))
+            return false;
+    }
+    else
         UNEXPECT_VAR("%d", node->type);
 
     *result = NULL;
@@ -2321,30 +2442,51 @@ static bool json_type_node_validate(
 
 struct json_type_args_dict_t;
 
-#define JSON_TYPE_ARGS_DICT_TRIE_SYM_IS_NULL(s) \
-    (                                           \
-        STATIC(TYPEOF_IS(s, uchar_t)),          \
-        (s) == 0                                \
+#define JSON_TYPE_UCHAR_TRIE_NULL_SYM() \
+    ((uchar_t) 0)
+#define JSON_TYPE_UCHAR_TRIE_SYM_IS_NULL(s) \
+    (                                       \
+        STATIC(TYPEOF_IS(s, uchar_t)),      \
+        (s) == 0                            \
     )
-#define JSON_TYPE_ARGS_DICT_TRIE_SYM_CMP(x, y)  \
-    (                                           \
-        STATIC(TYPEOF_IS(x, uchar_t)),          \
-        STATIC(TYPEOF_IS(y, uchar_t)),          \
-          (x) == (y)                            \
-        ? trie_sym_cmp_eq                       \
-        : (x) < (y)                             \
-        ? trie_sym_cmp_lt                       \
-        : trie_sym_cmp_gt                       \
+#define JSON_TYPE_UCHAR_TRIE_SYM_CMP(x, y)  \
+    (                                       \
+        STATIC(TYPEOF_IS(x, uchar_t)),      \
+        STATIC(TYPEOF_IS(y, uchar_t)),      \
+          (x) == (y)                        \
+        ? trie_sym_cmp_eq                   \
+        : (x) < (y)                         \
+        ? trie_sym_cmp_lt                   \
+        : trie_sym_cmp_gt                   \
     )
+#define JSON_TYPE_UCHAR_TRIE_SYM_PRINT(s, f) \
+    do {                                     \
+        STATIC(TYPEOF_IS(s, uchar_t));       \
+        STATIC(TYPEOF_IS(f, FILE*));         \
+        pretty_print_string(f, &(s), 1,      \
+            pretty_print_string_quotes);     \
+    } while (0)
+#define JSON_TYPE_UCHAR_TRIE_SYM_GEN_DEF(s, f) \
+    do {                                       \
+        STATIC(TYPEOF_IS(s, uchar_t));         \
+        STATIC(TYPEOF_IS(f, FILE*));           \
+        pretty_print_char(f, s,                \
+            pretty_print_char_quotes);         \
+    } while (0)
+
+#define JSON_TYPE_UCHAR_TRIE_SYM_TYPE     uchar_t
+#define JSON_TYPE_UCHAR_TRIE_KEY_TYPE     const uchar_t*
+#define JSON_TYPE_UCHAR_TRIE_KEY_INC(k)   ((k) ++)
+#define JSON_TYPE_UCHAR_TRIE_KEY_DEREF(k) (*(k))
 
 #define TRIE_NAME           json_type_args_dict
-#define TRIE_SYM_TYPE       uchar_t
+#define TRIE_SYM_TYPE       JSON_TYPE_UCHAR_TRIE_SYM_TYPE
 #define TRIE_VAL_TYPE       const struct json_type_defs_arg_t*
-#define TRIE_SYM_IS_NULL    JSON_TYPE_ARGS_DICT_TRIE_SYM_IS_NULL
-#define TRIE_SYM_CMP        JSON_TYPE_ARGS_DICT_TRIE_SYM_CMP
-#define TRIE_KEY_TYPE       const uchar_t*
-#define TRIE_KEY_INC(k)     ((k) ++)
-#define TRIE_KEY_DEREF(k)   ((*k))
+#define TRIE_SYM_IS_NULL    JSON_TYPE_UCHAR_TRIE_SYM_IS_NULL
+#define TRIE_SYM_CMP        JSON_TYPE_UCHAR_TRIE_SYM_CMP
+#define TRIE_KEY_TYPE       JSON_TYPE_UCHAR_TRIE_KEY_TYPE
+#define TRIE_KEY_INC        JSON_TYPE_UCHAR_TRIE_KEY_INC
+#define TRIE_KEY_DEREF      JSON_TYPE_UCHAR_TRIE_KEY_DEREF
 #undef  TRIE_ALLOC_OBJ_TYPE
 #define TRIE_ALLOC_OBJ_TYPE struct json_type_args_dict_t
 
@@ -2355,13 +2497,13 @@ struct json_type_args_dict_t;
 #define JSON_TYPE_ARGS_DICT_TRIE_NODE_AS_VAL(p) \
     TRIE_NODE_AS_VAL(                           \
         json_type_args_dict, p,                 \
-        JSON_TYPE_ARGS_DICT_TRIE_SYM_IS_NULL)
+        JSON_TYPE_UCHAR_TRIE_SYM_IS_NULL)
 #define JSON_TYPE_ARGS_DICT_TRIE_NODE_AS_VAL_REF(p)    \
     ({                                                 \
         const struct json_type_defs_arg_t* const* __r; \
         __r = TRIE_NODE_AS_VAL_REF(                    \
             json_type_args_dict, p,                    \
-            JSON_TYPE_ARGS_DICT_TRIE_SYM_IS_NULL);     \
+            JSON_TYPE_UCHAR_TRIE_SYM_IS_NULL);         \
         CONST_CAST(__r,                                \
             const struct json_type_defs_arg_t*);       \
     })
@@ -2611,6 +2753,11 @@ static void json_type_object_sym_gen_def(
 
 static void json_type_list_attr_gen_def(
     const struct json_type_list_attr_t*,
+    struct json_type_ptr_space_t*,
+    FILE*);
+
+static void json_type_dict_attr_gen_def(
+    const struct json_type_dict_attr_t*,
     struct json_type_ptr_space_t*,
     FILE*);
 
@@ -2866,6 +3013,61 @@ static void json_type_node_gen_def(
             n.list->size);
     }
     else
+    if ((n.dict = JSON_TYPE_NODE_AS_IF_CONST(node, dict))) {
+        const struct json_type_dict_node_arg_t *p, *e;
+
+        for (p = n.dict->args,
+             e = p + n.dict->size;
+             p < e;
+             p ++) {
+            json_type_node_gen_def(p->type, space, file);
+        }
+
+        json_type_dict_attr_gen_def(
+            node->attr.dict, space, file);
+
+        u = JSON_TYPE_PTR_SPACE_INSERT(n.dict->args);
+
+        fprintf(file,
+            "static const struct json_type_dict_node_arg_t "
+                "__%zu[] = {\n",
+            u->val);
+
+        for (p = n.dict->args,
+             e = p + n.dict->size;
+             p < e;
+             p ++) {
+            fputs(
+                "    {\n"
+                "        .name = (const uchar_t*) ",
+                file);
+
+            json_type_print_repr(p->name, true, file);
+
+            t = JSON_TYPE_PTR_SPACE_LOOKUP(p->type);
+            fprintf(file,
+                ",\n"
+                "        .type = &__%zu\n"
+                "    }%s\n",
+                t->val, p < e - 1 ? "," : "");
+        }
+        fputs("};\n\n", file);
+
+        t = JSON_TYPE_PTR_SPACE_INSERT(node);
+        v = JSON_TYPE_PTR_SPACE_LOOKUP(node->attr.dict);
+
+        fprintf(file,
+            "static const struct json_type_node_t __%zu = {\n"
+            "    .type = json_type_dict_node_type,\n"
+            "    .attr.dict = &__%zu,\n"
+            "    .node.dict = {\n"
+            "        .args = __%zu,\n"
+            "        .size = %zu\n"
+            "    }\n"
+            "};\n\n",
+            t->val, v->val, u->val, n.object->size);
+    }
+    else
         UNEXPECT_VAR("%d", node->type);
 }
 
@@ -3029,6 +3231,21 @@ static void json_type_def_gen_def(
         STATIC(JSON_TYPE_TYPEOF_IS_NODE_CONST(y)), \
         json_type_trie_sym_cmp(x, y)               \
     )
+#define JSON_TYPE_TRIE_NODE_GEN_DEF(p)               \
+    do {                                             \
+        STATIC(JSON_TYPE_TYPEOF_IS_NODE_CONST(p));   \
+        if ((p) != NULL) {                           \
+            struct json_type_ptr_treap_node_t* __t = \
+                JSON_TYPE_PTR_SPACE_LOOKUP(p);       \
+            fprintf(file,                            \
+                "&__%zu",                            \
+                __t->val);                           \
+        }                                            \
+        else                                         \
+            fputs(                                   \
+                "NULL",                              \
+                file);                               \
+    } while (0)
 
 #undef  TRIE_NAME
 #define TRIE_NAME           json_type
@@ -3076,23 +3293,10 @@ static void json_type_def_gen_def(
 #undef  TRIE_GEN_DEF_PTR_SPACE_INSERT
 #define TRIE_GEN_DEF_PTR_SPACE_INSERT \
                             JSON_TYPE_PTR_SPACE_GEN_DEF_INSERT_
-
 #undef  TRIE_SYM_GEN_DEF
-#define TRIE_SYM_GEN_DEF(s)                          \
-    do {                                             \
-        STATIC(JSON_TYPE_TYPEOF_IS_NODE_CONST(s));   \
-        if ((s) != NULL) {                           \
-            struct json_type_ptr_treap_node_t* __t = \
-                JSON_TYPE_PTR_SPACE_LOOKUP(s);       \
-            fprintf(file,                            \
-                "&__%zu",                            \
-                __t->val);                           \
-        }                                            \
-        else                                         \
-            fputs(                                   \
-                "NULL",                              \
-                file);                               \
-    } while (0)
+#define TRIE_SYM_GEN_DEF    JSON_TYPE_TRIE_NODE_GEN_DEF
+#undef  TRIE_VAL_GEN_DEF
+#define TRIE_VAL_GEN_DEF    JSON_TYPE_TRIE_NODE_GEN_DEF
 
 #define TRIE_NEED_PRINT
 #define TRIE_NEED_GEN_DEF
@@ -3363,6 +3567,8 @@ static enum trie_sym_cmp_t json_type_list_node_cmp(
         return trie_sym_cmp_gt;
 }
 
+#define json_type_dict_node_cmp json_type_object_node_cmp
+
 static enum trie_sym_cmp_t json_type_node_cmp(
     const struct json_type_node_t* x,
     const struct json_type_node_t* y)
@@ -3388,6 +3594,9 @@ static enum trie_sym_cmp_t json_type_node_cmp(
     if (x->type == json_type_list_node_type)
         return json_type_list_node_cmp(
             &x->node.list, &y->node.list);
+    if (x->type == json_type_dict_node_type)
+        return json_type_dict_node_cmp(
+            &x->node.dict, &y->node.dict);
     else
         UNEXPECT_VAR("%d", x->type);
 }
@@ -3702,6 +3911,92 @@ static void json_type_object_sym_print(
         CONST_CAST(__r,                            \
             const struct json_type_node_t*);       \
     })
+
+#define JSON_TYPE_OBJECT_TRIE_CONST_CAST(p) \
+    CONST_CAST(p, struct json_type_object_trie_t)
+
+#define JSON_TYPE_DICT_TRIE_VAL_PRINT(v, f) \
+    do {                                    \
+        STATIC(TYPEOF_IS(v, size_t));       \
+        STATIC(TYPEOF_IS(f, FILE*));        \
+        fprintf(f, "%zu", v);               \
+    } while (0)
+
+#undef  TRIE_NAME
+#define TRIE_NAME json_type_dict
+
+#undef  TRIE_SYM_TYPE
+#define TRIE_SYM_TYPE JSON_TYPE_UCHAR_TRIE_SYM_TYPE
+
+#undef  TRIE_NULL_SYM
+#define TRIE_NULL_SYM JSON_TYPE_UCHAR_TRIE_NULL_SYM
+
+#undef  TRIE_SYM_IS_NULL
+#define TRIE_SYM_IS_NULL JSON_TYPE_UCHAR_TRIE_SYM_IS_NULL
+
+#undef  TRIE_SYM_CMP
+#define TRIE_SYM_CMP JSON_TYPE_UCHAR_TRIE_SYM_CMP
+
+#undef  TRIE_SYM_PRINT
+#define TRIE_SYM_PRINT JSON_TYPE_UCHAR_TRIE_SYM_PRINT
+
+#undef  TRIE_VAL_TYPE
+#define TRIE_VAL_TYPE size_t
+
+#undef  TRIE_VAL_PRINT
+#define TRIE_VAL_PRINT JSON_TYPE_DICT_TRIE_VAL_PRINT
+
+#undef  TRIE_KEY_TYPE
+#define TRIE_KEY_TYPE JSON_TYPE_UCHAR_TRIE_KEY_TYPE
+
+#undef  TRIE_KEY_INC
+#define TRIE_KEY_INC JSON_TYPE_UCHAR_TRIE_KEY_INC
+
+#undef  TRIE_KEY_DEREF
+#define TRIE_KEY_DEREF JSON_TYPE_UCHAR_TRIE_KEY_DEREF
+
+#undef  TRIE_SYM_GEN_DEF
+#define TRIE_SYM_GEN_DEF(s) JSON_TYPE_UCHAR_TRIE_SYM_GEN_DEF(s, file)
+
+#undef  TRIE_SYM_VALIDATE
+#define TRIE_SYM_VALIDATE(s) (true)
+
+#undef  TRIE_VAL_VALIDATE
+#define TRIE_VAL_VALIDATE(v) (true)
+
+#undef  TRIE_VAL_GEN_DEF
+#define TRIE_VAL_GEN_DEF(v) JSON_TYPE_DICT_TRIE_VAL_PRINT(v, file)
+
+#define TRIE_NEED_PRINT
+#define TRIE_NEED_GEN_DEF
+#define TRIE_NEED_VALIDATE
+#define TRIE_NEED_REBALANCE
+#define TRIE_NEED_LOOKUP_KEY
+#define TRIE_NEED_GET_NODE_COUNT
+#define TRIE_NEED_IMPL_ONLY
+#include "trie-impl.h"
+#undef  TRIE_NEED_IMPL_ONLY
+#undef  TRIE_NEED_GET_NODE_COUNT
+#undef  TRIE_NEED_LOOKUP_KEY
+#undef  TRIE_NEED_REBALANCE
+#undef  TRIE_NEED_VALIDATE
+#undef  TRIE_NEED_GEN_DEF
+#undef  TRIE_NEED_PRINT
+
+#define JSON_TYPE_DICT_TRIE_NODE_AS_VAL(p) \
+    TRIE_NODE_AS_VAL(                      \
+        json_type_dict, p,                 \
+        JSON_TYPE_UCHAR_TRIE_SYM_IS_NULL)
+#define JSON_TYPE_DICT_TRIE_NODE_AS_VAL_REF(p)    \
+    ({                                            \
+        const size_t* __r = TRIE_NODE_AS_VAL_REF( \
+            json_type_dict, p,                    \
+            JSON_TYPE_UCHAR_TRIE_SYM_IS_NULL);    \
+        CONST_CAST(__r, size_t);                  \
+    })
+
+#define JSON_TYPE_DICT_TRIE_CONST_CAST(p) \
+    CONST_CAST(p, struct json_type_dict_trie_t)
 
 #undef  CASE
 #define CASE(n)                                       \
@@ -4111,6 +4406,38 @@ static void json_type_list_attr_gen_def(
     fprintf(file,
         "%s;\n\n",
         b ? "}" : "");
+}
+
+static void json_type_dict_attr_print(
+    const struct json_type_dict_attr_t* attr,
+    FILE* file)
+{
+    json_type_dict_trie_print(attr, file);
+}
+
+static size_t json_type_dict_attr_get_ptr_count(
+    const struct json_type_dict_attr_t* dict)
+{
+    return 1 + json_type_dict_trie_get_node_count(
+        dict);
+}
+
+static bool json_type_dict_attr_validate(
+    const struct json_type_dict_attr_t* dict,
+    struct json_type_ptr_space_t* space,
+    const void** result)
+{
+    return json_type_dict_trie_validate(
+        dict, space, result);
+}
+
+static void json_type_dict_attr_gen_def(
+    const struct json_type_dict_attr_t* dict,
+    struct json_type_ptr_space_t* space,
+    FILE* file)
+{
+    json_type_dict_trie_gen_def(
+        dict, space, file);
 }
 
 enum json_type_lib_obj_type_t
@@ -4757,6 +5084,23 @@ static struct json_type_object_trie_t* json_type_lib_new_object_trie(
     return t;
 }
 
+static struct json_type_dict_trie_node_t* json_type_lib_new_dict_trie_node(
+    struct json_type_lib_t* lib)
+{
+    return JSON_TYPE_LIB_ALLOCATE_STRUCT(json_type_dict_trie_node_t);
+}
+
+static struct json_type_dict_trie_t* json_type_lib_new_dict_trie(
+    struct json_type_lib_t* lib)
+{
+    struct json_type_dict_trie_t* t;
+
+    t = JSON_TYPE_LIB_ALLOCATE_STRUCT(json_type_dict_trie_t);
+    json_type_dict_trie_init(t, json_type_lib_new_dict_trie_node, lib);
+
+    return t;
+}
+
 static struct json_type_list_attr_t* json_type_lib_new_list_attr(
     struct json_type_lib_t* lib)
 {
@@ -4860,7 +5204,7 @@ static struct json_type_node_t* json_type_lib_new_plain_node(
 
 static struct json_type_node_t* json_type_lib_new_object_node(
     struct json_type_lib_t* lib, const struct json_text_pos_t* pos,
-    size_t size)
+    size_t size, bool is_object)
 {
     struct json_type_object_node_arg_t* a;
     struct json_type_node_t* n;
@@ -4872,7 +5216,9 @@ static struct json_type_node_t* json_type_lib_new_object_node(
     n = json_type_lib_new_node(lib, pos);
     ASSERT(n != NULL);
 
-    n->type = json_type_object_node_type;
+    n->type = is_object
+        ? json_type_object_node_type
+        : json_type_dict_node_type;
     n->node.object.size = size;
     n->node.object.args = a;
     // stev: 'n->node.object.args' to be setup immediately
@@ -5059,20 +5405,23 @@ static void json_type_lib_rules_arg_name(
     JSON_TYPE_LIB_STACK_PUSH_ARG(a);
 }
 
-static void json_type_lib_rules_args_object(
+static void json_type_lib_rules_args_object_base(
     struct json_type_lib_t* lib,
     const struct json_text_pos_t* pos,
-    size_t size)
+    size_t size, bool is_object)
 {
     struct json_type_node_t* n;
 
-    n = json_type_lib_new_object_node(lib, pos, size);
+    n = json_type_lib_new_object_node(
+        lib, pos, size, is_object);
     if (size > 0) {
         struct json_type_lib_obj_t *b, *p;
         struct json_type_object_node_t* o;
         struct json_type_object_node_arg_t* q;
 
-        o = JSON_TYPE_NODE_AS(n, object);
+        o = is_object
+            ? JSON_TYPE_NODE_AS(n, object)
+            : JSON_TYPE_NODE_AS(n, dict);
 
         ASSERT(o->size == size);
 
@@ -5090,6 +5439,15 @@ static void json_type_lib_rules_args_object(
     }
 
     JSON_TYPE_LIB_STACK_PUSH_NODE(n);
+}
+
+static void json_type_lib_rules_args_object(
+    struct json_type_lib_t* lib,
+    const struct json_text_pos_t* pos,
+    size_t size)
+{
+    json_type_lib_rules_args_object_base(
+        lib, pos, size, true);
 }
 
 static void json_type_lib_rules_mono_array(
@@ -5176,6 +5534,15 @@ static void json_type_lib_rules_args_list(
     JSON_TYPE_LIB_STACK_PUSH_NODE(n);
 }
 
+static void json_type_lib_rules_args_dict(
+    struct json_type_lib_t* lib,
+    const struct json_text_pos_t* pos,
+    size_t size)
+{
+    json_type_lib_rules_args_object_base(
+        lib, pos, size, false);
+}
+
 static void json_type_lib_rules_args_top(
     struct json_type_lib_t* lib,
     const struct json_text_pos_t* pos,
@@ -5235,6 +5602,9 @@ static const struct json_type_ruler_rules_t json_type_lib_rules = {
 
     .args_list_rule   = (json_type_ruler_size_rule_t)
                          json_type_lib_rules_args_list,
+
+    .args_dict_rule   = (json_type_ruler_size_rule_t)
+                         json_type_lib_rules_args_dict,
 
     .args_top_rule    = (json_type_ruler_size_rule_t)
                          json_type_lib_rules_args_top,
@@ -5328,6 +5698,19 @@ static void json_type_lib_attr_print_error_desc(
         fprintf(file, "invalid \"list\" type object: "
             "element is a \"list\" (the outer \"list\""
             " begins at %zu:%zu)",
+            attr->pos[1].line,
+            attr->pos[1].col);
+        break;
+    CASE(invalid_list_elem_is_dict):
+        fprintf(file, "invalid \"list\" type object: "
+            "element is a \"dict\" (the \"list\""
+            " begins at %zu:%zu)",
+            attr->pos[1].line,
+            attr->pos[1].col);
+        break;
+    CASE(invalid_dict_dup_key_name):
+        fprintf(file, "invalid \"dict\" type object: "
+            "duplicate key name (previous defined at %zu:%zu)",
             attr->pos[1].line,
             attr->pos[1].col);
         break;
@@ -5456,6 +5839,8 @@ static const char* json_type_lib_attr_error_type_get_name(
     CASE(invalid_list_sort_of_array_of_object_not_supported);
     CASE(invalid_list_sort_of_array_of_array_not_supported);
     CASE(invalid_list_elem_is_list);
+    CASE(invalid_list_elem_is_dict);
+    CASE(invalid_dict_dup_key_name);
     CASE(invalid_defs_dup_name);
     default:
         UNEXPECT_VAR("%d", type);
@@ -5612,6 +5997,7 @@ static bool json_type_lib_text_validate(
     struct json_type_lib_t* lib,
     struct json_type_lib_text_impl_t* impl)
 {
+    // stev: TODO: why not calling here 'json_type_def_validate' too?
     return json_type_lib_text_validate_base(lib, impl, true);
 }
 
@@ -6084,11 +6470,6 @@ static bool json_type_lib_check_array_not_supported(
     return true;
 }
 
-#define JSON_TYPE_TRIE_CONST_CAST(p) \
-    CONST_CAST(p, struct json_type_trie_t)
-#define JSON_TYPE_OBJECT_TRIE_CONST_CAST(p) \
-    CONST_CAST(p, struct json_type_object_trie_t)
-
 static bool json_type_lib_gen_list_attrs(
     struct json_type_lib_t* lib,
     const struct json_type_list_node_t* list,
@@ -6105,6 +6486,8 @@ static bool json_type_lib_gen_list_attrs(
         size_t open_array;
         size_t closed_array;
     } c;
+
+    ASSERT(JSON_TYPE_LIB_IMPL_IS(text));
 
     memset(&c, 0, sizeof(c));
 
@@ -6140,6 +6523,15 @@ static bool json_type_lib_gen_list_attrs(
                     list, list);
             return JSON_TYPE_LIB_ATTR_ERROR(
                 invalid_list_elem_is_list,
+                n->pos, m->pos);
+        }
+        else
+        if (n->type == json_type_dict_node_type) {
+            const struct json_type_node_t* m =
+                JSON_TYPE_TO_NODE_CONST(
+                    list, list);
+            return JSON_TYPE_LIB_ATTR_ERROR(
+                invalid_list_elem_is_dict,
                 n->pos, m->pos);
         }
         else
@@ -6246,7 +6638,10 @@ static bool json_type_lib_gen_list_attrs(
                 UNEXPECT_VAR("%d", q.array->type);
         }
         else
-        if (n->type != json_type_list_node_type)
+        if (n->type != json_type_list_node_type &&
+            n->type != json_type_dict_node_type)
+            ASSERT(false);
+        else
             UNEXPECT_VAR("%d", n->type);
     }
 
@@ -6341,6 +6736,47 @@ static void json_type_lib_rebalance_list_attrs(
             JSON_TYPE_TRIE_CONST_CAST(attr->closed_array));
 }
 
+static bool json_type_lib_gen_dict_attrs(
+    struct json_type_lib_t* lib,
+    const struct json_type_dict_node_t* dict,
+    const struct json_type_dict_attr_t** result)
+{
+    const struct json_type_dict_node_arg_t *p, *e;
+    struct json_type_dict_trie_t* r;
+    size_t k = 0;
+
+    r = json_type_lib_new_dict_trie(lib);
+
+    for (p = dict->args,
+         e = p + dict->size;
+         p < e;
+         p ++) {
+        const struct json_type_dict_trie_node_t* n;
+
+        if (!json_type_dict_trie_insert_key(r, p->name, &n)) {
+            size_t k = JSON_TYPE_DICT_TRIE_NODE_AS_VAL(n);
+            ASSERT(k < dict->size);
+            return JSON_TYPE_LIB_ATTR_ERROR(
+                invalid_dict_dup_key_name,
+                p->pos, dict->args[k].pos);
+        }
+        *JSON_TYPE_DICT_TRIE_NODE_AS_VAL_REF(n) = k ++;
+    }
+
+    *result = r;
+    return true;
+}
+
+static void json_type_lib_rebalance_dict_attrs(
+    struct json_type_lib_t* lib UNUSED, // iff JSON_DEBUG is off
+    const struct json_type_dict_attr_t* attr)
+{
+    ASSERT(JSON_TYPE_LIB_IMPL_IS(text));
+
+    json_type_dict_trie_rebalance(
+        JSON_TYPE_DICT_TRIE_CONST_CAST(attr));
+}
+
 static bool json_type_lib_gen_node_attrs(
     struct json_type_lib_t* lib, const struct json_type_node_t* node)
 {
@@ -6404,6 +6840,23 @@ static bool json_type_lib_gen_node_attrs(
         }
     }
     else
+    if ((n.dict = JSON_TYPE_NODE_AS_IF_CONST(node, dict))) {
+        const struct json_type_dict_node_arg_t *p, *e;
+        const struct json_type_dict_attr_t** a;
+
+        a = &JSON_TYPE_NODE_CONST_CAST(node)->attr.dict;
+        if (!json_type_lib_gen_dict_attrs(lib, n.dict, a))
+            return false;
+
+        for (p = n.dict->args,
+             e = p + n.dict->size;
+             p < e;
+             p ++) {
+            if (!json_type_lib_gen_node_attrs(lib, p->type))
+                return false;
+        }
+    }
+    else
         UNEXPECT_VAR("%d", node->type);
 
     return true;
@@ -6418,7 +6871,8 @@ static bool json_type_lib_check_node_attrs(
         JSON_TYPE_NODE_IS_CONST(node, plain)) 
         ; // stev: nop
     else
-    if ((n.object = JSON_TYPE_NODE_AS_IF_CONST(node, object))) {
+    if ((n.object = JSON_TYPE_NODE_AS_IF_CONST(node, object)) ||
+        (n.object = JSON_TYPE_NODE_AS_IF_CONST(node, dict))) {
         const struct json_type_object_node_arg_t *p, *e;
 
         for (p = n.object->args,
@@ -6525,6 +6979,18 @@ static void json_type_lib_rebalance_node_attrs(
              p < e;
              p ++)
             json_type_lib_rebalance_node_attrs(lib, *p);
+    }
+    else
+    if ((n.dict = JSON_TYPE_NODE_AS_IF_CONST(node, dict))) {
+        const struct json_type_dict_node_arg_t *p, *e;
+
+        json_type_lib_rebalance_dict_attrs(lib, node->attr.dict);
+
+        for (p = n.dict->args,
+             e = p + n.dict->size;
+             p < e;
+             p ++)
+            json_type_lib_rebalance_node_attrs(lib, p->type);
     }
     else
         UNEXPECT_VAR("%d", node->type);
@@ -7295,6 +7761,27 @@ static void json_type_check_error_print_object_trie_key_arg(
     json_type_check_error_printer_done(&p);
 }
 
+static void json_type_check_error_print_dict_key_arg(
+    const struct json_type_check_error_dict_key_arg_t* dict,
+    FILE* file)
+{
+    struct json_type_check_error_printer_t p;
+    size_t i, n;
+
+    json_type_check_error_printer_init(&p, file);
+
+    n = bit_set_get_size(dict->args);
+    p.count = SIZE_SUB(dict->args->size, n);
+
+    for (i = 0; i < dict->args->size; i ++) {
+        if (!BIT_SET_TEST(dict->args, i))
+            json_type_check_error_printer_print_name(
+                &p, dict->node->args[i].name);
+    }
+
+    json_type_check_error_printer_done(&p);
+}
+
 static void json_type_check_error_key_arg_print_error_desc(
     const struct json_type_check_error_key_arg_t* arg,
     FILE* file)
@@ -7316,6 +7803,18 @@ static void json_type_check_error_key_arg_print_error_desc(
             json_type_check_error_print_object_trie_key_arg(
                 arg->object_trie, file);
         }
+        break;
+
+    case json_type_check_error_key_arg_dup_name_type:
+        ASSERT(arg->dup_name);
+        fputs(": ", file);
+        json_type_print_repr(arg->dup_name, true, file);
+        break;
+
+    case json_type_check_error_key_arg_dict_type:
+        fputs(head, file);
+        json_type_check_error_print_dict_key_arg(
+            &arg->dict, file);
         break;
 
     default:
@@ -7640,6 +8139,8 @@ static const char* json_type_check_error_type_get_desc(
         return "too few arguments";
     case json_type_check_error_invalid_arg_name:
         return "invalid argument name";
+    case json_type_check_error_duplicate_arg_name:
+        return "duplicate argument name";
     default:
         UNEXPECT_VAR("%d", type);
     }
@@ -7671,6 +8172,7 @@ static const char* json_type_check_error_type_get_name(
     CASE(too_many_args);
     CASE(too_few_args);
     CASE(invalid_arg_name);
+    CASE(duplicate_arg_name);
     default:
         UNEXPECT_VAR("%d", type);
     }
@@ -7687,9 +8189,22 @@ static const char* json_type_check_error_key_arg_type_get_name(
     switch (type) {
     CASE(name);
     CASE(object_trie);
+    CASE(dup_name);
+    CASE(dict);
     default:
         UNEXPECT_VAR("%d", type);
     }
+}
+
+static void json_type_check_error_dict_key_arg_print_error_debug(
+    const struct json_type_check_error_dict_key_arg_t* dict,
+    FILE* file)
+{
+    fputs("{.node=", file);
+    json_type_dict_node_print_debug(dict->node, file);
+    fputs(" .args=", file);
+    bit_set_print_debug(dict->args, file);
+    fputc('}', file);
 }
 
 static void json_type_check_error_key_arg_print_error_debug(
@@ -7707,6 +8222,15 @@ static void json_type_check_error_key_arg_print_error_debug(
     case json_type_check_error_key_arg_object_trie_type:
         fputs(".object_trie=", file);
         json_type_object_trie_print_node(arg->object_trie, file);
+        break;
+    case json_type_check_error_key_arg_dup_name_type:
+        fputs(".dup_name=", file);
+        json_type_string_print_debug(arg->dup_name, file);
+        break;
+    case json_type_check_error_key_arg_dict_type:
+        fputs(".dict=", file);
+        json_type_check_error_dict_key_arg_print_error_debug(
+            &arg->dict, file);
         break;
     default:
         UNEXPECT_VAR("%d", arg->type);
@@ -7832,6 +8356,7 @@ enum json_type_obj_args_type_t
     json_type_obj_args_array_type,
     json_type_obj_args_object_trie_type,
     json_type_obj_args_array_trie_type,
+    json_type_obj_args_dict_type,
 };
 
 #define json_type_array_trie_node_t json_type_trie_node_t
@@ -7851,6 +8376,13 @@ struct json_type_obj_args_array_trie_attr_t
     bool                                is_closed;
 };
 
+struct json_type_obj_args_dict_attr_t
+{
+    struct json_text_pos_t pos;
+    struct bit_set_t       args;
+    size_t                 last;
+};
+
 struct json_type_obj_args_t
 {
     enum json_type_obj_args_type_t type;
@@ -7859,12 +8391,14 @@ struct json_type_obj_args_t
         const struct json_type_array_node_t*       array;
         const struct json_type_object_trie_node_t* object_trie;
         const struct json_type_array_trie_node_t*  array_trie;
+        const struct json_type_dict_node_t*        dict;
     };
     union {
         // struct json_type_obj_args_object_attr_t   object;
         // struct json_type_obj_args_array_attr_t    array;
         struct json_type_obj_args_object_trie_attr_t object_trie;
         struct json_type_obj_args_array_trie_attr_t  array_trie;
+        struct json_type_obj_args_dict_attr_t        dict;
     } attr;
     size_t n_arg;
 };
@@ -7934,24 +8468,100 @@ struct json_type_obj_t
     JSON_TYPE_STACK_PUSH_TRIE_ARGS(array_trie, b, v, p, \
         __o.args.attr.array_trie.is_closed = c)
 
-#define JSON_TYPE_STACK_POP_ARGS(t)      \
-    do {                                 \
-        struct json_type_obj_t __o;      \
-        __o = JSON_TYPE_STACK_POP();     \
-        JSON_TYPE_OBJ_PRINT_DEBUG(       \
-            "pop: ", &__o);              \
-        ASSERT(JSON_TYPE_OBJ_IS(         \
-            &__o, args));                \
-        ASSERT(                          \
-            JSON_TYPE_OBJ_ARGS_IS(       \
-                &__o.args, t) ||         \
-            JSON_TYPE_OBJ_ARGS_IS(       \
-                &__o.args, t ## _trie)); \
+#define JSON_TYPE_STACK_PUSH_DICT(v, p)    \
+    JSON_TYPE_STACK_PUSH_ARGS_(dict, v, p, \
+        __o.args.attr.dict.pos = p;        \
+        BIT_SET_INIT(                      \
+            &__o.args.attr.dict.args,      \
+            JSON_TYPE_VAR_STACK_ALLOC,     \
+            v->size))
+
+#define JSON_TYPE_STACK_POP_OBJECT_ARGS_(o)    \
+    do {                                       \
+        ASSERT(                                \
+            JSON_TYPE_OBJ_ARGS_IS(             \
+                &(o).args, object) ||          \
+            JSON_TYPE_OBJ_ARGS_IS(             \
+                &(o).args, object ## _trie) || \
+            JSON_TYPE_OBJ_ARGS_IS(             \
+                &(o).args, dict));             \
+        if (JSON_TYPE_OBJ_ARGS_IS(             \
+                &(o).args, dict))              \
+            BIT_SET_DONE(                      \
+                &(o).args.attr.dict.args,      \
+                JSON_TYPE_VAR_STACK_FREE);     \
     } while (0)
+
+#define JSON_TYPE_STACK_POP_ARRAY_ARGS_(o)   \
+    do {                                     \
+        ASSERT(                              \
+            JSON_TYPE_OBJ_ARGS_IS(           \
+                &(o).args, array) ||         \
+            JSON_TYPE_OBJ_ARGS_IS(           \
+                &(o).args, array ## _trie)); \
+    } while (0)
+
+#define JSON_TYPE_STACK_POP_ARGS(t)  \
+    do {                             \
+        struct json_type_obj_t __o;  \
+        __o = JSON_TYPE_STACK_POP(); \
+        JSON_TYPE_OBJ_PRINT_DEBUG(   \
+            "pop: ", &__o);          \
+        ASSERT(JSON_TYPE_OBJ_IS(     \
+            &__o, args));            \
+        JSON_TYPE_STACK_POP_ ## t ## \
+            _ARGS_(__o);             \
+    } while (0)
+#define JSON_TYPE_STACK_POP_OBJECT_ARGS() \
+    JSON_TYPE_STACK_POP_ARGS(OBJECT)
+#define JSON_TYPE_STACK_POP_ARRAY_ARGS() \
+    JSON_TYPE_STACK_POP_ARGS(ARRAY)
 
 #define JSON_TYPE_STACK_SIZE()    STACK_SIZE(&type->obj_stack)
 #define JSON_TYPE_STACK_POP()     STACK_POP(&type->obj_stack)
 #define JSON_TYPE_STACK_TOP_REF() STACK_TOP_REF(&type->obj_stack)
+
+#ifdef JSON_DEBUG
+#define VSTACK_DEBUG
+#endif
+
+#define VSTACK_NAME      json_type_var
+#define VSTACK_NODE_NAME json_type_var_stack_node
+
+#include "vstack-impl.h"
+
+#define JSON_TYPE_VAR_STACK_PUSH(n)             \
+    ({                                          \
+        struct json_type_var_stack_node_t* __n; \
+        STATIC(TYPEOF_IS_SIZET(n));             \
+        __n = json_type_var_stack_push(         \
+            &type->var_stack, n);               \
+        ASSERT(__n != NULL);                    \
+        __n->ptr;                               \
+    })
+
+#define JSON_TYPE_VAR_STACK_POP() \
+    do {                          \
+        json_type_var_stack_pop(  \
+            &type->var_stack);    \
+    } while (0)
+
+#define JSON_TYPE_VAR_STACK_TOP() \
+    (                             \
+        type->var_stack.top       \
+    )
+
+#define JSON_TYPE_VAR_STACK_ALLOC \
+    JSON_TYPE_VAR_STACK_PUSH
+
+#define JSON_TYPE_VAR_STACK_FREE(p)             \
+    do {                                        \
+        struct json_type_var_stack_node_t* __t; \
+        STATIC(TYPEOF_IS(p, uchar_t*));         \
+        __t = JSON_TYPE_VAR_STACK_TOP();        \
+        ASSERT(__t != NULL && __t->ptr == (p)); \
+        JSON_TYPE_VAR_STACK_POP();              \
+    } while (0)
 
 #define JSON_TYPE_TYPEOF_IS_OBJ_ARGS(p) \
     TYPEOF_IS(p, struct json_type_obj_args_t*) 
@@ -8001,7 +8611,27 @@ struct json_type_obj_t
         ? &(p->args) : NULL;        \
     })
 
-#define JSON_TYPE_STACK_TOP_REF_ENSURE_AS_ARGS(n)          \
+#define JSON_TYPE_OBJ_ARGS_ENSURE_AS_OBJECT(a)         \
+    do {                                               \
+        ENSURE(                                        \
+            JSON_TYPE_OBJ_ARGS_IS(a, object) ||        \
+            JSON_TYPE_OBJ_ARGS_IS(a, object_trie) ||   \
+            JSON_TYPE_OBJ_ARGS_IS(a, dict),            \
+            "invalid type stack: top element neither " \
+            "'object args' nor 'object trie args' "    \
+            "nor 'dict args'");                        \
+    } while (0)
+
+#define JSON_TYPE_OBJ_ARGS_ENSURE_AS_ARRAY(a)          \
+    do {                                               \
+        ENSURE(                                        \
+            JSON_TYPE_OBJ_ARGS_IS(a, array) ||         \
+            JSON_TYPE_OBJ_ARGS_IS(a, array_trie),      \
+            "invalid type stack: top element neither " \
+            "'array args' nor 'array trie args'");     \
+    } while (0)
+
+#define JSON_TYPE_STACK_TOP_REF_ENSURE_AS_ARGS_(n)         \
     ({                                                     \
         struct json_type_obj_t* __o;                       \
         struct json_type_obj_args_t* __a;                  \
@@ -8009,13 +8639,13 @@ struct json_type_obj_t
         ENSURE(JSON_TYPE_OBJ_IS(__o, args),                \
             "invalid type stack: top element not 'args'"); \
         __a = &__o->args;                                  \
-        ENSURE(                                            \
-            JSON_TYPE_OBJ_ARGS_IS(__a, n) ||               \
-            JSON_TYPE_OBJ_ARGS_IS(__a, n ## _trie),        \
-            "invalid type stack: top element neither "     \
-            "'" #n " args' nor '" #n " trie args'");       \
+        JSON_TYPE_OBJ_ARGS_ENSURE_AS_ ## n(__a);           \
         __a;                                               \
     })
+#define JSON_TYPE_STACK_TOP_REF_ENSURE_AS_OBJECT_ARGS() \
+    JSON_TYPE_STACK_TOP_REF_ENSURE_AS_ARGS_(OBJECT)
+#define JSON_TYPE_STACK_TOP_REF_ENSURE_AS_ARRAY_ARGS() \
+    JSON_TYPE_STACK_TOP_REF_ENSURE_AS_ARGS_(ARRAY)
 
 #undef  PRINT_DEBUG_COND
 #define PRINT_DEBUG_COND type->debug
@@ -8050,6 +8680,7 @@ struct json_type_t
     struct json_type_lib_t         type_lib;
     struct json_obj_t*             json_obj;
     struct json_type_stack_t       obj_stack;
+    struct json_type_var_stack_t   var_stack;
     const struct json_type_node_t* root_node;
     enum json_parse_status_t       current_stat;
     struct json_type_error_info_t  error_info;
@@ -8204,6 +8835,7 @@ union json_type_obj_args_pack_t
     const struct json_type_array_node_t*       array;
     const struct json_type_object_trie_node_t* object_trie;
     const struct json_type_trie_node_t*        array_trie;
+    const struct json_type_dict_node_t*        dict;
 };
 
 #ifdef JSON_DEBUG
@@ -8222,6 +8854,25 @@ static const char* json_type_obj_type_get_name(
     }
 }
 
+#define JSON_TYPE_OBJ_ARGS_ATTR_POS(a)          \
+    (                                           \
+          JSON_TYPE_OBJ_ARGS_IS(a, object_trie) \
+        ? &(a)->attr.object_trie.pos            \
+        : JSON_TYPE_OBJ_ARGS_IS(a, array_trie)  \
+        ? &(a)->attr.array_trie.pos             \
+        : JSON_TYPE_OBJ_ARGS_IS(a, dict)        \
+        ? &(a)->attr.dict.pos                   \
+        : NULL                                  \
+    )
+#define JSON_TYPE_OBJ_ARGS_ATTR_BASE(a)         \
+    (                                           \
+          JSON_TYPE_OBJ_ARGS_IS(a, object_trie) \
+        ? (a)->attr.object_trie.base            \
+        : JSON_TYPE_OBJ_ARGS_IS(a, array_trie)  \
+        ? (a)->attr.array_trie.base             \
+        : NULL                                  \
+    )
+
 static void json_type_obj_print_debug(
     struct json_type_obj_t* obj, FILE* file)
 {
@@ -8237,13 +8888,15 @@ static void json_type_obj_print_debug(
     else
     if ((o.args = JSON_TYPE_OBJ_AS_IF_ARGS(obj))) {
         union json_type_obj_args_pack_t a;
+        const struct json_type_node_t* b;
+        const struct json_text_pos_t* p;
 
         fputs("# args {", file);
 
         // stev: not using JSON_TYPE_OBJ_ARGS_AS_IF(o.args, ...)
         // because each of 'o.args->object', 'o.args->array',
-        // 'o.args->object_trie' or 'o.args->array_trie'
-        // can meaningfully be 'NULL'
+        // 'o.args->object_trie', 'o.args->array_trie' or
+        // 'o.args->dict' can meaningfully be 'NULL'
 
         if (JSON_TYPE_OBJ_ARGS_IS(o.args, object)) {
             a.object = o.args->object;
@@ -8280,35 +8933,47 @@ static void json_type_obj_print_debug(
             json_type_trie_print_node(a.array_trie, file);
         }
         else
-            UNEXPECT_VAR("%d", o.args->type);
+        if (JSON_TYPE_OBJ_ARGS_IS(o.args, dict)) {
+            a.dict = o.args->dict;
 
-        if (JSON_TYPE_OBJ_ARGS_IS(o.args, object_trie) ||
-            JSON_TYPE_OBJ_ARGS_IS(o.args, array_trie))
-            fputs(" .attr={.base=", file);
-
-        if (JSON_TYPE_OBJ_ARGS_IS(o.args, object_trie)) {
-            const struct json_type_obj_args_object_trie_attr_t* a =
-                &o.args->attr.object_trie;
-
-            ASSERT(a->base != NULL);
-            json_type_node_print_debug(a->base, file);
+            fputs(".dict=", file);
+            json_type_dict_node_null_print_debug(a.dict, file);
         }
         else
+            UNEXPECT_VAR("%d", o.args->type);
+
+        if ((p = JSON_TYPE_OBJ_ARGS_ATTR_POS(o.args)))
+            fprintf(file, " .attr={.pos={.line=%zu .col=%zu}",
+                p->line, p->col);
+
+        if ((b = JSON_TYPE_OBJ_ARGS_ATTR_BASE(o.args))) {
+            fputs(" .base=", file);
+
+            ASSERT(b != NULL);
+            json_type_node_print_debug(b, file);
+        }
+
         if (JSON_TYPE_OBJ_ARGS_IS(o.args, array_trie)) {
             const struct json_type_obj_args_array_trie_attr_t* a =
                 &o.args->attr.array_trie;
 
-            ASSERT(a->base != NULL);
-            json_type_node_print_debug(a->base, file);
             fputs(" .open_node=", file);
             json_type_node_null_print_debug(a->open_node, file);
             fputs(" .open_trie=", file);
             json_type_trie_print_node(a->open_trie, file);
             fprintf(file, " .is_closed=%d", a->is_closed);
         }
+        else
+        if (JSON_TYPE_OBJ_ARGS_IS(o.args, dict)) {
+            const struct json_type_obj_args_dict_attr_t* a =
+                &o.args->attr.dict;
 
-        if (JSON_TYPE_OBJ_ARGS_IS(o.args, object_trie) ||
-            JSON_TYPE_OBJ_ARGS_IS(o.args, array_trie))
+            fputs(" .args=", file);
+            bit_set_print_debug(&a->args, file);
+            fprintf(file, " .last=%zu", a->last);
+        }
+
+        if (p != NULL)
             fputc('}', file);
 
         fprintf(file, " .n_arg=%zu}", o.args->n_arg);
@@ -8520,6 +9185,17 @@ static enum json_type_check_error_type_t
                     return json_type_check_error_type_mismatch;
 
                 o = JSON_TYPE_STACK_PUSH_OBJECT_TRIE(node, n, *pos);
+                ASSERT(o->n_arg == 0);
+            }
+            else
+            if (JSON_TYPE_NODE_IS_CONST(node, dict)) {
+                const struct json_type_dict_node_t* n;
+                struct json_type_obj_args_t* o;
+
+                n = JSON_TYPE_NODE_AS_IF_CONST(node, dict);
+                ASSERT(n != NULL);
+
+                o = JSON_TYPE_STACK_PUSH_DICT(n, *pos);
                 ASSERT(o->n_arg == 0);
             }
             else {
@@ -9092,6 +9768,29 @@ static bool json_type_check_node(
                 return JSON_TYPE_CHECK_NODE_RESULT(r);
             }
         }
+        else
+        if (JSON_TYPE_OBJ_ARGS_IS(o.args, dict)) {
+            struct json_type_obj_args_dict_attr_t* p =
+                 &o.args->attr.dict;
+
+            ENSURE((o.args->n_arg % 2) == 1,
+                "invalid type stack: top element not "
+                "a 'dict val'");
+
+            a.dict = o.args->dict;
+            ASSERT(a.dict != NULL);
+
+            return
+                  a.dict->size >
+                  o.args->n_arg / 2
+                ? o.args->n_arg ++,
+                  BIT_SET_SET(
+                    &p->args, p->last),
+                  JSON_TYPE_CHECK_NODE_RESULT(
+                    a.dict->args[p->last].type)
+                : JSON_TYPE_CHECK_ERROR_RESULT(
+                    too_many_args);
+        }
         UNEXPECT_VAR("%d", o.args->type);
     }
     UNEXPECT_VAR("%d", obj->type);
@@ -9241,7 +9940,7 @@ static bool json_type_object_key(struct json_type_t* type,
     JSON_TYPE_STACK_TOP_PRINT_DEBUG();
 
     JSON_TYPE_GET_CURRENT_TOK_POS(e);
-    o = JSON_TYPE_STACK_TOP_REF_ENSURE_AS_ARGS(object);
+    o = JSON_TYPE_STACK_TOP_REF_ENSURE_AS_OBJECT_ARGS();
 
     if (JSON_TYPE_OBJ_ARGS_IS(o, object)) {
         ENSURE((o->n_arg % 2) == 0,
@@ -9315,6 +10014,47 @@ static bool json_type_object_key(struct json_type_t* type,
         }
     }
     else
+    if (JSON_TYPE_OBJ_ARGS_IS(o, dict)) {
+        const struct json_type_dict_trie_node_t* t;
+        const struct json_type_node_t* n;
+        size_t k;
+
+        ENSURE((o->n_arg % 2) == 0,
+            "invalid type stack: top element not an 'dict key'");
+
+        ASSERT(o->dict != NULL);
+
+        k = o->n_arg / 2;
+        if (k >= o->dict->size)
+            return JSON_TYPE_CHECK_ERROR(e, too_many_args);
+
+        n = JSON_TYPE_TO_NODE_CONST(o->dict, dict);
+        if (!json_type_dict_trie_lookup_key(n->attr.dict, key, &t)) {
+            struct json_type_check_error_key_arg_t a;
+
+            a.type = json_type_check_error_key_arg_dict_type;
+            a.dict.args = &o->attr.dict.args;
+            a.dict.node = o->dict;
+
+            return JSON_TYPE_CHECK_ERROR_KEY(
+                e, a, invalid_arg_name);
+        }
+
+        k = JSON_TYPE_DICT_TRIE_NODE_AS_VAL(t);
+        if (BIT_SET_TEST(&o->attr.dict.args, k)) {
+            struct json_type_check_error_key_arg_t a;
+
+            a.type = json_type_check_error_key_arg_dup_name_type;
+            a.dup_name = o->dict->args[k].name;
+
+            return JSON_TYPE_CHECK_ERROR_KEY(
+                e, a, duplicate_arg_name);
+        }
+
+        o->attr.dict.last = k;
+        o->n_arg ++;
+    }
+    else
         UNEXPECT_VAR("%d", o->type);
 
     return JSON_TYPE_CALL_HANDLER(object_key, key, len);
@@ -9328,7 +10068,7 @@ static bool json_type_object_sep(struct json_type_t* type)
     JSON_TYPE_STACK_TOP_PRINT_DEBUG();
 
     JSON_TYPE_GET_CURRENT_TOK_POS(e);
-    o = JSON_TYPE_STACK_TOP_REF_ENSURE_AS_ARGS(object);
+    o = JSON_TYPE_STACK_TOP_REF_ENSURE_AS_OBJECT_ARGS();
 
     if (JSON_TYPE_OBJ_ARGS_IS(o, object)) {
         ENSURE(o->n_arg > 0 && (o->n_arg % 2) == 0,
@@ -9360,6 +10100,19 @@ static bool json_type_object_sep(struct json_type_t* type)
         }
     }
     else
+    if (JSON_TYPE_OBJ_ARGS_IS(o, dict)) {
+        size_t k;
+
+        ENSURE(o->n_arg > 0 && (o->n_arg % 2) == 0,
+            "invalid type stack: top element not an 'dict key'");
+
+        ASSERT(o->dict != NULL);
+        k = o->n_arg / 2;
+        if (k >= o->dict->size)
+            return JSON_TYPE_CHECK_ERROR(
+                e, too_many_args);
+    }
+    else
         UNEXPECT_VAR("%d", o->type);
 
     return JSON_TYPE_CALL_HANDLER(object_sep);
@@ -9373,7 +10126,7 @@ static bool json_type_object_end(struct json_type_t* type)
     JSON_TYPE_STACK_TOP_PRINT_DEBUG();
 
     JSON_TYPE_GET_CURRENT_TOK_POS(e);
-    o = JSON_TYPE_STACK_TOP_REF_ENSURE_AS_ARGS(object);
+    o = JSON_TYPE_STACK_TOP_REF_ENSURE_AS_OBJECT_ARGS();
 
     if (JSON_TYPE_OBJ_ARGS_IS(o, object)) {
         ENSURE((o->n_arg % 2) == 0,
@@ -9406,9 +10159,14 @@ static bool json_type_object_end(struct json_type_t* type)
         }
     }
     else
+    if (JSON_TYPE_OBJ_ARGS_IS(o, dict)) {
+        ASSERT(o->dict != NULL);
+        ASSERT(o->n_arg / 2 <= o->dict->size);
+    }
+    else
         UNEXPECT_VAR("%d", o->type);
 
-    JSON_TYPE_STACK_POP_ARGS(object);
+    JSON_TYPE_STACK_POP_OBJECT_ARGS();
 
     return JSON_TYPE_CALL_HANDLER(object_end);
 }
@@ -9437,7 +10195,7 @@ static bool json_type_array_sep(struct json_type_t* type)
     JSON_TYPE_STACK_TOP_PRINT_DEBUG();
 
     JSON_TYPE_GET_CURRENT_TOK_POS(e);
-    o = JSON_TYPE_STACK_TOP_REF_ENSURE_AS_ARGS(array);
+    o = JSON_TYPE_STACK_TOP_REF_ENSURE_AS_ARRAY_ARGS();
 
     if (JSON_TYPE_OBJ_ARGS_IS(o, array)) {
         union json_type_array_node_pack_t p;
@@ -9493,7 +10251,7 @@ static bool json_type_array_end(struct json_type_t* type)
     JSON_TYPE_STACK_TOP_PRINT_DEBUG();
 
     JSON_TYPE_GET_CURRENT_TOK_POS(e);
-    o = JSON_TYPE_STACK_TOP_REF_ENSURE_AS_ARGS(array);
+    o = JSON_TYPE_STACK_TOP_REF_ENSURE_AS_ARRAY_ARGS();
 
     if (JSON_TYPE_OBJ_ARGS_IS(o, array)) {
         union json_type_array_node_pack_t p;
@@ -9529,7 +10287,7 @@ static bool json_type_array_end(struct json_type_t* type)
     else
         UNEXPECT_VAR("%d", o->type);
 
-    JSON_TYPE_STACK_POP_ARGS(array);
+    JSON_TYPE_STACK_POP_ARRAY_ARGS();
 
     return JSON_TYPE_CALL_HANDLER(array_end);
 }
@@ -9602,6 +10360,11 @@ static struct json_type_t* json_type_create(
         sizes->obj.stack_max,
         sizes->obj.stack_init);
 
+    json_type_var_stack_init(
+        &type->var_stack,
+        sizes->var_stack_max,
+        sizes->var_stack_init);
+
     type->root_node = json_type_lib_init_from_spec(
         &type->type_lib, spec, &sizes->lib);
 
@@ -9655,6 +10418,7 @@ struct json_type_t* json_type_create_from_lib(
 void json_type_destroy(struct json_type_t* type)
 {
     json_type_lib_done(&type->type_lib);
+    json_type_var_stack_done(&type->var_stack);
     json_type_stack_done(&type->obj_stack);
     json_obj_destroy(type->json_obj);
     free(type);
