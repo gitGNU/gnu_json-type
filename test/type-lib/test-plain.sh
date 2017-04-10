@@ -80,6 +80,10 @@ $ json <<< '\''{"plain":"list"}'\''
 {
     "plain": "list"
 }
+$ json <<< '\''{"plain":"dict"}'\''
+{
+    "plain": "dict"
+}
 $ json <<< '\''{"plain":{}}'\''
 json: error: <stdin>:1:10: meta error: invalid "plain" object: value must be `null'\'', a boolean, a number or a string
 json: error: <stdin>:1:10: {"plain":{}}
@@ -156,6 +160,10 @@ echo 'command failed: json <<< '\''{"plain":"array"}'\'''
 echo '$ json <<< '\''{"plain":"list"}'\'''
 json <<< '{"plain":"list"}' 2>&1 ||
 echo 'command failed: json <<< '\''{"plain":"list"}'\'''
+
+echo '$ json <<< '\''{"plain":"dict"}'\'''
+json <<< '{"plain":"dict"}' 2>&1 ||
+echo 'command failed: json <<< '\''{"plain":"dict"}'\'''
 
 echo '$ json <<< '\''{"plain":{}}'\'''
 json <<< '{"plain":{}}' 2>&1 ||

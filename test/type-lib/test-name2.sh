@@ -158,6 +158,16 @@ json: error: <stdin>:1:22: meta error: invalid "name" object: its "type" argumen
 json: error: <stdin>:1:22: {"name":"faa","type":"list"}
 json: error: <stdin>:1:22:                      ^
 command failed: json <<< '\''{"name":"faa","type":"list"}'\''
+$ json <<< '\''{"name":"faa","fuu":"dict"}'\''
+json: error: <stdin>:1:1: meta error: invalid "name" object: key of second argument is not "type"
+json: error: <stdin>:1:1: {"name":"faa","fuu":"dict"}
+json: error: <stdin>:1:1: ^
+command failed: json <<< '\''{"name":"faa","fuu":"dict"}'\''
+$ json <<< '\''{"name":"faa","type":"dict"}'\''
+json: error: <stdin>:1:22: meta error: invalid "name" object: its "type" argument must be a type
+json: error: <stdin>:1:22: {"name":"faa","type":"dict"}
+json: error: <stdin>:1:22:                      ^
+command failed: json <<< '\''{"name":"faa","type":"dict"}'\''
 $ json <<< '\''{"name":"faa","fuu":{}}'\''
 json: error: <stdin>:1:1: meta error: invalid "name" object: key of second argument is not "type"
 json: error: <stdin>:1:1: {"name":"faa","fuu":{}}
@@ -306,6 +316,14 @@ echo 'command failed: json <<< '\''{"name":"faa","fuu":"list"}'\'''
 echo '$ json <<< '\''{"name":"faa","type":"list"}'\'''
 json <<< '{"name":"faa","type":"list"}' 2>&1 ||
 echo 'command failed: json <<< '\''{"name":"faa","type":"list"}'\'''
+
+echo '$ json <<< '\''{"name":"faa","fuu":"dict"}'\'''
+json <<< '{"name":"faa","fuu":"dict"}' 2>&1 ||
+echo 'command failed: json <<< '\''{"name":"faa","fuu":"dict"}'\'''
+
+echo '$ json <<< '\''{"name":"faa","type":"dict"}'\'''
+json <<< '{"name":"faa","type":"dict"}' 2>&1 ||
+echo 'command failed: json <<< '\''{"name":"faa","type":"dict"}'\'''
 
 echo '$ json <<< '\''{"name":"faa","fuu":{}}'\'''
 json <<< '{"name":"faa","fuu":{}}' 2>&1 ||

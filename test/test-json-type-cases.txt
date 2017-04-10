@@ -2025,4 +2025,617 @@ json: error: <stdin>:1:8:        ^
 command failed: json -d '{"type":"list","args":[{"type":"array","args":"number"},{"type":"array","args":[{"plain":1},{"plain":2},"object"]}]}' <<< '[1,2,{},null]'
 $ 
 
+--[ 82 ]------------------------------------------------------------------------
+
+$ json -d '{"type":"dict","args":[]}' <<< null
+json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `{"type":"dict","args":[]}'
+json: error: <stdin>:1:1: null
+json: error: <stdin>:1:1: ^
+command failed: json -d '{"type":"dict","args":[]}' <<< null
+$ json -d '{"type":"dict","args":[]}' <<< false
+json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `{"type":"dict","args":[]}'
+json: error: <stdin>:1:1: false
+json: error: <stdin>:1:1: ^
+command failed: json -d '{"type":"dict","args":[]}' <<< false
+$ json -d '{"type":"dict","args":[]}' <<< 123
+json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `{"type":"dict","args":[]}'
+json: error: <stdin>:1:1: 123
+json: error: <stdin>:1:1: ^
+command failed: json -d '{"type":"dict","args":[]}' <<< 123
+$ json -d '{"type":"dict","args":[]}' <<< "foo"
+json: error: <stdin>:1:2: parse error: invalid literal
+json: error: <stdin>:1:2: foo
+json: error: <stdin>:1:2:  ^
+command failed: json -d '{"type":"dict","args":[]}' <<< "foo"
+$ json -d '{"type":"dict","args":[]}' <<< '[]'
+json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `{"type":"dict","args":[]}'
+json: error: <stdin>:1:1: []
+json: error: <stdin>:1:1: ^
+command failed: json -d '{"type":"dict","args":[]}' <<< '[]'
+$ json -d '{"type":"dict","args":[]}' <<< '{}'
+{}
+$ json -d '{"type":"dict","args":[]}' <<< '{"foo":"bar"}'
+json: error: <stdin>:1:2: type check error: too many arguments
+json: error: <stdin>:1:2: {"foo":"bar"}
+json: error: <stdin>:1:2:  ^
+{
+command failed: json -d '{"type":"dict","args":[]}' <<< '{"foo":"bar"}'
+$
+
+--[ 83 ]------------------------------------------------------------------------
+
+$ json -d '{"type":"dict","args":[{"name":"foo","type":"type"}]}' <<< null
+json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `{"type":"dict","args":[...]}'
+json: error: <stdin>:1:1: null
+json: error: <stdin>:1:1: ^
+command failed: json -d '{"type":"dict","args":[{"name":"foo","type":"type"}]}' <<< null
+$ json -d '{"type":"dict","args":[{"name":"foo","type":"type"}]}' <<< false
+json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `{"type":"dict","args":[...]}'
+json: error: <stdin>:1:1: false
+json: error: <stdin>:1:1: ^
+command failed: json -d '{"type":"dict","args":[{"name":"foo","type":"type"}]}' <<< false
+$ json -d '{"type":"dict","args":[{"name":"foo","type":"type"}]}' <<< 123
+json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `{"type":"dict","args":[...]}'
+json: error: <stdin>:1:1: 123
+json: error: <stdin>:1:1: ^
+command failed: json -d '{"type":"dict","args":[{"name":"foo","type":"type"}]}' <<< 123
+$ json -d '{"type":"dict","args":[{"name":"foo","type":"type"}]}' <<< '"bar"'
+json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `{"type":"dict","args":[...]}'
+json: error: <stdin>:1:1: "bar"
+json: error: <stdin>:1:1: ^
+command failed: json -d '{"type":"dict","args":[{"name":"foo","type":"type"}]}' <<< '"bar"'
+$ json -d '{"type":"dict","args":[{"name":"foo","type":"type"}]}' <<< '[]'
+json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `{"type":"dict","args":[...]}'
+json: error: <stdin>:1:1: []
+json: error: <stdin>:1:1: ^
+command failed: json -d '{"type":"dict","args":[{"name":"foo","type":"type"}]}' <<< '[]'
+$ json -d '{"type":"dict","args":[{"name":"foo","type":"type"}]}' <<< '{}'
+{}
+$ json -d '{"type":"dict","args":[{"name":"foo","type":"type"}]}' <<< '{"foo":"bar"}'
+{"foo":"bar"}
+$ json -d '{"type":"dict","args":[{"name":"foo","type":"type"}]}' <<< '{"foo":"bar","foo":true}'
+json: error: <stdin>:1:13: type check error: too many arguments
+json: error: <stdin>:1:13: {"foo":"bar","foo":true}
+json: error: <stdin>:1:13:             ^
+{"foo":"bar"
+command failed: json -d '{"type":"dict","args":[{"name":"foo","type":"type"}]}' <<< '{"foo":"bar","foo":true}'
+$ json -d '{"type":"dict","args":[{"name":"foo","type":"type"}]}' <<< '{"foo":"bar","faa":true}'
+json: error: <stdin>:1:13: type check error: too many arguments
+json: error: <stdin>:1:13: {"foo":"bar","faa":true}
+json: error: <stdin>:1:13:             ^
+{"foo":"bar"
+command failed: json -d '{"type":"dict","args":[{"name":"foo","type":"type"}]}' <<< '{"foo":"bar","faa":true}'
+$ json -d '{"type":"dict","args":[{"name":"foo","type":"type"}]}' <<< '{"faa":true}'
+json: error: <stdin>:1:2: type check error: invalid argument name: expected "foo"
+json: error: <stdin>:1:2: {"faa":true}
+json: error: <stdin>:1:2:  ^
+{
+command failed: json -d '{"type":"dict","args":[{"name":"foo","type":"type"}]}' <<< '{"faa":true}'
+$
+
+--[ 84 ]------------------------------------------------------------------------
+
+$ json -d '{"type":"dict","args":[{"name":"foo","type":"type"},{"name":"faa","type":"type"}]}' <<< null
+json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `{"type":"dict","args":[...]}'
+json: error: <stdin>:1:1: null
+json: error: <stdin>:1:1: ^
+command failed: json -d '{"type":"dict","args":[{"name":"foo","type":"type"},{"name":"faa","type":"type"}]}' <<< null
+$ json -d '{"type":"dict","args":[{"name":"foo","type":"type"},{"name":"faa","type":"type"}]}' <<< false
+json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `{"type":"dict","args":[...]}'
+json: error: <stdin>:1:1: false
+json: error: <stdin>:1:1: ^
+command failed: json -d '{"type":"dict","args":[{"name":"foo","type":"type"},{"name":"faa","type":"type"}]}' <<< false
+$ json -d '{"type":"dict","args":[{"name":"foo","type":"type"},{"name":"faa","type":"type"}]}' <<< 123
+json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `{"type":"dict","args":[...]}'
+json: error: <stdin>:1:1: 123
+json: error: <stdin>:1:1: ^
+command failed: json -d '{"type":"dict","args":[{"name":"foo","type":"type"},{"name":"faa","type":"type"}]}' <<< 123
+$ json -d '{"type":"dict","args":[{"name":"foo","type":"type"},{"name":"faa","type":"type"}]}' <<< '"bar"'
+json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `{"type":"dict","args":[...]}'
+json: error: <stdin>:1:1: "bar"
+json: error: <stdin>:1:1: ^
+command failed: json -d '{"type":"dict","args":[{"name":"foo","type":"type"},{"name":"faa","type":"type"}]}' <<< '"bar"'
+$ json -d '{"type":"dict","args":[{"name":"foo","type":"type"},{"name":"faa","type":"type"}]}' <<< '[]'
+json: error: <stdin>:1:1: type check error: type mismatch: expected a value of type `{"type":"dict","args":[...]}'
+json: error: <stdin>:1:1: []
+json: error: <stdin>:1:1: ^
+command failed: json -d '{"type":"dict","args":[{"name":"foo","type":"type"},{"name":"faa","type":"type"}]}' <<< '[]'
+$ json -d '{"type":"dict","args":[{"name":"foo","type":"type"},{"name":"faa","type":"type"}]}' <<< '{}'
+{}
+$ json -d '{"type":"dict","args":[{"name":"foo","type":"type"},{"name":"faa","type":"type"}]}' <<< '{"foo":"bar"}'
+{"foo":"bar"}
+$ json -d '{"type":"dict","args":[{"name":"foo","type":"type"},{"name":"faa","type":"type"}]}' <<< '{"foo":"bar","foo":true}'
+json: error: <stdin>:1:14: type check error: duplicate argument name: "foo"
+json: error: <stdin>:1:14: {"foo":"bar","foo":true}
+json: error: <stdin>:1:14:              ^
+{"foo":"bar",
+command failed: json -d '{"type":"dict","args":[{"name":"foo","type":"type"},{"name":"faa","type":"type"}]}' <<< '{"foo":"bar","foo":true}'
+$ json -d '{"type":"dict","args":[{"name":"foo","type":"type"},{"name":"faa","type":"type"}]}' <<< '{"foo":"bar","faa":true}'
+{"foo":"bar","faa":true}
+$ json -d '{"type":"dict","args":[{"name":"foo","type":"type"},{"name":"faa","type":"type"}]}' <<< '{"foo":"bar","faa":true,"foo":456}'
+json: error: <stdin>:1:24: type check error: too many arguments
+json: error: <stdin>:1:24: {"foo":"bar","faa":true,"foo":456}
+json: error: <stdin>:1:24:                        ^
+{"foo":"bar","faa":true
+command failed: json -d '{"type":"dict","args":[{"name":"foo","type":"type"},{"name":"faa","type":"type"}]}' <<< '{"foo":"bar","faa":true,"foo":456}'
+$ json -d '{"type":"dict","args":[{"name":"foo","type":"type"},{"name":"faa","type":"type"}]}' <<< '{"foo":"bar","faa":true,"faa":456}'
+json: error: <stdin>:1:24: type check error: too many arguments
+json: error: <stdin>:1:24: {"foo":"bar","faa":true,"faa":456}
+json: error: <stdin>:1:24:                        ^
+{"foo":"bar","faa":true
+command failed: json -d '{"type":"dict","args":[{"name":"foo","type":"type"},{"name":"faa","type":"type"}]}' <<< '{"foo":"bar","faa":true,"faa":456}'
+$ json -d '{"type":"dict","args":[{"name":"foo","type":"type"},{"name":"faa","type":"type"}]}' <<< '{"faa":"bar"}'
+{"faa":"bar"}
+$ json -d '{"type":"dict","args":[{"name":"foo","type":"type"},{"name":"faa","type":"type"}]}' <<< '{"faa":"bar","foo":true}'
+{"faa":"bar","foo":true}
+$ json -d '{"type":"dict","args":[{"name":"foo","type":"type"},{"name":"faa","type":"type"}]}' <<< '{"faa":"bar","foo":true,"faa":456}'
+json: error: <stdin>:1:24: type check error: too many arguments
+json: error: <stdin>:1:24: {"faa":"bar","foo":true,"faa":456}
+json: error: <stdin>:1:24:                        ^
+{"faa":"bar","foo":true
+command failed: json -d '{"type":"dict","args":[{"name":"foo","type":"type"},{"name":"faa","type":"type"}]}' <<< '{"faa":"bar","foo":true,"faa":456}'
+$ json -d '{"type":"dict","args":[{"name":"foo","type":"type"},{"name":"faa","type":"type"}]}' <<< '{"faa":"bar","foo":true,"foo":456}'
+json: error: <stdin>:1:24: type check error: too many arguments
+json: error: <stdin>:1:24: {"faa":"bar","foo":true,"foo":456}
+json: error: <stdin>:1:24:                        ^
+{"faa":"bar","foo":true
+command failed: json -d '{"type":"dict","args":[{"name":"foo","type":"type"},{"name":"faa","type":"type"}]}' <<< '{"faa":"bar","foo":true,"foo":456}'
+$ json -d '{"type":"dict","args":[{"name":"foo","type":"type"},{"name":"faa","type":"type"}]}' <<< '{"foo":"bar","foo":true}'
+json: error: <stdin>:1:14: type check error: duplicate argument name: "foo"
+json: error: <stdin>:1:14: {"foo":"bar","foo":true}
+json: error: <stdin>:1:14:              ^
+{"foo":"bar",
+command failed: json -d '{"type":"dict","args":[{"name":"foo","type":"type"},{"name":"faa","type":"type"}]}' <<< '{"foo":"bar","foo":true}'
+$ json -d '{"type":"dict","args":[{"name":"foo","type":"type"},{"name":"faa","type":"type"}]}' <<< '{"faa":"bar","faa":true}'
+json: error: <stdin>:1:14: type check error: duplicate argument name: "faa"
+json: error: <stdin>:1:14: {"faa":"bar","faa":true}
+json: error: <stdin>:1:14:              ^
+{"faa":"bar",
+command failed: json -d '{"type":"dict","args":[{"name":"foo","type":"type"},{"name":"faa","type":"type"}]}' <<< '{"faa":"bar","faa":true}'
+$ 
+
+--[ 85 ]------------------------------------------------------------------------
+
+# test-obj [--debug] [-[dkn]NUM|-p]
+$ test-obj() { local x='eval'; [ "$1" == '--debug' ] && { x='echo'; shift; }; local d=2; local k=4; local n=4; local p=''; local o; while [ "$#" -gt 0 ]; do o="$1"; [[ "$o" =~ ^-[dkn][1-9][0-9]*$ || "$o" =~ ^-p$ ]] || { error "invalid option '$o'"; return 1; }; local v="${o:2}"; [ -z "$v" ] && v="${o:1:1}"; eval "${o:1:1}=$v"; shift; done; $x "../lib/test-gen -d$d -k$k -n$n -V|json -t <(../lib/test-gen --object -d$d -k$k -n$n -T$p) --sizes-type-lib-{,own-}pool-size=2M --sizes-type-lib-text-max-size=1M -VO"; }
+#
+# # meta command:
+# $ for d in 1 2 3 4; do for k in 4 8 16 32 64 128; do for n in 1 2 4; do for p in '' p; do c="test-obj -d$d -k$k -n$n${p:+ -p}"; echo "$ $c"; eval "$c 2>&1" || echo "command failed: $c"; done; done; done; done
+#
+$ test-obj -d1 -k4 -n1
+$ test-obj -d1 -k4 -n1 -p
+$ test-obj -d1 -k4 -n2
+$ test-obj -d1 -k4 -n2 -p
+$ test-obj -d1 -k4 -n4
+$ test-obj -d1 -k4 -n4 -p
+$ test-obj -d1 -k8 -n1
+$ test-obj -d1 -k8 -n1 -p
+$ test-obj -d1 -k8 -n2
+$ test-obj -d1 -k8 -n2 -p
+$ test-obj -d1 -k8 -n4
+$ test-obj -d1 -k8 -n4 -p
+$ test-obj -d1 -k16 -n1
+$ test-obj -d1 -k16 -n1 -p
+$ test-obj -d1 -k16 -n2
+$ test-obj -d1 -k16 -n2 -p
+$ test-obj -d1 -k16 -n4
+$ test-obj -d1 -k16 -n4 -p
+$ test-obj -d1 -k32 -n1
+$ test-obj -d1 -k32 -n1 -p
+$ test-obj -d1 -k32 -n2
+$ test-obj -d1 -k32 -n2 -p
+$ test-obj -d1 -k32 -n4
+$ test-obj -d1 -k32 -n4 -p
+$ test-obj -d1 -k64 -n1
+$ test-obj -d1 -k64 -n1 -p
+$ test-obj -d1 -k64 -n2
+$ test-obj -d1 -k64 -n2 -p
+$ test-obj -d1 -k64 -n4
+$ test-obj -d1 -k64 -n4 -p
+$ test-obj -d1 -k128 -n1
+$ test-obj -d1 -k128 -n1 -p
+$ test-obj -d1 -k128 -n2
+$ test-obj -d1 -k128 -n2 -p
+$ test-obj -d1 -k128 -n4
+$ test-obj -d1 -k128 -n4 -p
+$ test-obj -d2 -k4 -n1
+$ test-obj -d2 -k4 -n1 -p
+$ test-obj -d2 -k4 -n2
+$ test-obj -d2 -k4 -n2 -p
+$ test-obj -d2 -k4 -n4
+$ test-obj -d2 -k4 -n4 -p
+$ test-obj -d2 -k8 -n1
+$ test-obj -d2 -k8 -n1 -p
+$ test-obj -d2 -k8 -n2
+$ test-obj -d2 -k8 -n2 -p
+$ test-obj -d2 -k8 -n4
+$ test-obj -d2 -k8 -n4 -p
+$ test-obj -d2 -k16 -n1
+$ test-obj -d2 -k16 -n1 -p
+$ test-obj -d2 -k16 -n2
+$ test-obj -d2 -k16 -n2 -p
+$ test-obj -d2 -k16 -n4
+$ test-obj -d2 -k16 -n4 -p
+$ test-obj -d2 -k32 -n1
+$ test-obj -d2 -k32 -n1 -p
+$ test-obj -d2 -k32 -n2
+$ test-obj -d2 -k32 -n2 -p
+$ test-obj -d2 -k32 -n4
+$ test-obj -d2 -k32 -n4 -p
+$ test-obj -d2 -k64 -n1
+$ test-obj -d2 -k64 -n1 -p
+$ test-obj -d2 -k64 -n2
+$ test-obj -d2 -k64 -n2 -p
+$ test-obj -d2 -k64 -n4
+$ test-obj -d2 -k64 -n4 -p
+$ test-obj -d2 -k128 -n1
+json.so: fatal error: AST pool alloc failed
+command failed: test-obj -d2 -k128 -n1
+$ test-obj -d2 -k128 -n1 -p
+json.so: fatal error: AST pool alloc failed
+command failed: test-obj -d2 -k128 -n1 -p
+$ test-obj -d2 -k128 -n2
+json.so: fatal error: AST pool alloc failed
+command failed: test-obj -d2 -k128 -n2
+$ test-obj -d2 -k128 -n2 -p
+json.so: fatal error: AST pool alloc failed
+command failed: test-obj -d2 -k128 -n2 -p
+$ test-obj -d2 -k128 -n4
+$ test-obj -d2 -k128 -n4 -p
+$ test-obj -d3 -k4 -n1
+$ test-obj -d3 -k4 -n1 -p
+$ test-obj -d3 -k4 -n2
+$ test-obj -d3 -k4 -n2 -p
+$ test-obj -d3 -k4 -n4
+$ test-obj -d3 -k4 -n4 -p
+$ test-obj -d3 -k8 -n1
+$ test-obj -d3 -k8 -n1 -p
+$ test-obj -d3 -k8 -n2
+$ test-obj -d3 -k8 -n2 -p
+$ test-obj -d3 -k8 -n4
+$ test-obj -d3 -k8 -n4 -p
+$ test-obj -d3 -k16 -n1
+$ test-obj -d3 -k16 -n1 -p
+$ test-obj -d3 -k16 -n2
+$ test-obj -d3 -k16 -n2 -p
+$ test-obj -d3 -k16 -n4
+$ test-obj -d3 -k16 -n4 -p
+$ test-obj -d3 -k32 -n1
+json.so: fatal error: AST pool alloc failed
+command failed: test-obj -d3 -k32 -n1
+$ test-obj -d3 -k32 -n1 -p
+json: error: /dev/fd/??: type lib error: system error: file read: File too large
+command failed: test-obj -d3 -k32 -n1 -p
+$ test-obj -d3 -k32 -n2
+$ test-obj -d3 -k32 -n2 -p
+$ test-obj -d3 -k32 -n4
+$ test-obj -d3 -k32 -n4 -p
+$ test-obj -d3 -k64 -n1
+json: error: /dev/fd/??: type lib error: system error: file read: File too large
+command failed: test-obj -d3 -k64 -n1
+$ test-obj -d3 -k64 -n1 -p
+json: error: /dev/fd/??: type lib error: system error: file read: File too large
+command failed: test-obj -d3 -k64 -n1 -p
+$ test-obj -d3 -k64 -n2
+json: error: /dev/fd/??: type lib error: system error: file read: File too large
+command failed: test-obj -d3 -k64 -n2
+$ test-obj -d3 -k64 -n2 -p
+json: error: /dev/fd/??: type lib error: system error: file read: File too large
+command failed: test-obj -d3 -k64 -n2 -p
+$ test-obj -d3 -k64 -n4
+$ test-obj -d3 -k64 -n4 -p
+$ test-obj -d3 -k128 -n1
+json: error: /dev/fd/??: type lib error: system error: file read: File too large
+command failed: test-obj -d3 -k128 -n1
+$ test-obj -d3 -k128 -n1 -p
+json: error: /dev/fd/??: type lib error: system error: file read: File too large
+command failed: test-obj -d3 -k128 -n1 -p
+$ test-obj -d3 -k128 -n2
+json: error: /dev/fd/??: type lib error: system error: file read: File too large
+command failed: test-obj -d3 -k128 -n2
+$ test-obj -d3 -k128 -n2 -p
+json: error: /dev/fd/??: type lib error: system error: file read: File too large
+command failed: test-obj -d3 -k128 -n2 -p
+$ test-obj -d3 -k128 -n4
+json: error: /dev/fd/??: type lib error: system error: file read: File too large
+command failed: test-obj -d3 -k128 -n4
+$ test-obj -d3 -k128 -n4 -p
+json: error: /dev/fd/??: type lib error: system error: file read: File too large
+command failed: test-obj -d3 -k128 -n4 -p
+$ test-obj -d4 -k4 -n1
+$ test-obj -d4 -k4 -n1 -p
+$ test-obj -d4 -k4 -n2
+$ test-obj -d4 -k4 -n2 -p
+$ test-obj -d4 -k4 -n4
+$ test-obj -d4 -k4 -n4 -p
+$ test-obj -d4 -k8 -n1
+$ test-obj -d4 -k8 -n1 -p
+$ test-obj -d4 -k8 -n2
+$ test-obj -d4 -k8 -n2 -p
+$ test-obj -d4 -k8 -n4
+$ test-obj -d4 -k8 -n4 -p
+$ test-obj -d4 -k16 -n1
+json: error: /dev/fd/??: type lib error: system error: file read: File too large
+command failed: test-obj -d4 -k16 -n1
+$ test-obj -d4 -k16 -n1 -p
+json: error: /dev/fd/??: type lib error: system error: file read: File too large
+command failed: test-obj -d4 -k16 -n1 -p
+$ test-obj -d4 -k16 -n2
+$ test-obj -d4 -k16 -n2 -p
+$ test-obj -d4 -k16 -n4
+$ test-obj -d4 -k16 -n4 -p
+$ test-obj -d4 -k32 -n1
+json: error: /dev/fd/??: type lib error: system error: file read: File too large
+command failed: test-obj -d4 -k32 -n1
+$ test-obj -d4 -k32 -n1 -p
+json: error: /dev/fd/??: type lib error: system error: file read: File too large
+command failed: test-obj -d4 -k32 -n1 -p
+$ test-obj -d4 -k32 -n2
+json.so: fatal error: AST pool alloc failed
+command failed: test-obj -d4 -k32 -n2
+$ test-obj -d4 -k32 -n2 -p
+json.so: fatal error: AST pool alloc failed
+command failed: test-obj -d4 -k32 -n2 -p
+$ test-obj -d4 -k32 -n4
+$ test-obj -d4 -k32 -n4 -p
+$ test-obj -d4 -k64 -n1
+json: error: /dev/fd/??: type lib error: system error: file read: File too large
+command failed: test-obj -d4 -k64 -n1
+$ test-obj -d4 -k64 -n1 -p
+json: error: /dev/fd/??: type lib error: system error: file read: File too large
+command failed: test-obj -d4 -k64 -n1 -p
+$ test-obj -d4 -k64 -n2
+json: error: /dev/fd/??: type lib error: system error: file read: File too large
+command failed: test-obj -d4 -k64 -n2
+$ test-obj -d4 -k64 -n2 -p
+json: error: /dev/fd/??: type lib error: system error: file read: File too large
+command failed: test-obj -d4 -k64 -n2 -p
+$ test-obj -d4 -k64 -n4
+json.so: fatal error: AST pool alloc failed
+command failed: test-obj -d4 -k64 -n4
+$ test-obj -d4 -k64 -n4 -p
+json.so: fatal error: AST pool alloc failed
+command failed: test-obj -d4 -k64 -n4 -p
+$ test-obj -d4 -k128 -n1
+json: error: /dev/fd/??: type lib error: system error: file read: File too large
+command failed: test-obj -d4 -k128 -n1
+$ test-obj -d4 -k128 -n1 -p
+json: error: /dev/fd/??: type lib error: system error: file read: File too large
+command failed: test-obj -d4 -k128 -n1 -p
+$ test-obj -d4 -k128 -n2
+json: error: /dev/fd/??: type lib error: system error: file read: File too large
+command failed: test-obj -d4 -k128 -n2
+$ test-obj -d4 -k128 -n2 -p
+json: error: /dev/fd/??: type lib error: system error: file read: File too large
+command failed: test-obj -d4 -k128 -n2 -p
+$ test-obj -d4 -k128 -n4
+json: error: /dev/fd/??: type lib error: system error: file read: File too large
+command failed: test-obj -d4 -k128 -n4
+$ test-obj -d4 -k128 -n4 -p
+json: error: /dev/fd/??: type lib error: system error: file read: File too large
+command failed: test-obj -d4 -k128 -n4 -p
+$ 
+
+--[ 86 ]------------------------------------------------------------------------
+
+# test-dict [--debug] [-[dkn]NUM|-p]
+$ test-dict() { local x='eval'; [ "$1" == '--debug' ] && { x='echo'; shift; }; local d=2; local k=4; local n=4; local p=''; local o; while [ "$#" -gt 0 ]; do o="$1"; [[ "$o" =~ ^-[dkn][1-9][0-9]*$ || "$o" =~ ^-p$ ]] || { error "invalid option '$o'"; return 1; }; local v="${o:2}"; [ -z "$v" ] && v="${o:1:1}"; eval "${o:1:1}=$v"; shift; done; $x "../lib/test-gen -d$d -k$k -n$n -Vr|json -t <(../lib/test-gen --dict -d$d -k$k -n$n -T$p) --sizes-type-lib-{,own-}pool-size=2M --sizes-type-lib-text-max-size=1M -VO"; }
+#
+# # meta command:
+# $ for d in 1 2 3 4; do for k in 4 8 16 32 64 128; do for n in 1 2 4; do for p in '' p; do c="test-dict -d$d -k$k -n$n${p:+ -p}"; echo "$ $c"; eval "$c 2>&1" || echo "command failed: $c"; done; done; done; done
+#
+$ test-dict -d1 -k4 -n1
+$ test-dict -d1 -k4 -n1 -p
+$ test-dict -d1 -k4 -n2
+$ test-dict -d1 -k4 -n2 -p
+$ test-dict -d1 -k4 -n4
+$ test-dict -d1 -k4 -n4 -p
+$ test-dict -d1 -k8 -n1
+$ test-dict -d1 -k8 -n1 -p
+$ test-dict -d1 -k8 -n2
+$ test-dict -d1 -k8 -n2 -p
+$ test-dict -d1 -k8 -n4
+$ test-dict -d1 -k8 -n4 -p
+$ test-dict -d1 -k16 -n1
+$ test-dict -d1 -k16 -n1 -p
+$ test-dict -d1 -k16 -n2
+$ test-dict -d1 -k16 -n2 -p
+$ test-dict -d1 -k16 -n4
+$ test-dict -d1 -k16 -n4 -p
+$ test-dict -d1 -k32 -n1
+$ test-dict -d1 -k32 -n1 -p
+$ test-dict -d1 -k32 -n2
+$ test-dict -d1 -k32 -n2 -p
+$ test-dict -d1 -k32 -n4
+$ test-dict -d1 -k32 -n4 -p
+$ test-dict -d1 -k64 -n1
+$ test-dict -d1 -k64 -n1 -p
+$ test-dict -d1 -k64 -n2
+$ test-dict -d1 -k64 -n2 -p
+$ test-dict -d1 -k64 -n4
+$ test-dict -d1 -k64 -n4 -p
+$ test-dict -d1 -k128 -n1
+$ test-dict -d1 -k128 -n1 -p
+$ test-dict -d1 -k128 -n2
+$ test-dict -d1 -k128 -n2 -p
+$ test-dict -d1 -k128 -n4
+$ test-dict -d1 -k128 -n4 -p
+$ test-dict -d2 -k4 -n1
+$ test-dict -d2 -k4 -n1 -p
+$ test-dict -d2 -k4 -n2
+$ test-dict -d2 -k4 -n2 -p
+$ test-dict -d2 -k4 -n4
+$ test-dict -d2 -k4 -n4 -p
+$ test-dict -d2 -k8 -n1
+$ test-dict -d2 -k8 -n1 -p
+$ test-dict -d2 -k8 -n2
+$ test-dict -d2 -k8 -n2 -p
+$ test-dict -d2 -k8 -n4
+$ test-dict -d2 -k8 -n4 -p
+$ test-dict -d2 -k16 -n1
+$ test-dict -d2 -k16 -n1 -p
+$ test-dict -d2 -k16 -n2
+$ test-dict -d2 -k16 -n2 -p
+$ test-dict -d2 -k16 -n4
+$ test-dict -d2 -k16 -n4 -p
+$ test-dict -d2 -k32 -n1
+$ test-dict -d2 -k32 -n1 -p
+$ test-dict -d2 -k32 -n2
+$ test-dict -d2 -k32 -n2 -p
+$ test-dict -d2 -k32 -n4
+$ test-dict -d2 -k32 -n4 -p
+$ test-dict -d2 -k64 -n1
+$ test-dict -d2 -k64 -n1 -p
+$ test-dict -d2 -k64 -n2
+$ test-dict -d2 -k64 -n2 -p
+$ test-dict -d2 -k64 -n4
+$ test-dict -d2 -k64 -n4 -p
+$ test-dict -d2 -k128 -n1
+json.so: fatal error: AST pool alloc failed
+command failed: test-dict -d2 -k128 -n1
+$ test-dict -d2 -k128 -n1 -p
+json.so: fatal error: AST pool alloc failed
+command failed: test-dict -d2 -k128 -n1 -p
+$ test-dict -d2 -k128 -n2
+json.so: fatal error: AST pool alloc failed
+command failed: test-dict -d2 -k128 -n2
+$ test-dict -d2 -k128 -n2 -p
+json.so: fatal error: AST pool alloc failed
+command failed: test-dict -d2 -k128 -n2 -p
+$ test-dict -d2 -k128 -n4
+$ test-dict -d2 -k128 -n4 -p
+$ test-dict -d3 -k4 -n1
+$ test-dict -d3 -k4 -n1 -p
+$ test-dict -d3 -k4 -n2
+$ test-dict -d3 -k4 -n2 -p
+$ test-dict -d3 -k4 -n4
+$ test-dict -d3 -k4 -n4 -p
+$ test-dict -d3 -k8 -n1
+$ test-dict -d3 -k8 -n1 -p
+$ test-dict -d3 -k8 -n2
+$ test-dict -d3 -k8 -n2 -p
+$ test-dict -d3 -k8 -n4
+$ test-dict -d3 -k8 -n4 -p
+$ test-dict -d3 -k16 -n1
+$ test-dict -d3 -k16 -n1 -p
+$ test-dict -d3 -k16 -n2
+$ test-dict -d3 -k16 -n2 -p
+$ test-dict -d3 -k16 -n4
+$ test-dict -d3 -k16 -n4 -p
+$ test-dict -d3 -k32 -n1
+json.so: fatal error: AST pool alloc failed
+command failed: test-dict -d3 -k32 -n1
+$ test-dict -d3 -k32 -n1 -p
+json: error: /dev/fd/??: type lib error: system error: file read: File too large
+command failed: test-dict -d3 -k32 -n1 -p
+$ test-dict -d3 -k32 -n2
+$ test-dict -d3 -k32 -n2 -p
+$ test-dict -d3 -k32 -n4
+$ test-dict -d3 -k32 -n4 -p
+$ test-dict -d3 -k64 -n1
+json: error: /dev/fd/??: type lib error: system error: file read: File too large
+command failed: test-dict -d3 -k64 -n1
+$ test-dict -d3 -k64 -n1 -p
+json: error: /dev/fd/??: type lib error: system error: file read: File too large
+command failed: test-dict -d3 -k64 -n1 -p
+$ test-dict -d3 -k64 -n2
+json: error: /dev/fd/??: type lib error: system error: file read: File too large
+command failed: test-dict -d3 -k64 -n2
+$ test-dict -d3 -k64 -n2 -p
+json: error: /dev/fd/??: type lib error: system error: file read: File too large
+command failed: test-dict -d3 -k64 -n2 -p
+$ test-dict -d3 -k64 -n4
+$ test-dict -d3 -k64 -n4 -p
+$ test-dict -d3 -k128 -n1
+json: error: /dev/fd/??: type lib error: system error: file read: File too large
+command failed: test-dict -d3 -k128 -n1
+$ test-dict -d3 -k128 -n1 -p
+json: error: /dev/fd/??: type lib error: system error: file read: File too large
+command failed: test-dict -d3 -k128 -n1 -p
+$ test-dict -d3 -k128 -n2
+json: error: /dev/fd/??: type lib error: system error: file read: File too large
+command failed: test-dict -d3 -k128 -n2
+$ test-dict -d3 -k128 -n2 -p
+json: error: /dev/fd/??: type lib error: system error: file read: File too large
+command failed: test-dict -d3 -k128 -n2 -p
+$ test-dict -d3 -k128 -n4
+json: error: /dev/fd/??: type lib error: system error: file read: File too large
+command failed: test-dict -d3 -k128 -n4
+$ test-dict -d3 -k128 -n4 -p
+json: error: /dev/fd/??: type lib error: system error: file read: File too large
+command failed: test-dict -d3 -k128 -n4 -p
+$ test-dict -d4 -k4 -n1
+$ test-dict -d4 -k4 -n1 -p
+$ test-dict -d4 -k4 -n2
+$ test-dict -d4 -k4 -n2 -p
+$ test-dict -d4 -k4 -n4
+$ test-dict -d4 -k4 -n4 -p
+$ test-dict -d4 -k8 -n1
+$ test-dict -d4 -k8 -n1 -p
+$ test-dict -d4 -k8 -n2
+$ test-dict -d4 -k8 -n2 -p
+$ test-dict -d4 -k8 -n4
+$ test-dict -d4 -k8 -n4 -p
+$ test-dict -d4 -k16 -n1
+json: error: /dev/fd/??: type lib error: system error: file read: File too large
+command failed: test-dict -d4 -k16 -n1
+$ test-dict -d4 -k16 -n1 -p
+json: error: /dev/fd/??: type lib error: system error: file read: File too large
+command failed: test-dict -d4 -k16 -n1 -p
+$ test-dict -d4 -k16 -n2
+$ test-dict -d4 -k16 -n2 -p
+$ test-dict -d4 -k16 -n4
+$ test-dict -d4 -k16 -n4 -p
+$ test-dict -d4 -k32 -n1
+json: error: /dev/fd/??: type lib error: system error: file read: File too large
+command failed: test-dict -d4 -k32 -n1
+$ test-dict -d4 -k32 -n1 -p
+json: error: /dev/fd/??: type lib error: system error: file read: File too large
+command failed: test-dict -d4 -k32 -n1 -p
+$ test-dict -d4 -k32 -n2
+json.so: fatal error: AST pool alloc failed
+command failed: test-dict -d4 -k32 -n2
+$ test-dict -d4 -k32 -n2 -p
+json.so: fatal error: AST pool alloc failed
+command failed: test-dict -d4 -k32 -n2 -p
+$ test-dict -d4 -k32 -n4
+$ test-dict -d4 -k32 -n4 -p
+$ test-dict -d4 -k64 -n1
+json: error: /dev/fd/??: type lib error: system error: file read: File too large
+command failed: test-dict -d4 -k64 -n1
+$ test-dict -d4 -k64 -n1 -p
+json: error: /dev/fd/??: type lib error: system error: file read: File too large
+command failed: test-dict -d4 -k64 -n1 -p
+$ test-dict -d4 -k64 -n2
+json: error: /dev/fd/??: type lib error: system error: file read: File too large
+command failed: test-dict -d4 -k64 -n2
+$ test-dict -d4 -k64 -n2 -p
+json: error: /dev/fd/??: type lib error: system error: file read: File too large
+command failed: test-dict -d4 -k64 -n2 -p
+$ test-dict -d4 -k64 -n4
+json.so: fatal error: AST pool alloc failed
+command failed: test-dict -d4 -k64 -n4
+$ test-dict -d4 -k64 -n4 -p
+json.so: fatal error: AST pool alloc failed
+command failed: test-dict -d4 -k64 -n4 -p
+$ test-dict -d4 -k128 -n1
+json: error: /dev/fd/??: type lib error: system error: file read: File too large
+command failed: test-dict -d4 -k128 -n1
+$ test-dict -d4 -k128 -n1 -p
+json: error: /dev/fd/??: type lib error: system error: file read: File too large
+command failed: test-dict -d4 -k128 -n1 -p
+$ test-dict -d4 -k128 -n2
+json: error: /dev/fd/??: type lib error: system error: file read: File too large
+command failed: test-dict -d4 -k128 -n2
+$ test-dict -d4 -k128 -n2 -p
+json: error: /dev/fd/??: type lib error: system error: file read: File too large
+command failed: test-dict -d4 -k128 -n2 -p
+$ test-dict -d4 -k128 -n4
+json: error: /dev/fd/??: type lib error: system error: file read: File too large
+command failed: test-dict -d4 -k128 -n4
+$ test-dict -d4 -k128 -n4 -p
+json: error: /dev/fd/??: type lib error: system error: file read: File too large
+command failed: test-dict -d4 -k128 -n4 -p
+$
+
 

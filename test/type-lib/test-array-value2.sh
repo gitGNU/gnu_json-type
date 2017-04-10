@@ -93,6 +93,11 @@ json: error: <stdin>:1:9: meta error: invalid array: element is neither a type n
 json: error: <stdin>:1:9: ["type","list"]
 json: error: <stdin>:1:9:         ^
 command failed: json <<< '\''["type","list"]'\''
+$ json <<< '\''["type","dict"]'\''
+json: error: <stdin>:1:9: meta error: invalid array: element is neither a type nor a "name" object
+json: error: <stdin>:1:9: ["type","dict"]
+json: error: <stdin>:1:9:         ^
+command failed: json <<< '\''["type","dict"]'\''
 $ json <<< '\''["type",{}]'\''
 json: error: <stdin>:1:9: meta error: empty objects are not allowed
 json: error: <stdin>:1:9: ["type",{}]
@@ -183,6 +188,11 @@ json: error: <stdin>:1:9: meta error: invalid array: element is neither a type n
 json: error: <stdin>:1:9: ["null","list"]
 json: error: <stdin>:1:9:         ^
 command failed: json <<< '\''["null","list"]'\''
+$ json <<< '\''["null","dict"]'\''
+json: error: <stdin>:1:9: meta error: invalid array: element is neither a type nor a "name" object
+json: error: <stdin>:1:9: ["null","dict"]
+json: error: <stdin>:1:9:         ^
+command failed: json <<< '\''["null","dict"]'\''
 $ json <<< '\''["null",{}]'\''
 json: error: <stdin>:1:9: meta error: empty objects are not allowed
 json: error: <stdin>:1:9: ["null",{}]
@@ -273,6 +283,11 @@ json: error: <stdin>:1:12: meta error: invalid array: element is neither a type 
 json: error: <stdin>:1:12: ["boolean","list"]
 json: error: <stdin>:1:12:            ^
 command failed: json <<< '\''["boolean","list"]'\''
+$ json <<< '\''["boolean","dict"]'\''
+json: error: <stdin>:1:12: meta error: invalid array: element is neither a type nor a "name" object
+json: error: <stdin>:1:12: ["boolean","dict"]
+json: error: <stdin>:1:12:            ^
+command failed: json <<< '\''["boolean","dict"]'\''
 $ json <<< '\''["boolean",{}]'\''
 json: error: <stdin>:1:12: meta error: empty objects are not allowed
 json: error: <stdin>:1:12: ["boolean",{}]
@@ -363,6 +378,11 @@ json: error: <stdin>:1:11: meta error: invalid array: element is neither a type 
 json: error: <stdin>:1:11: ["number","list"]
 json: error: <stdin>:1:11:           ^
 command failed: json <<< '\''["number","list"]'\''
+$ json <<< '\''["number","dict"]'\''
+json: error: <stdin>:1:11: meta error: invalid array: element is neither a type nor a "name" object
+json: error: <stdin>:1:11: ["number","dict"]
+json: error: <stdin>:1:11:           ^
+command failed: json <<< '\''["number","dict"]'\''
 $ json <<< '\''["number",{}]'\''
 json: error: <stdin>:1:11: meta error: empty objects are not allowed
 json: error: <stdin>:1:11: ["number",{}]
@@ -453,6 +473,11 @@ json: error: <stdin>:1:11: meta error: invalid array: element is neither a type 
 json: error: <stdin>:1:11: ["string","list"]
 json: error: <stdin>:1:11:           ^
 command failed: json <<< '\''["string","list"]'\''
+$ json <<< '\''["string","dict"]'\''
+json: error: <stdin>:1:11: meta error: invalid array: element is neither a type nor a "name" object
+json: error: <stdin>:1:11: ["string","dict"]
+json: error: <stdin>:1:11:           ^
+command failed: json <<< '\''["string","dict"]'\''
 $ json <<< '\''["string",{}]'\''
 json: error: <stdin>:1:11: meta error: empty objects are not allowed
 json: error: <stdin>:1:11: ["string",{}]
@@ -543,6 +568,11 @@ json: error: <stdin>:1:11: meta error: invalid array: element is neither a type 
 json: error: <stdin>:1:11: ["object","list"]
 json: error: <stdin>:1:11:           ^
 command failed: json <<< '\''["object","list"]'\''
+$ json <<< '\''["object","dict"]'\''
+json: error: <stdin>:1:11: meta error: invalid array: element is neither a type nor a "name" object
+json: error: <stdin>:1:11: ["object","dict"]
+json: error: <stdin>:1:11:           ^
+command failed: json <<< '\''["object","dict"]'\''
 $ json <<< '\''["object",{}]'\''
 json: error: <stdin>:1:11: meta error: empty objects are not allowed
 json: error: <stdin>:1:11: ["object",{}]
@@ -633,6 +663,11 @@ json: error: <stdin>:1:10: meta error: invalid array: element is neither a type 
 json: error: <stdin>:1:10: ["array","list"]
 json: error: <stdin>:1:10:          ^
 command failed: json <<< '\''["array","list"]'\''
+$ json <<< '\''["array","dict"]'\''
+json: error: <stdin>:1:10: meta error: invalid array: element is neither a type nor a "name" object
+json: error: <stdin>:1:10: ["array","dict"]
+json: error: <stdin>:1:10:          ^
+command failed: json <<< '\''["array","dict"]'\''
 $ json <<< '\''["array",{}]'\''
 json: error: <stdin>:1:10: meta error: empty objects are not allowed
 json: error: <stdin>:1:10: ["array",{}]
@@ -723,6 +758,11 @@ json: error: <stdin>:1:17: meta error: invalid array: element is neither a type 
 json: error: <stdin>:1:17: [{"plain":null},"list"]
 json: error: <stdin>:1:17:                 ^
 command failed: json <<< '\''[{"plain":null},"list"]'\''
+$ json <<< '\''[{"plain":null},"dict"]'\''
+json: error: <stdin>:1:17: meta error: invalid array: element is neither a type nor a "name" object
+json: error: <stdin>:1:17: [{"plain":null},"dict"]
+json: error: <stdin>:1:17:                 ^
+command failed: json <<< '\''[{"plain":null},"dict"]'\''
 $ json <<< '\''[{"plain":null},{}]'\''
 json: error: <stdin>:1:17: meta error: empty objects are not allowed
 json: error: <stdin>:1:17: [{"plain":null},{}]
@@ -813,6 +853,11 @@ json: error: <stdin>:1:33: meta error: invalid array: element is neither a type 
 json: error: <stdin>:1:33: [{"type":"array","args":"type"},"list"]
 json: error: <stdin>:1:33:                                 ^
 command failed: json <<< '\''[{"type":"array","args":"type"},"list"]'\''
+$ json <<< '\''[{"type":"array","args":"type"},"dict"]'\''
+json: error: <stdin>:1:33: meta error: invalid array: element is neither a type nor a "name" object
+json: error: <stdin>:1:33: [{"type":"array","args":"type"},"dict"]
+json: error: <stdin>:1:33:                                 ^
+command failed: json <<< '\''[{"type":"array","args":"type"},"dict"]'\''
 $ json <<< '\''[{"type":"array","args":"type"},{}]'\''
 json: error: <stdin>:1:33: meta error: empty objects are not allowed
 json: error: <stdin>:1:33: [{"type":"array","args":"type"},{}]
@@ -903,6 +948,11 @@ json: error: <stdin>:1:33: meta error: invalid array: element is neither a type 
 json: error: <stdin>:1:33: [{"name":"baz","type":"object"},"list"]
 json: error: <stdin>:1:33:                                 ^
 command failed: json <<< '\''[{"name":"baz","type":"object"},"list"]'\''
+$ json <<< '\''[{"name":"baz","type":"object"},"dict"]'\''
+json: error: <stdin>:1:33: meta error: invalid array: element is neither a type nor a "name" object
+json: error: <stdin>:1:33: [{"name":"baz","type":"object"},"dict"]
+json: error: <stdin>:1:33:                                 ^
+command failed: json <<< '\''[{"name":"baz","type":"object"},"dict"]'\''
 $ json <<< '\''[{"name":"baz","type":"object"},{}]'\''
 json: error: <stdin>:1:33: meta error: empty objects are not allowed
 json: error: <stdin>:1:33: [{"name":"baz","type":"object"},{}]
@@ -995,6 +1045,10 @@ echo '$ json <<< '\''["type","list"]'\'''
 json <<< '["type","list"]' 2>&1 ||
 echo 'command failed: json <<< '\''["type","list"]'\'''
 
+echo '$ json <<< '\''["type","dict"]'\'''
+json <<< '["type","dict"]' 2>&1 ||
+echo 'command failed: json <<< '\''["type","dict"]'\'''
+
 echo '$ json <<< '\''["type",{}]'\'''
 json <<< '["type",{}]' 2>&1 ||
 echo 'command failed: json <<< '\''["type",{}]'\'''
@@ -1066,6 +1120,10 @@ echo 'command failed: json <<< '\''["null","array"]'\'''
 echo '$ json <<< '\''["null","list"]'\'''
 json <<< '["null","list"]' 2>&1 ||
 echo 'command failed: json <<< '\''["null","list"]'\'''
+
+echo '$ json <<< '\''["null","dict"]'\'''
+json <<< '["null","dict"]' 2>&1 ||
+echo 'command failed: json <<< '\''["null","dict"]'\'''
 
 echo '$ json <<< '\''["null",{}]'\'''
 json <<< '["null",{}]' 2>&1 ||
@@ -1139,6 +1197,10 @@ echo '$ json <<< '\''["boolean","list"]'\'''
 json <<< '["boolean","list"]' 2>&1 ||
 echo 'command failed: json <<< '\''["boolean","list"]'\'''
 
+echo '$ json <<< '\''["boolean","dict"]'\'''
+json <<< '["boolean","dict"]' 2>&1 ||
+echo 'command failed: json <<< '\''["boolean","dict"]'\'''
+
 echo '$ json <<< '\''["boolean",{}]'\'''
 json <<< '["boolean",{}]' 2>&1 ||
 echo 'command failed: json <<< '\''["boolean",{}]'\'''
@@ -1210,6 +1272,10 @@ echo 'command failed: json <<< '\''["number","array"]'\'''
 echo '$ json <<< '\''["number","list"]'\'''
 json <<< '["number","list"]' 2>&1 ||
 echo 'command failed: json <<< '\''["number","list"]'\'''
+
+echo '$ json <<< '\''["number","dict"]'\'''
+json <<< '["number","dict"]' 2>&1 ||
+echo 'command failed: json <<< '\''["number","dict"]'\'''
 
 echo '$ json <<< '\''["number",{}]'\'''
 json <<< '["number",{}]' 2>&1 ||
@@ -1283,6 +1349,10 @@ echo '$ json <<< '\''["string","list"]'\'''
 json <<< '["string","list"]' 2>&1 ||
 echo 'command failed: json <<< '\''["string","list"]'\'''
 
+echo '$ json <<< '\''["string","dict"]'\'''
+json <<< '["string","dict"]' 2>&1 ||
+echo 'command failed: json <<< '\''["string","dict"]'\'''
+
 echo '$ json <<< '\''["string",{}]'\'''
 json <<< '["string",{}]' 2>&1 ||
 echo 'command failed: json <<< '\''["string",{}]'\'''
@@ -1354,6 +1424,10 @@ echo 'command failed: json <<< '\''["object","array"]'\'''
 echo '$ json <<< '\''["object","list"]'\'''
 json <<< '["object","list"]' 2>&1 ||
 echo 'command failed: json <<< '\''["object","list"]'\'''
+
+echo '$ json <<< '\''["object","dict"]'\'''
+json <<< '["object","dict"]' 2>&1 ||
+echo 'command failed: json <<< '\''["object","dict"]'\'''
 
 echo '$ json <<< '\''["object",{}]'\'''
 json <<< '["object",{}]' 2>&1 ||
@@ -1427,6 +1501,10 @@ echo '$ json <<< '\''["array","list"]'\'''
 json <<< '["array","list"]' 2>&1 ||
 echo 'command failed: json <<< '\''["array","list"]'\'''
 
+echo '$ json <<< '\''["array","dict"]'\'''
+json <<< '["array","dict"]' 2>&1 ||
+echo 'command failed: json <<< '\''["array","dict"]'\'''
+
 echo '$ json <<< '\''["array",{}]'\'''
 json <<< '["array",{}]' 2>&1 ||
 echo 'command failed: json <<< '\''["array",{}]'\'''
@@ -1498,6 +1576,10 @@ echo 'command failed: json <<< '\''[{"plain":null},"array"]'\'''
 echo '$ json <<< '\''[{"plain":null},"list"]'\'''
 json <<< '[{"plain":null},"list"]' 2>&1 ||
 echo 'command failed: json <<< '\''[{"plain":null},"list"]'\'''
+
+echo '$ json <<< '\''[{"plain":null},"dict"]'\'''
+json <<< '[{"plain":null},"dict"]' 2>&1 ||
+echo 'command failed: json <<< '\''[{"plain":null},"dict"]'\'''
 
 echo '$ json <<< '\''[{"plain":null},{}]'\'''
 json <<< '[{"plain":null},{}]' 2>&1 ||
@@ -1571,6 +1653,10 @@ echo '$ json <<< '\''[{"type":"array","args":"type"},"list"]'\'''
 json <<< '[{"type":"array","args":"type"},"list"]' 2>&1 ||
 echo 'command failed: json <<< '\''[{"type":"array","args":"type"},"list"]'\'''
 
+echo '$ json <<< '\''[{"type":"array","args":"type"},"dict"]'\'''
+json <<< '[{"type":"array","args":"type"},"dict"]' 2>&1 ||
+echo 'command failed: json <<< '\''[{"type":"array","args":"type"},"dict"]'\'''
+
 echo '$ json <<< '\''[{"type":"array","args":"type"},{}]'\'''
 json <<< '[{"type":"array","args":"type"},{}]' 2>&1 ||
 echo 'command failed: json <<< '\''[{"type":"array","args":"type"},{}]'\'''
@@ -1642,6 +1728,10 @@ echo 'command failed: json <<< '\''[{"name":"baz","type":"object"},"array"]'\'''
 echo '$ json <<< '\''[{"name":"baz","type":"object"},"list"]'\'''
 json <<< '[{"name":"baz","type":"object"},"list"]' 2>&1 ||
 echo 'command failed: json <<< '\''[{"name":"baz","type":"object"},"list"]'\'''
+
+echo '$ json <<< '\''[{"name":"baz","type":"object"},"dict"]'\'''
+json <<< '[{"name":"baz","type":"object"},"dict"]' 2>&1 ||
+echo 'command failed: json <<< '\''[{"name":"baz","type":"object"},"dict"]'\'''
 
 echo '$ json <<< '\''[{"name":"baz","type":"object"},{}]'\'''
 json <<< '[{"name":"baz","type":"object"},{}]' 2>&1 ||

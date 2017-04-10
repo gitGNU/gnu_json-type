@@ -107,6 +107,11 @@ json: error: <stdin>:1:25: meta error: invalid array: element is neither a type 
 json: error: <stdin>:1:25: {"type":"array","args":["list"]}
 json: error: <stdin>:1:25:                         ^
 command failed: json <<< '\''{"type":"array","args":["list"]}'\''
+$ json <<< '\''{"type":"array","args":["dict"]}'\''
+json: error: <stdin>:1:25: meta error: invalid array: element is neither a type nor a "name" object
+json: error: <stdin>:1:25: {"type":"array","args":["dict"]}
+json: error: <stdin>:1:25:                         ^
+command failed: json <<< '\''{"type":"array","args":["dict"]}'\''
 $ json <<< '\''{"type":"array","args":[{}]}'\''
 json: error: <stdin>:1:25: meta error: empty objects are not allowed
 json: error: <stdin>:1:25: {"type":"array","args":[{}]}
@@ -222,6 +227,10 @@ echo 'command failed: json <<< '\''{"type":"array","args":["array"]}'\'''
 echo '$ json <<< '\''{"type":"array","args":["list"]}'\'''
 json <<< '{"type":"array","args":["list"]}' 2>&1 ||
 echo 'command failed: json <<< '\''{"type":"array","args":["list"]}'\'''
+
+echo '$ json <<< '\''{"type":"array","args":["dict"]}'\'''
+json <<< '{"type":"array","args":["dict"]}' 2>&1 ||
+echo 'command failed: json <<< '\''{"type":"array","args":["dict"]}'\'''
 
 echo '$ json <<< '\''{"type":"array","args":[{}]}'\'''
 json <<< '{"type":"array","args":[{}]}' 2>&1 ||

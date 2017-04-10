@@ -93,6 +93,11 @@ json: error: <stdin>:1:1: meta error: invalid "name" object: arguments not of si
 json: error: <stdin>:1:1: {"name":"list"}
 json: error: <stdin>:1:1: ^
 command failed: json <<< '\''{"name":"list"}'\''
+$ json <<< '\''{"name":"dict"}'\''
+json: error: <stdin>:1:1: meta error: invalid "name" object: arguments not of size two
+json: error: <stdin>:1:1: {"name":"dict"}
+json: error: <stdin>:1:1: ^
+command failed: json <<< '\''{"name":"dict"}'\''
 $ json <<< '\''{"name":{}}'\''
 json: error: <stdin>:1:1: meta error: invalid "name" object: arguments not of size two
 json: error: <stdin>:1:1: {"name":{}}
@@ -169,6 +174,10 @@ echo 'command failed: json <<< '\''{"name":"array"}'\'''
 echo '$ json <<< '\''{"name":"list"}'\'''
 json <<< '{"name":"list"}' 2>&1 ||
 echo 'command failed: json <<< '\''{"name":"list"}'\'''
+
+echo '$ json <<< '\''{"name":"dict"}'\'''
+json <<< '{"name":"dict"}' 2>&1 ||
+echo 'command failed: json <<< '\''{"name":"dict"}'\'''
 
 echo '$ json <<< '\''{"name":{}}'\'''
 json <<< '{"name":{}}' 2>&1 ||

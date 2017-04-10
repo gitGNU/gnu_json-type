@@ -93,6 +93,11 @@ json: error: <stdin>:1:2: meta error: invalid first key of object: it must be "t
 json: error: <stdin>:1:2: {"foo":"list"}
 json: error: <stdin>:1:2:  ^
 command failed: json <<< '\''{"foo":"list"}'\''
+$ json <<< '\''{"foo":"dict"}'\''
+json: error: <stdin>:1:2: meta error: invalid first key of object: it must be "type", "name" or "plain"
+json: error: <stdin>:1:2: {"foo":"dict"}
+json: error: <stdin>:1:2:  ^
+command failed: json <<< '\''{"foo":"dict"}'\''
 $ json <<< '\''{"foo":{}}'\''
 json: error: <stdin>:1:2: meta error: invalid first key of object: it must be "type", "name" or "plain"
 json: error: <stdin>:1:2: {"foo":{}}
@@ -114,52 +119,52 @@ json: error: <stdin>:1:2: {"foo":["foo","bar"]}
 json: error: <stdin>:1:2:  ^
 command failed: json <<< '\''{"foo":["foo","bar"]}'\''
 $ json <<< '\''{"type":null}'\''
-json: error: <stdin>:1:9: meta error: invalid "type" object: type not "object", "array" or "list"
+json: error: <stdin>:1:9: meta error: invalid "type" object: type not "object", "array", "list" or "dict"
 json: error: <stdin>:1:9: {"type":null}
 json: error: <stdin>:1:9:         ^
 command failed: json <<< '\''{"type":null}'\''
 $ json <<< '\''{"type":false}'\''
-json: error: <stdin>:1:9: meta error: invalid "type" object: type not "object", "array" or "list"
+json: error: <stdin>:1:9: meta error: invalid "type" object: type not "object", "array", "list" or "dict"
 json: error: <stdin>:1:9: {"type":false}
 json: error: <stdin>:1:9:         ^
 command failed: json <<< '\''{"type":false}'\''
 $ json <<< '\''{"type":true}'\''
-json: error: <stdin>:1:9: meta error: invalid "type" object: type not "object", "array" or "list"
+json: error: <stdin>:1:9: meta error: invalid "type" object: type not "object", "array", "list" or "dict"
 json: error: <stdin>:1:9: {"type":true}
 json: error: <stdin>:1:9:         ^
 command failed: json <<< '\''{"type":true}'\''
 $ json <<< '\''{"type":123}'\''
-json: error: <stdin>:1:9: meta error: invalid "type" object: type not "object", "array" or "list"
+json: error: <stdin>:1:9: meta error: invalid "type" object: type not "object", "array", "list" or "dict"
 json: error: <stdin>:1:9: {"type":123}
 json: error: <stdin>:1:9:         ^
 command failed: json <<< '\''{"type":123}'\''
 $ json <<< '\''{"type":"foo"}'\''
-json: error: <stdin>:1:9: meta error: invalid "type" object: type not "object", "array" or "list"
+json: error: <stdin>:1:9: meta error: invalid "type" object: type not "object", "array", "list" or "dict"
 json: error: <stdin>:1:9: {"type":"foo"}
 json: error: <stdin>:1:9:         ^
 command failed: json <<< '\''{"type":"foo"}'\''
 $ json <<< '\''{"type":"type"}'\''
-json: error: <stdin>:1:9: meta error: invalid "type" object: type not "object", "array" or "list"
+json: error: <stdin>:1:9: meta error: invalid "type" object: type not "object", "array", "list" or "dict"
 json: error: <stdin>:1:9: {"type":"type"}
 json: error: <stdin>:1:9:         ^
 command failed: json <<< '\''{"type":"type"}'\''
 $ json <<< '\''{"type":"null"}'\''
-json: error: <stdin>:1:9: meta error: invalid "type" object: type not "object", "array" or "list"
+json: error: <stdin>:1:9: meta error: invalid "type" object: type not "object", "array", "list" or "dict"
 json: error: <stdin>:1:9: {"type":"null"}
 json: error: <stdin>:1:9:         ^
 command failed: json <<< '\''{"type":"null"}'\''
 $ json <<< '\''{"type":"boolean"}'\''
-json: error: <stdin>:1:9: meta error: invalid "type" object: type not "object", "array" or "list"
+json: error: <stdin>:1:9: meta error: invalid "type" object: type not "object", "array", "list" or "dict"
 json: error: <stdin>:1:9: {"type":"boolean"}
 json: error: <stdin>:1:9:         ^
 command failed: json <<< '\''{"type":"boolean"}'\''
 $ json <<< '\''{"type":"number"}'\''
-json: error: <stdin>:1:9: meta error: invalid "type" object: type not "object", "array" or "list"
+json: error: <stdin>:1:9: meta error: invalid "type" object: type not "object", "array", "list" or "dict"
 json: error: <stdin>:1:9: {"type":"number"}
 json: error: <stdin>:1:9:         ^
 command failed: json <<< '\''{"type":"number"}'\''
 $ json <<< '\''{"type":"string"}'\''
-json: error: <stdin>:1:9: meta error: invalid "type" object: type not "object", "array" or "list"
+json: error: <stdin>:1:9: meta error: invalid "type" object: type not "object", "array", "list" or "dict"
 json: error: <stdin>:1:9: {"type":"string"}
 json: error: <stdin>:1:9:         ^
 command failed: json <<< '\''{"type":"string"}'\''
@@ -178,23 +183,28 @@ json: error: <stdin>:1:1: meta error: invalid "type" object: arguments not of si
 json: error: <stdin>:1:1: {"type":"list"}
 json: error: <stdin>:1:1: ^
 command failed: json <<< '\''{"type":"list"}'\''
+$ json <<< '\''{"type":"dict"}'\''
+json: error: <stdin>:1:1: meta error: invalid "type" object: arguments not of size two
+json: error: <stdin>:1:1: {"type":"dict"}
+json: error: <stdin>:1:1: ^
+command failed: json <<< '\''{"type":"dict"}'\''
 $ json <<< '\''{"type":{}}'\''
-json: error: <stdin>:1:9: meta error: invalid "type" object: type not "object", "array" or "list"
+json: error: <stdin>:1:9: meta error: invalid "type" object: type not "object", "array", "list" or "dict"
 json: error: <stdin>:1:9: {"type":{}}
 json: error: <stdin>:1:9:         ^
 command failed: json <<< '\''{"type":{}}'\''
 $ json <<< '\''{"type":{"foo":"bar"}}'\''
-json: error: <stdin>:1:9: meta error: invalid "type" object: type not "object", "array" or "list"
+json: error: <stdin>:1:9: meta error: invalid "type" object: type not "object", "array", "list" or "dict"
 json: error: <stdin>:1:9: {"type":{"foo":"bar"}}
 json: error: <stdin>:1:9:         ^
 command failed: json <<< '\''{"type":{"foo":"bar"}}'\''
 $ json <<< '\''{"type":[]}'\''
-json: error: <stdin>:1:9: meta error: invalid "type" object: type not "object", "array" or "list"
+json: error: <stdin>:1:9: meta error: invalid "type" object: type not "object", "array", "list" or "dict"
 json: error: <stdin>:1:9: {"type":[]}
 json: error: <stdin>:1:9:         ^
 command failed: json <<< '\''{"type":[]}'\''
 $ json <<< '\''{"type":["foo","bar"]}'\''
-json: error: <stdin>:1:9: meta error: invalid "type" object: type not "object", "array" or "list"
+json: error: <stdin>:1:9: meta error: invalid "type" object: type not "object", "array", "list" or "dict"
 json: error: <stdin>:1:9: {"type":["foo","bar"]}
 json: error: <stdin>:1:9:         ^
 command failed: json <<< '\''{"type":["foo","bar"]}'\''
@@ -263,6 +273,11 @@ json: error: <stdin>:1:1: meta error: invalid "name" object: arguments not of si
 json: error: <stdin>:1:1: {"name":"list"}
 json: error: <stdin>:1:1: ^
 command failed: json <<< '\''{"name":"list"}'\''
+$ json <<< '\''{"name":"dict"}'\''
+json: error: <stdin>:1:1: meta error: invalid "name" object: arguments not of size two
+json: error: <stdin>:1:1: {"name":"dict"}
+json: error: <stdin>:1:1: ^
+command failed: json <<< '\''{"name":"dict"}'\''
 $ json <<< '\''{"name":{}}'\''
 json: error: <stdin>:1:1: meta error: invalid "name" object: arguments not of size two
 json: error: <stdin>:1:1: {"name":{}}
@@ -334,6 +349,10 @@ $ json <<< '\''{"plain":"array"}'\''
 $ json <<< '\''{"plain":"list"}'\''
 {
     "plain": "list"
+}
+$ json <<< '\''{"plain":"dict"}'\''
+{
+    "plain": "dict"
 }
 $ json <<< '\''{"plain":{}}'\''
 json: error: <stdin>:1:10: meta error: invalid "plain" object: value must be `null'\'', a boolean, a number or a string
@@ -412,6 +431,10 @@ echo '$ json <<< '\''{"foo":"list"}'\'''
 json <<< '{"foo":"list"}' 2>&1 ||
 echo 'command failed: json <<< '\''{"foo":"list"}'\'''
 
+echo '$ json <<< '\''{"foo":"dict"}'\'''
+json <<< '{"foo":"dict"}' 2>&1 ||
+echo 'command failed: json <<< '\''{"foo":"dict"}'\'''
+
 echo '$ json <<< '\''{"foo":{}}'\'''
 json <<< '{"foo":{}}' 2>&1 ||
 echo 'command failed: json <<< '\''{"foo":{}}'\'''
@@ -479,6 +502,10 @@ echo 'command failed: json <<< '\''{"type":"array"}'\'''
 echo '$ json <<< '\''{"type":"list"}'\'''
 json <<< '{"type":"list"}' 2>&1 ||
 echo 'command failed: json <<< '\''{"type":"list"}'\'''
+
+echo '$ json <<< '\''{"type":"dict"}'\'''
+json <<< '{"type":"dict"}' 2>&1 ||
+echo 'command failed: json <<< '\''{"type":"dict"}'\'''
 
 echo '$ json <<< '\''{"type":{}}'\'''
 json <<< '{"type":{}}' 2>&1 ||
@@ -548,6 +575,10 @@ echo '$ json <<< '\''{"name":"list"}'\'''
 json <<< '{"name":"list"}' 2>&1 ||
 echo 'command failed: json <<< '\''{"name":"list"}'\'''
 
+echo '$ json <<< '\''{"name":"dict"}'\'''
+json <<< '{"name":"dict"}' 2>&1 ||
+echo 'command failed: json <<< '\''{"name":"dict"}'\'''
+
 echo '$ json <<< '\''{"name":{}}'\'''
 json <<< '{"name":{}}' 2>&1 ||
 echo 'command failed: json <<< '\''{"name":{}}'\'''
@@ -615,6 +646,10 @@ echo 'command failed: json <<< '\''{"plain":"array"}'\'''
 echo '$ json <<< '\''{"plain":"list"}'\'''
 json <<< '{"plain":"list"}' 2>&1 ||
 echo 'command failed: json <<< '\''{"plain":"list"}'\'''
+
+echo '$ json <<< '\''{"plain":"dict"}'\'''
+json <<< '{"plain":"dict"}' 2>&1 ||
+echo 'command failed: json <<< '\''{"plain":"dict"}'\'''
 
 echo '$ json <<< '\''{"plain":{}}'\'''
 json <<< '{"plain":{}}' 2>&1 ||

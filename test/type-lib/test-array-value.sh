@@ -93,6 +93,11 @@ json: error: <stdin>:1:2: meta error: invalid array: element is neither a type n
 json: error: <stdin>:1:2: ["list"]
 json: error: <stdin>:1:2:  ^
 command failed: json <<< '\''["list"]'\''
+$ json <<< '\''["dict"]'\''
+json: error: <stdin>:1:2: meta error: invalid array: element is neither a type nor a "name" object
+json: error: <stdin>:1:2: ["dict"]
+json: error: <stdin>:1:2:  ^
+command failed: json <<< '\''["dict"]'\''
 $ json <<< '\''[{}]'\''
 json: error: <stdin>:1:2: meta error: empty objects are not allowed
 json: error: <stdin>:1:2: [{}]
@@ -176,6 +181,10 @@ echo 'command failed: json <<< '\''["array"]'\'''
 echo '$ json <<< '\''["list"]'\'''
 json <<< '["list"]' 2>&1 ||
 echo 'command failed: json <<< '\''["list"]'\'''
+
+echo '$ json <<< '\''["dict"]'\'''
+json <<< '["dict"]' 2>&1 ||
+echo 'command failed: json <<< '\''["dict"]'\'''
 
 echo '$ json <<< '\''[{}]'\'''
 json <<< '[{}]' 2>&1 ||

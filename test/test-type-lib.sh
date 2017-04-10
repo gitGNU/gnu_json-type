@@ -56,6 +56,8 @@ for t in \
     object \
     open-array \
     closed-array \
+    dict \
+    dict-dup \
     list \
     list-any-type \
     list-any-type2 \
@@ -344,6 +346,7 @@ for t in \
     list-closed-array-array2-closed-array-array2 \
     list-closed-array-empty-open-array-any \
     list-list \
+    list-dict \
     list-dup \
     json-type
 do

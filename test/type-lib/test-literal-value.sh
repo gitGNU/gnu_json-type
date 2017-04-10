@@ -71,7 +71,12 @@ $ json <<< '\''"list"'\''
 json: error: <stdin>:1:1: meta error: invalid top value: it must be a type or an array of "name" objects
 json: error: <stdin>:1:1: "list"
 json: error: <stdin>:1:1: ^
-command failed: json <<< '\''"list"'\'''
+command failed: json <<< '\''"list"'\''
+$ json <<< '\''"dict"'\''
+json: error: <stdin>:1:1: meta error: invalid top value: it must be a type or an array of "name" objects
+json: error: <stdin>:1:1: "dict"
+json: error: <stdin>:1:1: ^
+command failed: json <<< '\''"dict"'\'''
 ) -L literal-value.new <(
 echo '$ json() { set -o pipefail && LD_LIBRARY_PATH=../lib ../src/json --literal-value -V -TA "$@"|LD_LIBRARY_PATH=../lib ../src/json --from-ast-print --verbose --no-error; }'
 json() { set -o pipefail && LD_LIBRARY_PATH=../lib ../src/json --literal-value -V -TA "$@"|LD_LIBRARY_PATH=../lib ../src/json --from-ast-print --verbose --no-error; } 2>&1 ||
@@ -128,5 +133,9 @@ echo 'command failed: json <<< '\''"array"'\'''
 echo '$ json <<< '\''"list"'\'''
 json <<< '"list"' 2>&1 ||
 echo 'command failed: json <<< '\''"list"'\'''
+
+echo '$ json <<< '\''"dict"'\'''
+json <<< '"dict"' 2>&1 ||
+echo 'command failed: json <<< '\''"dict"'\'''
 )
 

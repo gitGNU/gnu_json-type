@@ -93,6 +93,11 @@ json: error: <stdin>:1:1: meta error: invalid "type" object: key of second argum
 json: error: <stdin>:1:1: {"type":"object","foo":"list"}
 json: error: <stdin>:1:1: ^
 command failed: json <<< '\''{"type":"object","foo":"list"}'\''
+$ json <<< '\''{"type":"object","foo":"dict"}'\''
+json: error: <stdin>:1:1: meta error: invalid "type" object: key of second argument is not "args"
+json: error: <stdin>:1:1: {"type":"object","foo":"dict"}
+json: error: <stdin>:1:1: ^
+command failed: json <<< '\''{"type":"object","foo":"dict"}'\''
 $ json <<< '\''{"type":"object","foo":{}}'\''
 json: error: <stdin>:1:1: meta error: invalid "type" object: key of second argument is not "args"
 json: error: <stdin>:1:1: {"type":"object","foo":{}}
@@ -188,6 +193,11 @@ json: error: <stdin>:1:25: meta error: invalid "object" object: value of "args" 
 json: error: <stdin>:1:25: {"type":"object","args":"list"}
 json: error: <stdin>:1:25:                         ^
 command failed: json <<< '\''{"type":"object","args":"list"}'\''
+$ json <<< '\''{"type":"object","args":"dict"}'\''
+json: error: <stdin>:1:25: meta error: invalid "object" object: value of "args" must be an array of "name" objects
+json: error: <stdin>:1:25: {"type":"object","args":"dict"}
+json: error: <stdin>:1:25:                         ^
+command failed: json <<< '\''{"type":"object","args":"dict"}'\''
 $ json <<< '\''{"type":"object","args":{}}'\''
 json: error: <stdin>:1:25: meta error: empty objects are not allowed
 json: error: <stdin>:1:25: {"type":"object","args":{}}
@@ -288,6 +298,11 @@ json: error: <stdin>:1:1: meta error: invalid "type" object: key of second argum
 json: error: <stdin>:1:1: {"type":"array","foo":"list"}
 json: error: <stdin>:1:1: ^
 command failed: json <<< '\''{"type":"array","foo":"list"}'\''
+$ json <<< '\''{"type":"array","foo":"dict"}'\''
+json: error: <stdin>:1:1: meta error: invalid "type" object: key of second argument is not "args"
+json: error: <stdin>:1:1: {"type":"array","foo":"dict"}
+json: error: <stdin>:1:1: ^
+command failed: json <<< '\''{"type":"array","foo":"dict"}'\''
 $ json <<< '\''{"type":"array","foo":{}}'\''
 json: error: <stdin>:1:1: meta error: invalid "type" object: key of second argument is not "args"
 json: error: <stdin>:1:1: {"type":"array","foo":{}}
@@ -383,6 +398,11 @@ json: error: <stdin>:1:24: meta error: invalid "array" object: value of "args" m
 json: error: <stdin>:1:24: {"type":"array","args":"list"}
 json: error: <stdin>:1:24:                        ^
 command failed: json <<< '\''{"type":"array","args":"list"}'\''
+$ json <<< '\''{"type":"array","args":"dict"}'\''
+json: error: <stdin>:1:24: meta error: invalid "array" object: value of "args" must be a type or an array of types
+json: error: <stdin>:1:24: {"type":"array","args":"dict"}
+json: error: <stdin>:1:24:                        ^
+command failed: json <<< '\''{"type":"array","args":"dict"}'\''
 $ json <<< '\''{"type":"array","args":{}}'\''
 json: error: <stdin>:1:24: meta error: empty objects are not allowed
 json: error: <stdin>:1:24: {"type":"array","args":{}}
@@ -481,6 +501,11 @@ json: error: <stdin>:1:1: meta error: invalid "type" object: key of second argum
 json: error: <stdin>:1:1: {"type":"list","foo":"list"}
 json: error: <stdin>:1:1: ^
 command failed: json <<< '\''{"type":"list","foo":"list"}'\''
+$ json <<< '\''{"type":"list","foo":"dict"}'\''
+json: error: <stdin>:1:1: meta error: invalid "type" object: key of second argument is not "args"
+json: error: <stdin>:1:1: {"type":"list","foo":"dict"}
+json: error: <stdin>:1:1: ^
+command failed: json <<< '\''{"type":"list","foo":"dict"}'\''
 $ json <<< '\''{"type":"list","foo":{}}'\''
 json: error: <stdin>:1:1: meta error: invalid "type" object: key of second argument is not "args"
 json: error: <stdin>:1:1: {"type":"list","foo":{}}
@@ -576,6 +601,11 @@ json: error: <stdin>:1:23: meta error: invalid "list" object: value of "args" mu
 json: error: <stdin>:1:23: {"type":"list","args":"list"}
 json: error: <stdin>:1:23:                       ^
 command failed: json <<< '\''{"type":"list","args":"list"}'\''
+$ json <<< '\''{"type":"list","args":"dict"}'\''
+json: error: <stdin>:1:23: meta error: invalid "list" object: value of "args" must be an array of types
+json: error: <stdin>:1:23: {"type":"list","args":"dict"}
+json: error: <stdin>:1:23:                       ^
+command failed: json <<< '\''{"type":"list","args":"dict"}'\''
 $ json <<< '\''{"type":"list","args":{}}'\''
 json: error: <stdin>:1:23: meta error: empty objects are not allowed
 json: error: <stdin>:1:23: {"type":"list","args":{}}
@@ -644,7 +674,233 @@ $ json <<< '\''{"type":"list","args":["boolean","number"]}'\''
             "closed": null
         }
     }
-}'
+}
+$ json <<< '\''{"type":"dict","foo":null}'\''
+json: error: <stdin>:1:1: meta error: invalid "type" object: key of second argument is not "args"
+json: error: <stdin>:1:1: {"type":"dict","foo":null}
+json: error: <stdin>:1:1: ^
+command failed: json <<< '\''{"type":"dict","foo":null}'\''
+$ json <<< '\''{"type":"dict","foo":false}'\''
+json: error: <stdin>:1:1: meta error: invalid "type" object: key of second argument is not "args"
+json: error: <stdin>:1:1: {"type":"dict","foo":false}
+json: error: <stdin>:1:1: ^
+command failed: json <<< '\''{"type":"dict","foo":false}'\''
+$ json <<< '\''{"type":"dict","foo":true}'\''
+json: error: <stdin>:1:1: meta error: invalid "type" object: key of second argument is not "args"
+json: error: <stdin>:1:1: {"type":"dict","foo":true}
+json: error: <stdin>:1:1: ^
+command failed: json <<< '\''{"type":"dict","foo":true}'\''
+$ json <<< '\''{"type":"dict","foo":123}'\''
+json: error: <stdin>:1:1: meta error: invalid "type" object: key of second argument is not "args"
+json: error: <stdin>:1:1: {"type":"dict","foo":123}
+json: error: <stdin>:1:1: ^
+command failed: json <<< '\''{"type":"dict","foo":123}'\''
+$ json <<< '\''{"type":"dict","foo":"foo"}'\''
+json: error: <stdin>:1:1: meta error: invalid "type" object: key of second argument is not "args"
+json: error: <stdin>:1:1: {"type":"dict","foo":"foo"}
+json: error: <stdin>:1:1: ^
+command failed: json <<< '\''{"type":"dict","foo":"foo"}'\''
+$ json <<< '\''{"type":"dict","foo":"type"}'\''
+json: error: <stdin>:1:1: meta error: invalid "type" object: key of second argument is not "args"
+json: error: <stdin>:1:1: {"type":"dict","foo":"type"}
+json: error: <stdin>:1:1: ^
+command failed: json <<< '\''{"type":"dict","foo":"type"}'\''
+$ json <<< '\''{"type":"dict","foo":"null"}'\''
+json: error: <stdin>:1:1: meta error: invalid "type" object: key of second argument is not "args"
+json: error: <stdin>:1:1: {"type":"dict","foo":"null"}
+json: error: <stdin>:1:1: ^
+command failed: json <<< '\''{"type":"dict","foo":"null"}'\''
+$ json <<< '\''{"type":"dict","foo":"boolean"}'\''
+json: error: <stdin>:1:1: meta error: invalid "type" object: key of second argument is not "args"
+json: error: <stdin>:1:1: {"type":"dict","foo":"boolean"}
+json: error: <stdin>:1:1: ^
+command failed: json <<< '\''{"type":"dict","foo":"boolean"}'\''
+$ json <<< '\''{"type":"dict","foo":"number"}'\''
+json: error: <stdin>:1:1: meta error: invalid "type" object: key of second argument is not "args"
+json: error: <stdin>:1:1: {"type":"dict","foo":"number"}
+json: error: <stdin>:1:1: ^
+command failed: json <<< '\''{"type":"dict","foo":"number"}'\''
+$ json <<< '\''{"type":"dict","foo":"string"}'\''
+json: error: <stdin>:1:1: meta error: invalid "type" object: key of second argument is not "args"
+json: error: <stdin>:1:1: {"type":"dict","foo":"string"}
+json: error: <stdin>:1:1: ^
+command failed: json <<< '\''{"type":"dict","foo":"string"}'\''
+$ json <<< '\''{"type":"dict","foo":"object"}'\''
+json: error: <stdin>:1:1: meta error: invalid "type" object: key of second argument is not "args"
+json: error: <stdin>:1:1: {"type":"dict","foo":"object"}
+json: error: <stdin>:1:1: ^
+command failed: json <<< '\''{"type":"dict","foo":"object"}'\''
+$ json <<< '\''{"type":"dict","foo":"array"}'\''
+json: error: <stdin>:1:1: meta error: invalid "type" object: key of second argument is not "args"
+json: error: <stdin>:1:1: {"type":"dict","foo":"array"}
+json: error: <stdin>:1:1: ^
+command failed: json <<< '\''{"type":"dict","foo":"array"}'\''
+$ json <<< '\''{"type":"dict","foo":"list"}'\''
+json: error: <stdin>:1:1: meta error: invalid "type" object: key of second argument is not "args"
+json: error: <stdin>:1:1: {"type":"dict","foo":"list"}
+json: error: <stdin>:1:1: ^
+command failed: json <<< '\''{"type":"dict","foo":"list"}'\''
+$ json <<< '\''{"type":"dict","foo":"dict"}'\''
+json: error: <stdin>:1:1: meta error: invalid "type" object: key of second argument is not "args"
+json: error: <stdin>:1:1: {"type":"dict","foo":"dict"}
+json: error: <stdin>:1:1: ^
+command failed: json <<< '\''{"type":"dict","foo":"dict"}'\''
+$ json <<< '\''{"type":"dict","foo":{}}'\''
+json: error: <stdin>:1:1: meta error: invalid "type" object: key of second argument is not "args"
+json: error: <stdin>:1:1: {"type":"dict","foo":{}}
+json: error: <stdin>:1:1: ^
+command failed: json <<< '\''{"type":"dict","foo":{}}'\''
+$ json <<< '\''{"type":"dict","foo":{"foo":"bar"}}'\''
+json: error: <stdin>:1:1: meta error: invalid "type" object: key of second argument is not "args"
+json: error: <stdin>:1:1: {"type":"dict","foo":{"foo":"bar"
+json: error: <stdin>:1:1: ^
+command failed: json <<< '\''{"type":"dict","foo":{"foo":"bar"}}'\''
+$ json <<< '\''{"type":"dict","foo":[]}'\''
+json: error: <stdin>:1:1: meta error: invalid "type" object: key of second argument is not "args"
+json: error: <stdin>:1:1: {"type":"dict","foo":[]}
+json: error: <stdin>:1:1: ^
+command failed: json <<< '\''{"type":"dict","foo":[]}'\''
+$ json <<< '\''{"type":"dict","foo":["foo","bar"]}'\''
+json: error: <stdin>:1:1: meta error: invalid "type" object: key of second argument is not "args"
+json: error: <stdin>:1:1: {"type":"dict","foo":["foo","bar"
+json: error: <stdin>:1:1: ^
+command failed: json <<< '\''{"type":"dict","foo":["foo","bar"]}'\''
+$ json <<< '\''{"type":"dict","foo":[{"name":"baz","type":"object"}]}'\''
+json: error: <stdin>:1:1: meta error: invalid "type" object: key of second argument is not "args"
+json: error: <stdin>:1:1: {"type":"dict","foo":[{"name":"ba
+json: error: <stdin>:1:1: ^
+command failed: json <<< '\''{"type":"dict","foo":[{"name":"baz","type":"object"}]}'\''
+$ json <<< '\''{"type":"dict","foo":["boolean","number"]}'\''
+json: error: <stdin>:1:1: meta error: invalid "type" object: key of second argument is not "args"
+json: error: <stdin>:1:1: {"type":"dict","foo":["boolean","
+json: error: <stdin>:1:1: ^
+command failed: json <<< '\''{"type":"dict","foo":["boolean","number"]}'\''
+$ json <<< '\''{"type":"dict","args":null}'\''
+json: error: <stdin>:1:23: meta error: invalid "dict" object: value of "args" must be an array of "name" objects
+json: error: <stdin>:1:23: {"type":"dict","args":null}
+json: error: <stdin>:1:23:                       ^
+command failed: json <<< '\''{"type":"dict","args":null}'\''
+$ json <<< '\''{"type":"dict","args":false}'\''
+json: error: <stdin>:1:23: meta error: invalid "dict" object: value of "args" must be an array of "name" objects
+json: error: <stdin>:1:23: {"type":"dict","args":false}
+json: error: <stdin>:1:23:                       ^
+command failed: json <<< '\''{"type":"dict","args":false}'\''
+$ json <<< '\''{"type":"dict","args":true}'\''
+json: error: <stdin>:1:23: meta error: invalid "dict" object: value of "args" must be an array of "name" objects
+json: error: <stdin>:1:23: {"type":"dict","args":true}
+json: error: <stdin>:1:23:                       ^
+command failed: json <<< '\''{"type":"dict","args":true}'\''
+$ json <<< '\''{"type":"dict","args":123}'\''
+json: error: <stdin>:1:23: meta error: invalid "dict" object: value of "args" must be an array of "name" objects
+json: error: <stdin>:1:23: {"type":"dict","args":123}
+json: error: <stdin>:1:23:                       ^
+command failed: json <<< '\''{"type":"dict","args":123}'\''
+$ json <<< '\''{"type":"dict","args":"foo"}'\''
+json: error: <stdin>:1:23: meta error: invalid "dict" object: value of "args" must be an array of "name" objects
+json: error: <stdin>:1:23: {"type":"dict","args":"foo"}
+json: error: <stdin>:1:23:                       ^
+command failed: json <<< '\''{"type":"dict","args":"foo"}'\''
+$ json <<< '\''{"type":"dict","args":"type"}'\''
+json: error: <stdin>:1:23: meta error: invalid "dict" object: value of "args" must be an array of "name" objects
+json: error: <stdin>:1:23: {"type":"dict","args":"type"}
+json: error: <stdin>:1:23:                       ^
+command failed: json <<< '\''{"type":"dict","args":"type"}'\''
+$ json <<< '\''{"type":"dict","args":"null"}'\''
+json: error: <stdin>:1:23: meta error: invalid "dict" object: value of "args" must be an array of "name" objects
+json: error: <stdin>:1:23: {"type":"dict","args":"null"}
+json: error: <stdin>:1:23:                       ^
+command failed: json <<< '\''{"type":"dict","args":"null"}'\''
+$ json <<< '\''{"type":"dict","args":"boolean"}'\''
+json: error: <stdin>:1:23: meta error: invalid "dict" object: value of "args" must be an array of "name" objects
+json: error: <stdin>:1:23: {"type":"dict","args":"boolean"}
+json: error: <stdin>:1:23:                       ^
+command failed: json <<< '\''{"type":"dict","args":"boolean"}'\''
+$ json <<< '\''{"type":"dict","args":"number"}'\''
+json: error: <stdin>:1:23: meta error: invalid "dict" object: value of "args" must be an array of "name" objects
+json: error: <stdin>:1:23: {"type":"dict","args":"number"}
+json: error: <stdin>:1:23:                       ^
+command failed: json <<< '\''{"type":"dict","args":"number"}'\''
+$ json <<< '\''{"type":"dict","args":"string"}'\''
+json: error: <stdin>:1:23: meta error: invalid "dict" object: value of "args" must be an array of "name" objects
+json: error: <stdin>:1:23: {"type":"dict","args":"string"}
+json: error: <stdin>:1:23:                       ^
+command failed: json <<< '\''{"type":"dict","args":"string"}'\''
+$ json <<< '\''{"type":"dict","args":"object"}'\''
+json: error: <stdin>:1:23: meta error: invalid "dict" object: value of "args" must be an array of "name" objects
+json: error: <stdin>:1:23: {"type":"dict","args":"object"}
+json: error: <stdin>:1:23:                       ^
+command failed: json <<< '\''{"type":"dict","args":"object"}'\''
+$ json <<< '\''{"type":"dict","args":"array"}'\''
+json: error: <stdin>:1:23: meta error: invalid "dict" object: value of "args" must be an array of "name" objects
+json: error: <stdin>:1:23: {"type":"dict","args":"array"}
+json: error: <stdin>:1:23:                       ^
+command failed: json <<< '\''{"type":"dict","args":"array"}'\''
+$ json <<< '\''{"type":"dict","args":"list"}'\''
+json: error: <stdin>:1:23: meta error: invalid "dict" object: value of "args" must be an array of "name" objects
+json: error: <stdin>:1:23: {"type":"dict","args":"list"}
+json: error: <stdin>:1:23:                       ^
+command failed: json <<< '\''{"type":"dict","args":"list"}'\''
+$ json <<< '\''{"type":"dict","args":"dict"}'\''
+json: error: <stdin>:1:23: meta error: invalid "dict" object: value of "args" must be an array of "name" objects
+json: error: <stdin>:1:23: {"type":"dict","args":"dict"}
+json: error: <stdin>:1:23:                       ^
+command failed: json <<< '\''{"type":"dict","args":"dict"}'\''
+$ json <<< '\''{"type":"dict","args":{}}'\''
+json: error: <stdin>:1:23: meta error: empty objects are not allowed
+json: error: <stdin>:1:23: {"type":"dict","args":{}}
+json: error: <stdin>:1:23:                       ^
+command failed: json <<< '\''{"type":"dict","args":{}}'\''
+$ json <<< '\''{"type":"dict","args":{"foo":"bar"}}'\''
+json: error: <stdin>:1:24: meta error: invalid first key of object: it must be "type", "name" or "plain"
+json: error: <stdin>:1:24: {"type":"dict","args":{"foo":"bar"}}
+json: error: <stdin>:1:24:                        ^
+command failed: json <<< '\''{"type":"dict","args":{"foo":"bar"}}'\''
+$ json <<< '\''{"type":"dict","args":[]}'\''
+{
+    "type": "dict",
+    "args": [],
+    "attr": null
+}
+$ json <<< '\''{"type":"dict","args":["foo","bar"]}'\''
+json: error: <stdin>:1:24: meta error: invalid array: element is neither a type nor a "name" object
+json: error: <stdin>:1:24: {"type":"dict","args":["foo","bar"]}
+json: error: <stdin>:1:24:                        ^
+command failed: json <<< '\''{"type":"dict","args":["foo","bar"]}'\''
+$ json <<< '\''{"type":"dict","args":[{"name":"baz","type":"object"}]}'\''
+{
+    "type": "dict",
+    "args": [
+        {
+            "name": "baz",
+            "type": "object"
+        }
+    ],
+    "attr": {
+        "sym": "b",
+        "lo": null,
+        "eq": {
+            "sym": "a",
+            "lo": null,
+            "eq": {
+                "sym": "z",
+                "lo": null,
+                "eq": {
+                    "val": 0,
+                    "lo": null,
+                    "hi": null
+                },
+                "hi": null
+            },
+            "hi": null
+        },
+        "hi": null
+    }
+}
+$ json <<< '\''{"type":"dict","args":["boolean","number"]}'\''
+json: error: <stdin>:1:23: meta error: invalid "dict" object: value of "args" must be an array of "name" objects
+json: error: <stdin>:1:23: {"type":"dict","args":["boolean","number"]}
+json: error: <stdin>:1:23:                       ^
+command failed: json <<< '\''{"type":"dict","args":["boolean","number"]}'\'''
 ) -L type.new <(
 echo '$ json() { set -o pipefail && LD_LIBRARY_PATH=../lib ../src/json --literal-value -V -TA "$@"|LD_LIBRARY_PATH=../lib ../src/json --from-ast-print --verbose --no-error; }'
 json() { set -o pipefail && LD_LIBRARY_PATH=../lib ../src/json --literal-value -V -TA "$@"|LD_LIBRARY_PATH=../lib ../src/json --from-ast-print --verbose --no-error; } 2>&1 ||
@@ -701,6 +957,10 @@ echo 'command failed: json <<< '\''{"type":"object","foo":"array"}'\'''
 echo '$ json <<< '\''{"type":"object","foo":"list"}'\'''
 json <<< '{"type":"object","foo":"list"}' 2>&1 ||
 echo 'command failed: json <<< '\''{"type":"object","foo":"list"}'\'''
+
+echo '$ json <<< '\''{"type":"object","foo":"dict"}'\'''
+json <<< '{"type":"object","foo":"dict"}' 2>&1 ||
+echo 'command failed: json <<< '\''{"type":"object","foo":"dict"}'\'''
 
 echo '$ json <<< '\''{"type":"object","foo":{}}'\'''
 json <<< '{"type":"object","foo":{}}' 2>&1 ||
@@ -778,6 +1038,10 @@ echo '$ json <<< '\''{"type":"object","args":"list"}'\'''
 json <<< '{"type":"object","args":"list"}' 2>&1 ||
 echo 'command failed: json <<< '\''{"type":"object","args":"list"}'\'''
 
+echo '$ json <<< '\''{"type":"object","args":"dict"}'\'''
+json <<< '{"type":"object","args":"dict"}' 2>&1 ||
+echo 'command failed: json <<< '\''{"type":"object","args":"dict"}'\'''
+
 echo '$ json <<< '\''{"type":"object","args":{}}'\'''
 json <<< '{"type":"object","args":{}}' 2>&1 ||
 echo 'command failed: json <<< '\''{"type":"object","args":{}}'\'''
@@ -853,6 +1117,10 @@ echo 'command failed: json <<< '\''{"type":"array","foo":"array"}'\'''
 echo '$ json <<< '\''{"type":"array","foo":"list"}'\'''
 json <<< '{"type":"array","foo":"list"}' 2>&1 ||
 echo 'command failed: json <<< '\''{"type":"array","foo":"list"}'\'''
+
+echo '$ json <<< '\''{"type":"array","foo":"dict"}'\'''
+json <<< '{"type":"array","foo":"dict"}' 2>&1 ||
+echo 'command failed: json <<< '\''{"type":"array","foo":"dict"}'\'''
 
 echo '$ json <<< '\''{"type":"array","foo":{}}'\'''
 json <<< '{"type":"array","foo":{}}' 2>&1 ||
@@ -930,6 +1198,10 @@ echo '$ json <<< '\''{"type":"array","args":"list"}'\'''
 json <<< '{"type":"array","args":"list"}' 2>&1 ||
 echo 'command failed: json <<< '\''{"type":"array","args":"list"}'\'''
 
+echo '$ json <<< '\''{"type":"array","args":"dict"}'\'''
+json <<< '{"type":"array","args":"dict"}' 2>&1 ||
+echo 'command failed: json <<< '\''{"type":"array","args":"dict"}'\'''
+
 echo '$ json <<< '\''{"type":"array","args":{}}'\'''
 json <<< '{"type":"array","args":{}}' 2>&1 ||
 echo 'command failed: json <<< '\''{"type":"array","args":{}}'\'''
@@ -1005,6 +1277,10 @@ echo 'command failed: json <<< '\''{"type":"list","foo":"array"}'\'''
 echo '$ json <<< '\''{"type":"list","foo":"list"}'\'''
 json <<< '{"type":"list","foo":"list"}' 2>&1 ||
 echo 'command failed: json <<< '\''{"type":"list","foo":"list"}'\'''
+
+echo '$ json <<< '\''{"type":"list","foo":"dict"}'\'''
+json <<< '{"type":"list","foo":"dict"}' 2>&1 ||
+echo 'command failed: json <<< '\''{"type":"list","foo":"dict"}'\'''
 
 echo '$ json <<< '\''{"type":"list","foo":{}}'\'''
 json <<< '{"type":"list","foo":{}}' 2>&1 ||
@@ -1082,6 +1358,10 @@ echo '$ json <<< '\''{"type":"list","args":"list"}'\'''
 json <<< '{"type":"list","args":"list"}' 2>&1 ||
 echo 'command failed: json <<< '\''{"type":"list","args":"list"}'\'''
 
+echo '$ json <<< '\''{"type":"list","args":"dict"}'\'''
+json <<< '{"type":"list","args":"dict"}' 2>&1 ||
+echo 'command failed: json <<< '\''{"type":"list","args":"dict"}'\'''
+
 echo '$ json <<< '\''{"type":"list","args":{}}'\'''
 json <<< '{"type":"list","args":{}}' 2>&1 ||
 echo 'command failed: json <<< '\''{"type":"list","args":{}}'\'''
@@ -1105,5 +1385,165 @@ echo 'command failed: json <<< '\''{"type":"list","args":[{"name":"baz","type":"
 echo '$ json <<< '\''{"type":"list","args":["boolean","number"]}'\'''
 json <<< '{"type":"list","args":["boolean","number"]}' 2>&1 ||
 echo 'command failed: json <<< '\''{"type":"list","args":["boolean","number"]}'\'''
+
+echo '$ json <<< '\''{"type":"dict","foo":null}'\'''
+json <<< '{"type":"dict","foo":null}' 2>&1 ||
+echo 'command failed: json <<< '\''{"type":"dict","foo":null}'\'''
+
+echo '$ json <<< '\''{"type":"dict","foo":false}'\'''
+json <<< '{"type":"dict","foo":false}' 2>&1 ||
+echo 'command failed: json <<< '\''{"type":"dict","foo":false}'\'''
+
+echo '$ json <<< '\''{"type":"dict","foo":true}'\'''
+json <<< '{"type":"dict","foo":true}' 2>&1 ||
+echo 'command failed: json <<< '\''{"type":"dict","foo":true}'\'''
+
+echo '$ json <<< '\''{"type":"dict","foo":123}'\'''
+json <<< '{"type":"dict","foo":123}' 2>&1 ||
+echo 'command failed: json <<< '\''{"type":"dict","foo":123}'\'''
+
+echo '$ json <<< '\''{"type":"dict","foo":"foo"}'\'''
+json <<< '{"type":"dict","foo":"foo"}' 2>&1 ||
+echo 'command failed: json <<< '\''{"type":"dict","foo":"foo"}'\'''
+
+echo '$ json <<< '\''{"type":"dict","foo":"type"}'\'''
+json <<< '{"type":"dict","foo":"type"}' 2>&1 ||
+echo 'command failed: json <<< '\''{"type":"dict","foo":"type"}'\'''
+
+echo '$ json <<< '\''{"type":"dict","foo":"null"}'\'''
+json <<< '{"type":"dict","foo":"null"}' 2>&1 ||
+echo 'command failed: json <<< '\''{"type":"dict","foo":"null"}'\'''
+
+echo '$ json <<< '\''{"type":"dict","foo":"boolean"}'\'''
+json <<< '{"type":"dict","foo":"boolean"}' 2>&1 ||
+echo 'command failed: json <<< '\''{"type":"dict","foo":"boolean"}'\'''
+
+echo '$ json <<< '\''{"type":"dict","foo":"number"}'\'''
+json <<< '{"type":"dict","foo":"number"}' 2>&1 ||
+echo 'command failed: json <<< '\''{"type":"dict","foo":"number"}'\'''
+
+echo '$ json <<< '\''{"type":"dict","foo":"string"}'\'''
+json <<< '{"type":"dict","foo":"string"}' 2>&1 ||
+echo 'command failed: json <<< '\''{"type":"dict","foo":"string"}'\'''
+
+echo '$ json <<< '\''{"type":"dict","foo":"object"}'\'''
+json <<< '{"type":"dict","foo":"object"}' 2>&1 ||
+echo 'command failed: json <<< '\''{"type":"dict","foo":"object"}'\'''
+
+echo '$ json <<< '\''{"type":"dict","foo":"array"}'\'''
+json <<< '{"type":"dict","foo":"array"}' 2>&1 ||
+echo 'command failed: json <<< '\''{"type":"dict","foo":"array"}'\'''
+
+echo '$ json <<< '\''{"type":"dict","foo":"list"}'\'''
+json <<< '{"type":"dict","foo":"list"}' 2>&1 ||
+echo 'command failed: json <<< '\''{"type":"dict","foo":"list"}'\'''
+
+echo '$ json <<< '\''{"type":"dict","foo":"dict"}'\'''
+json <<< '{"type":"dict","foo":"dict"}' 2>&1 ||
+echo 'command failed: json <<< '\''{"type":"dict","foo":"dict"}'\'''
+
+echo '$ json <<< '\''{"type":"dict","foo":{}}'\'''
+json <<< '{"type":"dict","foo":{}}' 2>&1 ||
+echo 'command failed: json <<< '\''{"type":"dict","foo":{}}'\'''
+
+echo '$ json <<< '\''{"type":"dict","foo":{"foo":"bar"}}'\'''
+json <<< '{"type":"dict","foo":{"foo":"bar"}}' 2>&1 ||
+echo 'command failed: json <<< '\''{"type":"dict","foo":{"foo":"bar"}}'\'''
+
+echo '$ json <<< '\''{"type":"dict","foo":[]}'\'''
+json <<< '{"type":"dict","foo":[]}' 2>&1 ||
+echo 'command failed: json <<< '\''{"type":"dict","foo":[]}'\'''
+
+echo '$ json <<< '\''{"type":"dict","foo":["foo","bar"]}'\'''
+json <<< '{"type":"dict","foo":["foo","bar"]}' 2>&1 ||
+echo 'command failed: json <<< '\''{"type":"dict","foo":["foo","bar"]}'\'''
+
+echo '$ json <<< '\''{"type":"dict","foo":[{"name":"baz","type":"object"}]}'\'''
+json <<< '{"type":"dict","foo":[{"name":"baz","type":"object"}]}' 2>&1 ||
+echo 'command failed: json <<< '\''{"type":"dict","foo":[{"name":"baz","type":"object"}]}'\'''
+
+echo '$ json <<< '\''{"type":"dict","foo":["boolean","number"]}'\'''
+json <<< '{"type":"dict","foo":["boolean","number"]}' 2>&1 ||
+echo 'command failed: json <<< '\''{"type":"dict","foo":["boolean","number"]}'\'''
+
+echo '$ json <<< '\''{"type":"dict","args":null}'\'''
+json <<< '{"type":"dict","args":null}' 2>&1 ||
+echo 'command failed: json <<< '\''{"type":"dict","args":null}'\'''
+
+echo '$ json <<< '\''{"type":"dict","args":false}'\'''
+json <<< '{"type":"dict","args":false}' 2>&1 ||
+echo 'command failed: json <<< '\''{"type":"dict","args":false}'\'''
+
+echo '$ json <<< '\''{"type":"dict","args":true}'\'''
+json <<< '{"type":"dict","args":true}' 2>&1 ||
+echo 'command failed: json <<< '\''{"type":"dict","args":true}'\'''
+
+echo '$ json <<< '\''{"type":"dict","args":123}'\'''
+json <<< '{"type":"dict","args":123}' 2>&1 ||
+echo 'command failed: json <<< '\''{"type":"dict","args":123}'\'''
+
+echo '$ json <<< '\''{"type":"dict","args":"foo"}'\'''
+json <<< '{"type":"dict","args":"foo"}' 2>&1 ||
+echo 'command failed: json <<< '\''{"type":"dict","args":"foo"}'\'''
+
+echo '$ json <<< '\''{"type":"dict","args":"type"}'\'''
+json <<< '{"type":"dict","args":"type"}' 2>&1 ||
+echo 'command failed: json <<< '\''{"type":"dict","args":"type"}'\'''
+
+echo '$ json <<< '\''{"type":"dict","args":"null"}'\'''
+json <<< '{"type":"dict","args":"null"}' 2>&1 ||
+echo 'command failed: json <<< '\''{"type":"dict","args":"null"}'\'''
+
+echo '$ json <<< '\''{"type":"dict","args":"boolean"}'\'''
+json <<< '{"type":"dict","args":"boolean"}' 2>&1 ||
+echo 'command failed: json <<< '\''{"type":"dict","args":"boolean"}'\'''
+
+echo '$ json <<< '\''{"type":"dict","args":"number"}'\'''
+json <<< '{"type":"dict","args":"number"}' 2>&1 ||
+echo 'command failed: json <<< '\''{"type":"dict","args":"number"}'\'''
+
+echo '$ json <<< '\''{"type":"dict","args":"string"}'\'''
+json <<< '{"type":"dict","args":"string"}' 2>&1 ||
+echo 'command failed: json <<< '\''{"type":"dict","args":"string"}'\'''
+
+echo '$ json <<< '\''{"type":"dict","args":"object"}'\'''
+json <<< '{"type":"dict","args":"object"}' 2>&1 ||
+echo 'command failed: json <<< '\''{"type":"dict","args":"object"}'\'''
+
+echo '$ json <<< '\''{"type":"dict","args":"array"}'\'''
+json <<< '{"type":"dict","args":"array"}' 2>&1 ||
+echo 'command failed: json <<< '\''{"type":"dict","args":"array"}'\'''
+
+echo '$ json <<< '\''{"type":"dict","args":"list"}'\'''
+json <<< '{"type":"dict","args":"list"}' 2>&1 ||
+echo 'command failed: json <<< '\''{"type":"dict","args":"list"}'\'''
+
+echo '$ json <<< '\''{"type":"dict","args":"dict"}'\'''
+json <<< '{"type":"dict","args":"dict"}' 2>&1 ||
+echo 'command failed: json <<< '\''{"type":"dict","args":"dict"}'\'''
+
+echo '$ json <<< '\''{"type":"dict","args":{}}'\'''
+json <<< '{"type":"dict","args":{}}' 2>&1 ||
+echo 'command failed: json <<< '\''{"type":"dict","args":{}}'\'''
+
+echo '$ json <<< '\''{"type":"dict","args":{"foo":"bar"}}'\'''
+json <<< '{"type":"dict","args":{"foo":"bar"}}' 2>&1 ||
+echo 'command failed: json <<< '\''{"type":"dict","args":{"foo":"bar"}}'\'''
+
+echo '$ json <<< '\''{"type":"dict","args":[]}'\'''
+json <<< '{"type":"dict","args":[]}' 2>&1 ||
+echo 'command failed: json <<< '\''{"type":"dict","args":[]}'\'''
+
+echo '$ json <<< '\''{"type":"dict","args":["foo","bar"]}'\'''
+json <<< '{"type":"dict","args":["foo","bar"]}' 2>&1 ||
+echo 'command failed: json <<< '\''{"type":"dict","args":["foo","bar"]}'\'''
+
+echo '$ json <<< '\''{"type":"dict","args":[{"name":"baz","type":"object"}]}'\'''
+json <<< '{"type":"dict","args":[{"name":"baz","type":"object"}]}' 2>&1 ||
+echo 'command failed: json <<< '\''{"type":"dict","args":[{"name":"baz","type":"object"}]}'\'''
+
+echo '$ json <<< '\''{"type":"dict","args":["boolean","number"]}'\'''
+json <<< '{"type":"dict","args":["boolean","number"]}' 2>&1 ||
+echo 'command failed: json <<< '\''{"type":"dict","args":["boolean","number"]}'\'''
 )
 

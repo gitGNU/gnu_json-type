@@ -46,12 +46,18 @@ for t in \
     node-plain \
     node-object-any \
     node-object-any2 \
+    node-dict-any \
+    node-dict-any2 \
     node-open-array-any \
     node-open-array-plain \
     node-open-array-object-any \
     node-open-array-object-any2 \
     node-open-array-object-plain \
     node-open-array-object-plain2 \
+    node-open-array-dict-any \
+    node-open-array-dict-any2 \
+    node-open-array-dict-plain \
+    node-open-array-dict-plain2 \
     node-closed-array-empty \
     node-closed-array-any \
     node-closed-array-any2 \
@@ -60,6 +66,9 @@ for t in \
     node-closed-array-object-any \
     node-closed-array-object-any2 \
     node-closed-array-object-any3 \
+    node-closed-array-dict-any \
+    node-closed-array-dict-any2 \
+    node-closed-array-dict-any3 \
     node-closed-array-open-array-any \
     node-closed-array-open-array-any2 \
     node-open-array-closed-array-empty \
@@ -70,6 +79,11 @@ for t in \
     node-object-closed-array-empty \
     node-object-closed-array-any \
     node-object-closed-array-any2 \
+    node-dict-open-array-any \
+    node-dict-open-array-any2 \
+    node-dict-closed-array-empty \
+    node-dict-closed-array-any \
+    node-dict-closed-array-any2 \
     node-list-empty \
     node-list-any \
     node-list-any2 \
@@ -77,12 +91,16 @@ for t in \
     node-list-plain2 \
     node-list-object-any \
     node-list-object-any2 \
+    node-list-dict-any \
+    node-list-dict-any2 \
     node-list-open-array-any \
     node-list-open-array-any2 \
     node-list-closed-array-any \
     node-list-closed-array-any2 \
     node-object-list-any \
     node-object-list-any2 \
+    node-dict-list-any \
+    node-dict-list-any2 \
     node-open-array-list-empty \
     node-open-array-list-any \
     node-open-array-list-any2 \

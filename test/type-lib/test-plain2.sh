@@ -93,6 +93,11 @@ json: error: <stdin>:1:1: meta error: invalid "plain" object: arguments not of s
 json: error: <stdin>:1:1: {"plain":"list","foo":"bar"}
 json: error: <stdin>:1:1: ^
 command failed: json <<< '\''{"plain":"list","foo":"bar"}'\''
+$ json <<< '\''{"plain":"dict","foo":"bar"}'\''
+json: error: <stdin>:1:1: meta error: invalid "plain" object: arguments not of size one
+json: error: <stdin>:1:1: {"plain":"dict","foo":"bar"}
+json: error: <stdin>:1:1: ^
+command failed: json <<< '\''{"plain":"dict","foo":"bar"}'\''
 $ json <<< '\''{"plain":{},"foo":"bar"}'\''
 json: error: <stdin>:1:1: meta error: invalid "plain" object: arguments not of size one
 json: error: <stdin>:1:1: {"plain":{},"foo":"bar"}
@@ -169,6 +174,10 @@ echo 'command failed: json <<< '\''{"plain":"array","foo":"bar"}'\'''
 echo '$ json <<< '\''{"plain":"list","foo":"bar"}'\'''
 json <<< '{"plain":"list","foo":"bar"}' 2>&1 ||
 echo 'command failed: json <<< '\''{"plain":"list","foo":"bar"}'\'''
+
+echo '$ json <<< '\''{"plain":"dict","foo":"bar"}'\'''
+json <<< '{"plain":"dict","foo":"bar"}' 2>&1 ||
+echo 'command failed: json <<< '\''{"plain":"dict","foo":"bar"}'\'''
 
 echo '$ json <<< '\''{"plain":{},"foo":"bar"}'\'''
 json <<< '{"plain":{},"foo":"bar"}' 2>&1 ||

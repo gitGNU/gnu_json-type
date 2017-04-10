@@ -93,6 +93,11 @@ json: error: <stdin>:1:1: meta error: invalid "name" object: arguments not of si
 json: error: <stdin>:1:1: {"name":"faa","type":"type","fuu"
 json: error: <stdin>:1:1: ^
 command failed: json <<< '\''{"name":"faa","type":"type","fuu":"list"}'\''
+$ json <<< '\''{"name":"faa","type":"type","fuu":"dict"}'\''
+json: error: <stdin>:1:1: meta error: invalid "name" object: arguments not of size two
+json: error: <stdin>:1:1: {"name":"faa","type":"type","fuu"
+json: error: <stdin>:1:1: ^
+command failed: json <<< '\''{"name":"faa","type":"type","fuu":"dict"}'\''
 $ json <<< '\''{"name":"faa","type":"type","fuu":{}}'\''
 json: error: <stdin>:1:1: meta error: invalid "name" object: arguments not of size two
 json: error: <stdin>:1:1: {"name":"faa","type":"type","fuu"
@@ -169,6 +174,10 @@ echo 'command failed: json <<< '\''{"name":"faa","type":"type","fuu":"array"}'\'
 echo '$ json <<< '\''{"name":"faa","type":"type","fuu":"list"}'\'''
 json <<< '{"name":"faa","type":"type","fuu":"list"}' 2>&1 ||
 echo 'command failed: json <<< '\''{"name":"faa","type":"type","fuu":"list"}'\'''
+
+echo '$ json <<< '\''{"name":"faa","type":"type","fuu":"dict"}'\'''
+json <<< '{"name":"faa","type":"type","fuu":"dict"}' 2>&1 ||
+echo 'command failed: json <<< '\''{"name":"faa","type":"type","fuu":"dict"}'\'''
 
 echo '$ json <<< '\''{"name":"faa","type":"type","fuu":{}}'\'''
 json <<< '{"name":"faa","type":"type","fuu":{}}' 2>&1 ||

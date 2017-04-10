@@ -128,6 +128,11 @@ json: error: <stdin>:1:47: meta error: invalid "name" object: its "type" argumen
 json: error: <stdin>:1:47: t","args":[{"name":"baz","type":"list"}]}
 json: error: <stdin>:1:47:                                 ^
 command failed: json <<< '\''{"type":"object","args":[{"name":"baz","type":"list"}]}'\''
+$ json <<< '\''{"type":"object","args":[{"name":"baz","type":"dict"}]}'\''
+json: error: <stdin>:1:47: meta error: invalid "name" object: its "type" argument must be a type
+json: error: <stdin>:1:47: t","args":[{"name":"baz","type":"dict"}]}
+json: error: <stdin>:1:47:                                 ^
+command failed: json <<< '\''{"type":"object","args":[{"name":"baz","type":"dict"}]}'\''
 $ json <<< '\''{"type":"object","args":[{"name":"baz","type":{}}]}'\''
 json: error: <stdin>:1:47: meta error: empty objects are not allowed
 json: error: <stdin>:1:47: t","args":[{"name":"baz","type":{}}]}
@@ -204,6 +209,10 @@ echo 'command failed: json <<< '\''{"type":"object","args":[{"name":"baz","type"
 echo '$ json <<< '\''{"type":"object","args":[{"name":"baz","type":"list"}]}'\'''
 json <<< '{"type":"object","args":[{"name":"baz","type":"list"}]}' 2>&1 ||
 echo 'command failed: json <<< '\''{"type":"object","args":[{"name":"baz","type":"list"}]}'\'''
+
+echo '$ json <<< '\''{"type":"object","args":[{"name":"baz","type":"dict"}]}'\'''
+json <<< '{"type":"object","args":[{"name":"baz","type":"dict"}]}' 2>&1 ||
+echo 'command failed: json <<< '\''{"type":"object","args":[{"name":"baz","type":"dict"}]}'\'''
 
 echo '$ json <<< '\''{"type":"object","args":[{"name":"baz","type":{}}]}'\'''
 json <<< '{"type":"object","args":[{"name":"baz","type":{}}]}' 2>&1 ||

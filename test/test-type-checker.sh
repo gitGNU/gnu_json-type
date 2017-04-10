@@ -55,6 +55,20 @@ for t in \
     object8 \
     object9 \
     object10 \
+    dict \
+    dict2 \
+    dict3 \
+    dict4 \
+    dict5 \
+    dict6 \
+    dict7 \
+    dict8 \
+    dict9 \
+    dict10 \
+    dict11 \
+    dict12 \
+    dict13 \
+    dict14 \
     open-array \
     open-array2 \
     open-array3 \
@@ -69,9 +83,14 @@ for t in \
     open-array12 \
     object-open-array \
     object-open-array2 \
+    dict-open-array \
+    dict-open-array2 \
     open-array-object \
     open-array-object2 \
     open-array-object3 \
+    open-array-dict \
+    open-array-dict2 \
+    open-array-dict3 \
     open-array-open-array \
     open-array-open-array2 \
     open-array-open-array3 \
@@ -89,9 +108,14 @@ for t in \
     closed-array11 \
     object-closed-array \
     object-closed-array2 \
+    dict-closed-array \
+    dict-closed-array2 \
     closed-array-object \
     closed-array-object2 \
     closed-array-object3 \
+    closed-array-dict \
+    closed-array-dict2 \
+    closed-array-dict3 \
     closed-array-closed-array \
     closed-array-closed-array2 \
     closed-array-open-array \
@@ -111,6 +135,13 @@ for t in \
     object-list5 \
     object-list6 \
     object-list7 \
+    dict-list \
+    dict-list2 \
+    dict-list3 \
+    dict-list4 \
+    dict-list5 \
+    dict-list6 \
+    dict-list7 \
     open-array-list \
     open-array-list2 \
     open-array-list3 \

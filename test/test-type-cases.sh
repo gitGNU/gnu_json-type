@@ -121,7 +121,12 @@ for t in \
     77 \
     78 \
     79 \
-    80
+    80 \
+    82 \
+    83 \
+    84 \
+    85 \
+    86
 do
     test -z "$q" &&
     printf >&2 "%-$((w + 6))s " "test: type-cases:$t"
