@@ -42,24 +42,26 @@ There are precisely three categories of type definitions:
 
   (F3) the JSON object values of form:
 
-       (a) `{ "type": "object", "args": [ $arg* ] }',
+       (a) `{ "type": "object", "args": [ $arg* ] }', or
+
+       (b) `{ "type": "dict", "args": [ $arg* ] }',
 
             where $arg is of form:
 
            `{ "name": $string, "type": $type }',
 
-       (b) `{ "type": "array", "args": $type }',
+       (c) `{ "type": "array", "args": $type }',
 
-       (c) `{ "type": "array", "args": [ $type* ] }', or
+       (d) `{ "type": "array", "args": [ $type* ] }', or
 
-       (d) `{ "type": "list", "args": [ $type* ] }',
+       (e) `{ "type": "list", "args": [ $type* ] }',
 
        where $string is any string and $type is any type.
 
 Each of the string values listed by point (F1) is exempted from being a type when
 occurring as value associated to the key `"plain"' of objects of form (F2) or to
-the key `"name"' of objects of form (F3.a). In such cases, the string values are
-to be interpreted as proper values.
+the key `"name"' of objects of form (F3.a) or (F3.b). In such cases, the string
+values are to be interpreted as proper values.
 
 The meaning of each of the constructs above is defined as follows:
 
@@ -90,17 +92,26 @@ The meaning of each of the constructs above is defined as follows:
 
        (b) A JSON value matches a given type of form (F3.b) if and only if:
 
+         * it is an JSON object, and
+         * irrespective of the order in which the arguments are specified in
+           the type, each object argument name corresponds to one specified by
+           the type, and appears at most once amongst the object arguments, and
+         * each object argument value matches the corresponding argument type
+           specified by the type.
+
+       (c) A JSON value matches a given type of form (F3.c) if and only if:
+
          * it is an JSON array with zero or more number of arguments, and
          * each argument value matches the type specified.
 
-       (c) A JSON value matches a given type of form (F3.c) if and only if:
+       (d) A JSON value matches a given type of form (F3.d) if and only if:
 
          * it is an JSON array, and
          * has the number of arguments specified by the type, and
          * in the order specified by the type, each argument value matches the
            corresponding argument type specified by the type.
 
-       (d) A JSON value matches a given type of form (F3.d) if and only if it
+       (e) A JSON value matches a given type of form (F3.e) if and only if it
            matches one of the argument types specified by the type.
 
 
