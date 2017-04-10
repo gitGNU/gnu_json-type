@@ -162,6 +162,7 @@
 
 #define TRIE_LOOKUP_SYM_NODE TRIE_MAKE_NAME(TRIE_NAME, lookup_sym_node)
 #define TRIE_LOOKUP_SYM      TRIE_MAKE_NAME(TRIE_NAME, lookup_sym)
+#define TRIE_LOOKUP_KEY      TRIE_MAKE_NAME(TRIE_NAME, lookup_key)
 #define TRIE_INSERT_SYM      TRIE_MAKE_NAME(TRIE_NAME, insert_sym)
 #define TRIE_INSERT_KEY      TRIE_MAKE_NAME(TRIE_NAME, insert_key)
 
@@ -758,6 +759,44 @@ done:
 }
 
 #endif // TRIE_NEED_INSERT_SYM
+
+#ifdef TRIE_NEED_LOOKUP_KEY
+
+static bool TRIE_LOOKUP_KEY(
+    const struct TRIE_TYPE* trie, TRIE_KEY_TYPE key,
+    const struct TRIE_NODE_TYPE** result)
+{
+    const struct TRIE_NODE_TYPE* node;
+    enum trie_sym_cmp_t cmp;
+
+    node = trie->root;
+    while (node) {
+        cmp = TRIE_SYM_CMP(
+                TRIE_KEY_DEREF(key),
+                node->sym); 
+        if (cmp == trie_sym_cmp_eq) {
+            if (TRIE_SYM_IS_NULL(node->sym)) {
+                *result = node;
+                return true;
+            }
+            TRIE_KEY_INC(key);
+            node = node->cell.eq;
+        }
+        else
+        if (cmp == trie_sym_cmp_lt)
+            node = node->lo;
+        else
+        if (cmp == trie_sym_cmp_gt)
+            node = node->hi;
+        else
+            UNEXPECT_VAR("%d", cmp);
+    }
+
+    *result = NULL;
+    return false;
+}
+
+#endif // TRIE_NEED_LOOKUP_KEY
 
 static bool TRIE_INSERT_KEY(
     struct TRIE_TYPE* trie, TRIE_KEY_TYPE key,
