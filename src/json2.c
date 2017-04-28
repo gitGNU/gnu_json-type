@@ -98,7 +98,8 @@ static void push_last(struct obj_json2_t* this)
 
 static void pop_last(struct obj_json2_t* this)
 {
-    pop_string(this->stack);
+    if (this->last)
+        pop_string(this->stack);
     this->last = true;
 }
 
