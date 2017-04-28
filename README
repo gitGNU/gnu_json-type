@@ -49,7 +49,7 @@ of input text one at a time, it stops as soon as it is detecting a type error
 occurrence in the input given.
 
 Aside from managing the bounded token buffer within the parser and three bounded
-stacks -- one in use by the parser and two other by the type checker --, there
+stacks -- one in use by the parser and two others by the type checker --, there
 is no other kind of memory management nor any kind of expensive computations
 that the library does while parsing and validating for types the input. (Neither
 'malloc', nor its friends are used, except for the mentioned buffer and stacks.)
