@@ -60,8 +60,8 @@ The file 'trie-impl.h' implements quite a few algorithms which apply to TSTs.
 The most important are those to be seen in the functions 'TRIE_LOOKUP_SYM',
 'TRIE_LOOKUP_KEY', 'TRIE_INSERT_SYM' and 'TRIE_INSERT_KEY'.
 
-'TRIE_LOOKUP_SYM' is an iterative variant of the recursive 'get' of Algorithm
-5.5 and 'TRIE_INSERT_{SYM,KEY}' are iterative variants of the recursive 'put'
+'TRIE_LOOKUP_{SYM,KEY}' are iterative variants of the recursive 'get' of Algorithm
+5.5, and 'TRIE_INSERT_{SYM,KEY}' are iterative counterparts of the recursive 'put'
 of Algorithm 5.5 in Sedgewick and Wayne [2].
 
 Note that professor Sedgewick made available C implementations for the iterative
